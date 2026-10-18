@@ -1,36 +1,128 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FSD Donor System
+
+A Next.js App Router application built with React 19, TypeScript, Tailwind CSS, and shadcn/ui.
+
+---
+
+## Tech Stack
+
+- **Framework**: Next.js (App Router, Turbopack)
+- **Library**: React 19
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS v4
+- **Components**: shadcn/ui primitives
+- **Icons**: Lucide React
+
+---
+
+## Project Structure
+
+```text
+FSD_Donor_System/
+├── docs/                        # Architecture and system specifications
+│   ├── 00-overview.md           # Architecture rules and system conventions
+│   ├── 01-schema.md             # Database schema design and entity models
+│   └── 02-screens.md            # Route specifications and screen contracts
+│
+├── public/                      # Static web assets and brand SVG icons
+│
+├── src/                         # Application source code
+│   ├── middleware.ts            # Route guards and authentication redirects
+│   │
+│   ├── actions/                 # Server Actions for business logic mutations
+│   │
+│   ├── app/                     # Next.js App Router (pages and layouts)
+│   │   ├── layout.tsx           # Root HTML shell and global font provider
+│   │   ├── globals.css          # Tailwind CSS tokens and utility layers
+│   │   ├── page.tsx             # Public landing page and marketing hero
+│   │   │
+│   │   ├── authentication/      # Authentication portal
+│   │   │   ├── layout.tsx       # Centered layout container for auth views
+│   │   │   └── page.tsx         # Sign-in and account access interface
+│   │   │
+│   │   ├── dashboard/           # Authenticated management workspace
+│   │   │   ├── layout.tsx       # Shell with responsive header and sidebar
+│   │   │   └── page.tsx         # Analytics overview and metrics dashboard
+│   │   │
+│   │   └── api/                 # API Route Handlers
+│   │       └── health/          # Health check endpoint
+│   │           └── route.ts     # Health status endpoint handler
+│   │
+│   ├── components/              # Modular React UI components
+│   │   ├── authentication/      # Authentication widgets and login forms
+│   │   │   └── AuthForm.tsx     # Sign-in form with client-side validation
+│   │   │
+│   │   ├── common/              # Shared application chrome components
+│   │   │   ├── Header.tsx       # Top navigation bar and user profile menu
+│   │   │   └── Sidebar.tsx      # Navigation sidebar with route indicators
+│   │   │
+│   │   ├── dashboard/           # Dashboard data displays and widgets
+│   │   │   └── StatCard.tsx     # KPI summary card with trend indicators
+│   │   │
+│   │   └── ui/                  # Reusable atomic shadcn/ui primitives
+│   │       ├── badge.tsx        # Status pill and categorical badge tag
+│   │       ├── button.tsx       # Interactive button with variant styles
+│   │       ├── card.tsx         # Container panel with header and content
+│   │       └── input.tsx        # Text input field with focus state styles
+│   │
+│   ├── lib/                     # Utilities and backend client connections
+│   │   ├── db/                  # Database configuration and initializers
+│   │   │   └── index.ts         # Connection pool settings and client export
+│   │   └── utils.ts             # Class name merger helper (`cn = clsx + twMerge`)
+│   │
+│   └── types/                   # TypeScript interfaces and entity types
+│       ├── database.ts          # Core database tables and status enum types
+│       └── index.ts             # Shared application contracts and DTO types
+│
+├── .env.example                 # Environment variables template
+├── .env.local                   # Local configuration secrets (gitignored)
+├── .gitignore                   # Git version control exclusions
+├── components.json              # shadcn/ui component configuration
+├── eslint.config.mjs            # ESLint static analysis configuration
+├── next.config.ts               # Next.js framework configuration
+├── package.json                 # Project manifest and package dependencies
+└── tsconfig.json                # TypeScript compiler rules and path aliases
+```
+
+---
 
 ## Getting Started
 
-First, run the development server:
+### 1. Installation
+
+```bash
+git clone <repository-url>
+cd FSD_Donor_System
+npm install
+```
+
+### 2. Environment Setup
+
+```bash
+cp .env.example .env.local
+```
+
+Required keys in `.env.local`:
+
+```ini
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+AUTH_SECRET=your_auth_secret_here
+DATABASE_URL=postgresql://user:password@localhost:5432/fsd_donor_db
+```
+
+### 3. Run Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to view the application.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Scripts
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `npm run dev` - Starts the local development server with Turbopack
+- `npm run build` - Compiles the production application bundle
+- `npm run start` - Runs the compiled production build locally
+- `npm run lint` - Runs ESLint to check for code issues
