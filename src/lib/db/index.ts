@@ -1,12 +1,6 @@
 /**
  * Database client initializer and configuration
- * Supports Prisma, Drizzle, Supabase, or native pg pool
+ * Supabase client exports for App Router
  */
 
-export interface DbConfig {
-  connectionString?: string
-}
-
-export const dbConfig: DbConfig = {
-  connectionString: process.env.DATABASE_URL,
-}
+export * from '@/lib/supabase/server'
