@@ -54,7 +54,8 @@ FSD_Donor_System/
 │   │   │
 │   │   ├── common/              # Shared application chrome components
 │   │   │   ├── Header.tsx       # Top navigation bar and user profile menu
-│   │   │   └── Navbar.tsx      # Navigation sidebar with route indicators
+│   │   │   └── Navbar.tsx      # Navigation navbar with route indicators
+│   │   │   └── Sidebar.tsx      # Navigation sidebar with route indicators
 │   │   │
 │   │   ├── dashboard/           # Dashboard data displays and widgets
 │   │   │   └── StatCard.tsx     # KPI summary card with trend indicators

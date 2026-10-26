@@ -1,166 +1,116 @@
 "use client";
 
-import Image from "next/image";
+import React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import {
-  LayoutGrid,
-  UserPlus,
-  RefreshCw,
-  Database,
-  Bell,
-  Sliders,
-  ChevronsUpDown,
-  type LucideIcon,
-} from "lucide-react";
+import { type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-interface NavItem {
-  name: string;
+export interface TabItem {
+  label: string;
   href: string;
-  icon: LucideIcon;
+  isActive?: boolean;
 }
 
-interface NavSection {
-  title?: string;
-  items: NavItem[];
+export interface ActionButton {
+  label: string;
+  icon?: LucideIcon;
+  variant?: "primary" | "secondary";
+  onClick?: () => void;
+  href?: string;
 }
 
-const navigationSections: NavSection[] = [
-  {
-    items: [
-      {
-        name: "Dashboard",
-        href: "/dashboard",
-        icon: LayoutGrid,
-      },
-    ],
-  },
-  {
-    title: "Modules",
-    items: [
-      {
-        name: "Donor conversion",
-        href: "/donor-conversion",
-        icon: UserPlus,
-      },
-      {
-        name: "Donor retention",
-        href: "/donor-retention",
-        icon: RefreshCw,
-      },
-      {
-        name: "Donor care",
-        href: "/donor-care",
-        icon: Database,
-      },
-    ],
-  },
-  {
-    title: "System",
-    items: [
-      {
-        name: "Notifications",
-        href: "/notifications",
-        icon: Bell,
-      },
-      {
-        name: "Preferences",
-        href: "/preferences",
-        icon: Sliders,
-      },
-    ],
-  },
-];
+interface ModuleHeaderProps {
+  title: string;
+  subtitle: string;
+  tabs?: TabItem[];
+  actions?: ActionButton[];
+}
 
-export function Navbar() {
-  const pathname = usePathname();
-
+export function Navbar({
+  title,
+  subtitle,
+  tabs = [],
+  actions = [],
+}: ModuleHeaderProps) {
   return (
-    <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col justify-between border-r border-gray-200 bg-white">
-      <div className="p-4">
-        {/* Header Logo & Title */}
-        <div className="mb-6 flex items-center gap-3 px-2 py-1">
-          <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-lg bg-[#801313]">
-            <Image
-              src="/caritas_logo.png"
-              alt="Caritas Manila Logo"
-              fill
-              sizes="32px"
-              className="object-cover"
-              priority
-            />
-          </div>
-          <div>
-            <h1 className="text-sm font-bold leading-tight text-gray-900">
-              Caritas Manila
-            </h1>
-            <p className="text-xs text-gray-500">FSD Donor System</p>
-          </div>
+    // Changed pt-6 pb-0 to py-5 (or pt-6 pb-4) with md:items-center for uniform scaling
+    <header className="w-full bg-white border-b border-gray-200 px-8 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      
+      {/* Left Section: Title, Subtitle & Inline Tabs */}
+      <div className="flex flex-col md:flex-row md:items-center gap-8">
+        
+        {/* Title & Description */}
+        <div>
+          <h1 className="text-xl font-bold text-gray-900 tracking-tight leading-none">
+            {title}
+          </h1>
+          <p className="text-xs text-gray-500 mt-1">
+            {subtitle}
+          </p>
         </div>
 
-        {/* Navigation Links */}
-        <nav className="space-y-6">
-          {navigationSections.map((section, idx) => (
-            <div key={section.title ?? idx}>
-              {section.title && (
-                <h2 className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
-                  {section.title}
-                </h2>
-              )}
-              <div className="space-y-1">
-                {section.items.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = pathname === item.href;
-
-                  return (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      className={cn(
-                        "flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium text-[#33383F] transition-colors duration-150 hover:bg-[#F0F2F5]",
-                        isActive &&
-                          "bg-[#FDF2F0] font-semibold text-[#801313] hover:bg-[#FDF2F0]"
-                      )}
-                    >
-                      <Icon
-                        className={cn(
-                          "h-4 w-4 shrink-0 text-gray-500",
-                          isActive && "text-[#801313]"
-                        )}
-                      />
-                      <span>{item.name}</span>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </nav>
+        {/* Dynamic Navigation Tabs */}
+        {tabs.length > 0 && (
+          <nav className="flex items-center space-x-6 overflow-x-auto">
+            {tabs.map((tab) => (
+              <Link
+                key={tab.label}
+                href={tab.href}
+                className={cn(
+                  "py-2 text-sm font-medium transition-colors relative whitespace-nowrap",
+                  tab.isActive
+                    ? "text-[#801313] font-semibold"
+                    : "text-gray-500 hover:text-gray-900"
+                )}
+              >
+                {tab.label}
+                {tab.isActive && (
+                  <span className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-[#801313]" />
+                )}
+              </Link>
+            ))}
+          </nav>
+        )}
       </div>
 
-      {/* Sidebar Footer / Profile */}
-      <div className="border-t border-gray-100 p-3">
-        <button
-          type="button"
-          className="flex w-full items-center justify-between rounded-xl border border-gray-200 p-2 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-200"
-        >
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#FCE8E6] text-xs font-semibold text-[#801313]">
-              CO
-            </div>
-            <div className="text-left">
-              <div className="text-xs font-semibold leading-tight text-gray-900">
-                Caritas Officer
-              </div>
-              <div className="text-[11px] text-gray-500">
-                FSD Division Head
-              </div>
-            </div>
-          </div>
-          <ChevronsUpDown className="h-4 w-4 shrink-0 text-gray-400" />
-        </button>
-      </div>
-    </aside>
+      {/* Right Section: Action Buttons (Removed manual pb offsets so it scales cleanly with the header) */}
+      {actions.length > 0 && (
+        <div className="flex items-center gap-3">
+          {actions.map((action, index) => {
+            const Icon = action.icon;
+            const isPrimary = action.variant === "primary";
+
+            const buttonClasses = cn(
+              "flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold shadow-sm transition-all duration-150",
+              isPrimary
+                ? "bg-[#801313] text-white hover:bg-[#6b0f0f]"
+                : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
+            );
+
+            if (action.href) {
+              return (
+                <Link key={index} href={action.href} className={buttonClasses}>
+                  {Icon && <Icon className="w-3.5 h-3.5" />}
+                  <span>{action.label}</span>
+                </Link>
+              );
+            }
+
+            return (
+              <button
+                key={index}
+                onClick={action.onClick}
+                className={buttonClasses}
+                type="button"
+              >
+                {Icon && <Icon className="w-3.5 h-3.5" />}
+                <span>{action.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+    </header>
   );
 }
