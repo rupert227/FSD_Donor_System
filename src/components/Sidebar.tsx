@@ -19,6 +19,7 @@ interface NavItem {
   name: string;
   href: string;
   icon: LucideIcon;
+  matchPrefix?: string;
 }
 
 interface NavSection {
@@ -41,17 +42,20 @@ const navigationSections: NavSection[] = [
     items: [
       {
         name: "Donor conversion",
-        href: "/donor-conversion",
+        href: "/conv-unit/lead-prospects-list",
+        matchPrefix: "/conv-unit",
         icon: UserPlus,
       },
       {
         name: "Donor retention",
-        href: "/donor-retention",
+        href: "/retn-unit/donor-profiles-list",
+        matchPrefix: "/retn-unit",
         icon: RefreshCw,
       },
       {
         name: "Donor care",
-        href: "/donor-care",
+        href: "/care-unit/transactions-list",
+        matchPrefix: "/care-unit",
         icon: Database,
       },
     ],
@@ -109,7 +113,9 @@ export function Sidebar() {
               <div className="space-y-1">
                 {section.items.map((item) => {
                   const Icon = item.icon;
-                  const isActive = pathname === item.href;
+                  const isActive = item.matchPrefix
+                    ? pathname.startsWith(item.matchPrefix)
+                    : pathname === item.href;
 
                   return (
                     <Link
@@ -121,15 +127,11 @@ export function Sidebar() {
                           "bg-[#FDF2F0] text-[#801313] shadow-sm ring-1 ring-[#F3D1CE]"
                       )}
                     >
-                      {isActive && (
-                        <span className="absolute left-2 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-[4px] bg-[#801313]" />
-                      )}
                       <Icon
                         className={cn(
                           "relative z-10 h-4 w-4 shrink-0 text-gray-500",
                           isActive && "text-[#801313]"
                         )}
-                        style={isActive ? { marginLeft: "10px" } : undefined}
                       />
                       <span className="relative z-10">{item.name}</span>
                     </Link>
