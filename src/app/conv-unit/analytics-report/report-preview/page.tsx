@@ -3,12 +3,12 @@ import { AppShell } from "@/components/AppShell";
 export default function Page() {
   return (
     <AppShell
-      title="Conversion Report Preview"
-      subtitle="Page Description"
+      title="Donor Conversion"
+      subtitle="Donor Conversion Workspace"
       tabs={[
-        { label: "Tab 1", href: "/null", isActive: true },
-        { label: "Tab 2", href: "/null" },
-        { label: "Tab 3", href: "/null" },
+      { label: "Leads", href: "/conv-unit/lead-prospects-list" },
+      { label: "Proposals", href: "/conv-unit/generate-proposals"},
+      { label: "Reports", href: "/conv-unit/analytics-report/report-preview", isActive: true },
       ]}
       actions={[
         { label: "Action 1", variant: "primary", href: "/null" },
