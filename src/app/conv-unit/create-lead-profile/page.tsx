@@ -1,9 +1,14 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 
 export default function CreateLeadProfilePage() {
+  const router = useRouter();
+
   const [formData, setFormData] = useState({
     prospectName: "",
     donorType: "",
@@ -33,14 +38,37 @@ export default function CreateLeadProfilePage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    router.push("/conv-unit/lead-prospects-list");
   };
 
   return (
     <AppShell
-      title="Add prospect"
-      subtitle="Donor conversion / Leads"
+      title="Donor Conversion"
+      subtitle="Donor Conversion Workspace"
+      tabs={[
+        {
+          label: "Leads",
+          href: "/conv-unit/lead-prospects-list",
+          isActive: true,
+        },
+        { label: "Proposals", href: "/conv-unit/generate-proposals" },
+        { label: "Reports", href: "/conv-unit/analytics-report" },
+      ]}
     >
-      <div className="w-full max-w-6xl mx-auto">
+      <div className="w-full max-w-6xl mx-auto space-y-4">
+        {/* Navigation Breadcrumb */}
+        <div className="flex items-center gap-2 text-xs text-gray-500">
+          <Link
+            href="/conv-unit/lead-prospects-list"
+            className="flex items-center gap-1.5 font-medium text-gray-600 hover:text-[#801313] transition-colors"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            <span>Back to Leads</span>
+          </Link>
+          <span className="text-gray-300">/</span>
+          <span className="font-semibold text-gray-800">Add prospect</span>
+        </div>
+
         <form
           onSubmit={handleSubmit}
           className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden"
@@ -392,6 +420,7 @@ export default function CreateLeadProfilePage() {
           <div className="flex items-center justify-end gap-3 border-t border-gray-200 px-8 py-4 bg-white">
             <button
               type="button"
+              onClick={() => router.push("/conv-unit/lead-prospects-list")}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition shadow-xs cursor-pointer"
             >
               Cancel

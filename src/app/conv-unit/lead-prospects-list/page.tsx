@@ -15,6 +15,7 @@ import { AppShell } from "@/components/AppShell";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import type { PipelineStatusEnum } from "@/types";
+import { SAMPLE_LEADS, type LeadDetail } from "@/lib/mock-data/leads";
 
 const PAGE_SIZE = 10;
 
@@ -34,15 +35,7 @@ const STATUS_STYLES: Record<PipelineStatusEnum, string> = {
   "Secured Donor": "bg-green-50 text-green-700",
 };
 
-interface LeadRow {
-  id: number;
-  prospect_name: string;
-  primary_contact_person: string;
-  email_address: string | null;
-  phone_number: string;
-  target_followup_date: string | null; // YYYY-MM-DD
-  pipeline_status: PipelineStatusEnum;
-}
+type LeadRow = LeadDetail;
 
 function formatDate(value: string | null) {
   if (!value) return "Not set";
@@ -54,34 +47,6 @@ function formatDate(value: string | null) {
     year: "numeric",
   });
 }
-
-const SAMPLE_LEADS: LeadRow[] = [
-  { id: 1, prospect_name: "Ayala Foundation", primary_contact_person: "Maria Santos", email_address: "msantos@ayalafoundation.org", phone_number: "0917 555 0101", target_followup_date: "2026-10-28", pipeline_status: "Outreach Started" },
-  { id: 2, prospect_name: "Metro Pacific Health", primary_contact_person: "Daniel Reyes", email_address: "dreyes@mphealth.ph", phone_number: "0918 555 0102", target_followup_date: "2026-10-29", pipeline_status: "Proposal Sent" },
-  { id: 3, prospect_name: "Metrobank Foundation", primary_contact_person: "Patricia Alcantara", email_address: "palcantara@mbfoundation.org", phone_number: "0919 555 0103", target_followup_date: "2026-10-30", pipeline_status: "Outreach Started" },
-  { id: 4, prospect_name: "Jollibee Group Foundation", primary_contact_person: "Gisela Tiongson", email_address: "gtiongson@jollibeefoundation.org", phone_number: "0920 555 0104", target_followup_date: "2026-10-31", pipeline_status: "New Lead" },
-  { id: 5, prospect_name: "Aboitiz Foundation", primary_contact_person: "Maribeth Marasigan", email_address: "mmarasigan@aboitiz.com", phone_number: "0921 555 0105", target_followup_date: "2026-11-02", pipeline_status: "Under Research" },
-  { id: 6, prospect_name: "San Miguel Foundation", primary_contact_person: "Camilla Silva", email_address: "csilva@sanmiguel.com.ph", phone_number: "0922 555 0106", target_followup_date: "2026-11-03", pipeline_status: "Proposal Sent" },
-  { id: 7, prospect_name: "BDO Foundation", primary_contact_person: "Mario Deriquito", email_address: "mderiquito@bdo.com.ph", phone_number: "0923 555 0107", target_followup_date: "2026-11-04", pipeline_status: "Outreach Started" },
-  { id: 8, prospect_name: "Megaworld Foundation", primary_contact_person: "Rolando Toledo", email_address: "rtoledo@megaworld-lifestyle.com", phone_number: "0924 555 0108", target_followup_date: "2026-11-05", pipeline_status: "New Lead" },
-  { id: 9, prospect_name: "GT Capital Holdings", primary_contact_person: "Anabelle Garcia", email_address: "agarcia@gtcapital.com.ph", phone_number: "0925 555 0109", target_followup_date: "2026-11-06", pipeline_status: "Under Research" },
-  { id: 10, prospect_name: "JG Summit Holdings", primary_contact_person: "Lance Gokongwei", email_address: "lgokongwei@jgsummit.com.ph", phone_number: "0926 555 0110", target_followup_date: "2026-11-07", pipeline_status: "Proposal Sent" },
-  { id: 11, prospect_name: "PHINMA Foundation", primary_contact_person: "Chito Salazar", email_address: "csalazar@phinma.com.ph", phone_number: "0927 555 0111", target_followup_date: "2026-11-08", pipeline_status: "Outreach Started" },
-  { id: 12, prospect_name: "Tan Yan Kee Foundation", primary_contact_person: "Juanita Tan", email_address: "jtan@tanyankee.org", phone_number: "0928 555 0112", target_followup_date: "2026-11-09", pipeline_status: "New Lead" },
-  { id: 13, prospect_name: "Mercury Drug Foundation", primary_contact_person: "Vivian Azcona", email_address: "vazcona@mercurydrug.com", phone_number: "0929 555 0113", target_followup_date: "2026-11-10", pipeline_status: "Under Research" },
-  { id: 14, prospect_name: "First Philippine Holdings", primary_contact_person: "Federico Lopez", email_address: "flopez@fphc.com", phone_number: "0930 555 0114", target_followup_date: "2026-11-11", pipeline_status: "Proposal Sent" },
-  { id: 15, prospect_name: "Unilab Foundation", primary_contact_person: "Rhodesian Ang", email_address: "rang@unilabfoundation.org", phone_number: "0931 555 0115", target_followup_date: "2026-11-12", pipeline_status: "Outreach Started" },
-  { id: 16, prospect_name: "Insular Life Foundation", primary_contact_person: "Nina Aguas", email_address: "naguas@insularlife.com.ph", phone_number: "0932 555 0116", target_followup_date: "2026-11-13", pipeline_status: "New Lead" },
-  { id: 17, prospect_name: "Nestlé Philippines", primary_contact_person: "Kais Marzouki", email_address: "kmarzouki@ph.nestle.com", phone_number: "0933 555 0117", target_followup_date: "2026-11-14", pipeline_status: "Under Research" },
-  { id: 18, prospect_name: "RCBC / The Yuchengco Group", primary_contact_person: "Eugene Acevedo", email_address: "eacevedo@rcbc.com", phone_number: "0934 555 0118", target_followup_date: "2026-11-15", pipeline_status: "Proposal Sent" },
-  { id: 19, prospect_name: "Security Bank Foundation", primary_contact_person: "Melissa Aquino", email_address: "maquino@securitybank.com.ph", phone_number: "0935 555 0119", target_followup_date: "2026-11-16", pipeline_status: "Outreach Started" },
-  { id: 20, prospect_name: "Chinabank Foundation", primary_contact_person: "Romeo Uyan", email_address: "ruyan@chinabank.ph", phone_number: "0936 555 0120", target_followup_date: "2026-11-17", pipeline_status: "New Lead" },
-  { id: 21, prospect_name: "SM Investments Corporation", primary_contact_person: "Frederic DyBuncio", email_address: "fdybuncio@sminvestments.com", phone_number: "0937 555 0121", target_followup_date: "2026-11-18", pipeline_status: "Under Research" },
-  { id: 22, prospect_name: "San Lorenzo Ruiz Parish", primary_contact_person: "Fr. Juan Carlos Dizon", email_address: "parish@sanlorenzoruiz.ph", phone_number: "0938 555 0122", target_followup_date: "2026-11-19", pipeline_status: "Proposal Sent" },
-  { id: 23, prospect_name: "Dela Cruz Family", primary_contact_person: "Rosario Dela Cruz", email_address: null, phone_number: "0939 555 0123", target_followup_date: null, pipeline_status: "New Lead" },
-  { id: 24, prospect_name: "SM Foundation Inc.", primary_contact_person: "Fr. Anton Lopez", email_address: null, phone_number: "0940 555 0124", target_followup_date: null, pipeline_status: "Under Research" },
-  { id: 25, prospect_name: "Yuchengco Group", primary_contact_person: "Victor Yu", email_address: "vyu@yuchengco.com", phone_number: "0941 555 0125", target_followup_date: "2026-10-26", pipeline_status: "Outreach Started" },
-  ];
 
 // Soonest first. Rows with no follow-up date go to the bottom.
 function byFollowUpDate(a: LeadRow, b: LeadRow) {
@@ -95,9 +60,10 @@ export default function LeadProspectsListPage() {
   const router = useRouter();
 
   const [rows] = useState<LeadRow[]>(() =>
-  [...SAMPLE_LEADS].sort(byFollowUpDate));
+    [...SAMPLE_LEADS].sort(byFollowUpDate)
+  );
   const [loading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error] = useState<string | null>(null);
 
   const [search, setSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
@@ -189,21 +155,21 @@ export default function LeadProspectsListPage() {
       title="Donor Conversion"
       subtitle="Donor Conversion Workspace"
       tabs={[
-    {
-      label: "Leads",
-      href: "/conv-unit/lead-prospects-list",
-      isActive: true,
-    },
-    { label: "Proposals", href: "/conv-unit/generate-proposals" },
-    { label: "Reports", href: "/conv-unit/analytics-report" },
-  ]}
-  actions={[
-    {
-      label: "Add lead",
-      icon: Plus,
-      variant: "primary",
-      href: "/conv-unit/create-lead-profile",
-    },
+        {
+          label: "Leads",
+          href: "/conv-unit/lead-prospects-list",
+          isActive: true,
+        },
+        { label: "Proposals", href: "/conv-unit/generate-proposals" },
+        { label: "Reports", href: "/conv-unit/analytics-report" },
+      ]}
+      actions={[
+        {
+          label: "Add lead",
+          icon: Plus,
+          variant: "primary",
+          href: "/conv-unit/create-lead-profile",
+        },
       ]}
     >
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
@@ -234,7 +200,7 @@ export default function LeadProspectsListPage() {
               />
             </div>
 
-            {/* Filter panel (replaces the old "Filter (All)" button) */}
+            {/* Filter panel */}
             <div className="relative" ref={filterRef}>
               <button
                 type="button"
@@ -413,7 +379,6 @@ export default function LeadProspectsListPage() {
                   <td className="px-4 py-3">{r.primary_contact_person}</td>
                   <td className="px-4 py-3">{r.email_address ?? "—"}</td>
                   <td className="px-4 py-3">{r.phone_number}</td>
-                  {/* Always rendered so the column never disappears after adding a lead */}
                   <td
                     className={cn(
                       "px-4 py-3 whitespace-nowrap",
