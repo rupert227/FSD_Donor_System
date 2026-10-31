@@ -6,13 +6,9 @@ export default function DashboardPage() {
       title="Dashboard"
       subtitle="Page Description"
       tabs={[
-        { label: "Tab 1", href: "/null", isActive: true },
-        { label: "Tab 2", href: "/null" },
-        { label: "Tab 3", href: "/null" },
-      ]}
-      actions={[
-        { label: "Action 1", variant: "primary", href: "/null" },
-        { label: "Action 2", variant: "secondary", href: "/null" },
+        { label: "Prospects", href: "/null", isActive: true },
+        { label: "Proposals", href: "/null" },
+        { label: "Reports", href: "/null" },
       ]}
     >
       <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
