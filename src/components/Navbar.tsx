@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { cn } from "cn"
+import { cn } from "cn";
 import { useEffect, useRef, useState } from "react";
 
 import {
@@ -20,15 +20,20 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+export interface NavbarPreset {
+  selectedModuleIndex: number;
+  selectedTabIndex?: number;
+  tabs?: TabItem[];
+}
+
 export interface TabItem {
   label: string;
   href: string;
   isActive?: boolean;
 }
 
-interface ModuleHeaderProps {
-  title: string;
-  tabs?: TabItem[];
+interface NavbarProps {
+  navbarPreset: NavbarPreset;
 }
 
 interface ProfileLabel {
@@ -37,7 +42,7 @@ interface ProfileLabel {
   iconLabel: string;
 }
 
-const categoryOptions = [
+const moduleOptions = [
   {
     label: "Dashboard",
     href: "/dashboard",
@@ -45,15 +50,15 @@ const categoryOptions = [
   },
   {
     label: "Donor Conversion",
-    href: "/conv-unit/lead-prospects-list",
+    href: "/donor-conversion/prospects",
     icon: UserPlus,
   },
   {
     label: "Donor Retention",
-    href: "/retn-unit/donor-profiles-list",
+    href: "/donor-retention/donors",
     icon: RefreshCw,
   },
-  { label: "Donor Care", href: "/care-unit/transactions-list", icon: Database },
+  { label: "Donor Care", href: "/donor-care/transactions", icon: Database },
   { label: "Notifications", href: "/notifications", icon: Bell },
   { label: "Preferences", href: "/preferences", icon: Sliders },
 ] as const;
@@ -66,34 +71,29 @@ const profileLabel: ProfileLabel = {
 
 let notificationCount = 10;
 
-export function Navbar({ title, tabs = [] }: ModuleHeaderProps) {
-  const categoryMenuRef = useRef<HTMLDivElement>(null);
-  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<
-    (typeof categoryOptions)[number]
-  >(categoryOptions[0]);
+export function Navbar({ navbarPreset }: NavbarProps) {
+  const { selectedModuleIndex, selectedTabIndex, tabs = [] } = navbarPreset;
+  const moduleMenuRef = useRef<HTMLDivElement>(null);
+  const [isModuleOpen, setIsModuleOpen] = useState(false);
+
+  const selectedModule = moduleOptions[selectedModuleIndex];
+  const SelectedModuleIcon = selectedModule.icon;
 
   useEffect(() => {
-    if (!isCategoryOpen) return;
+    if (!isModuleOpen) return;
 
     function handlePointerDown(event: MouseEvent) {
       if (
-        categoryMenuRef.current &&
-        !categoryMenuRef.current.contains(event.target as Node)
+        moduleMenuRef.current &&
+        !moduleMenuRef.current.contains(event.target as Node)
       ) {
-        setIsCategoryOpen(false);
+        setIsModuleOpen(false);
       }
     }
 
     document.addEventListener("mousedown", handlePointerDown);
     return () => document.removeEventListener("mousedown", handlePointerDown);
-  }, [isCategoryOpen]);
-
-  const SelectedCategoryIcon = selectedCategory.icon;
-  const activeIndex =
-    tabs.findIndex((tab) => tab.isActive) >= 0
-      ? tabs.findIndex((tab) => tab.isActive)
-      : 0;
+  }, [isModuleOpen]);
 
   return (
     <header className="bg-white">
@@ -180,32 +180,29 @@ export function Navbar({ title, tabs = [] }: ModuleHeaderProps) {
 
       <div className="flex border-b border-gray-300 px-4 py-1">
         <div
-          ref={categoryMenuRef}
+          ref={moduleMenuRef}
           className="relative flex items-center border-r border-gray-300 pr-4"
         >
           <button
             type="button"
-            onClick={() => setIsCategoryOpen((open) => !open)}
+            onClick={() => setIsModuleOpen((open) => !open)}
             className="hover:bg-surface-soft-hover flex max-w-60 cursor-pointer items-center gap-2 rounded-[6px] bg-transparent px-2 py-1 text-left text-[15px] font-semibold text-gray-900"
           >
-            <SelectedCategoryIcon className="text-brand-primary h-4 w-4 shrink-0" />
-            <span className="truncate">{selectedCategory.label}</span>
+            <SelectedModuleIcon className="text-brand-primary h-4 w-4 shrink-0" />
+            <span className="truncate">{selectedModule.label}</span>
             <ChevronDown className="h-4 w-4 shrink-0 text-gray-500" />
           </button>
-          {isCategoryOpen && (
+          {isModuleOpen && (
             <div className="absolute top-[calc(100%+1px)] left-0 z-20 overflow-hidden rounded-[6px] border border-gray-300 bg-white shadow-lg">
-              {categoryOptions.map((category) => {
-                const Icon = category.icon;
-                const isSelected = category.label === selectedCategory.label;
+              {moduleOptions.map((module) => {
+                const Icon = module.icon;
+                const isSelected = module.label === selectedModule.label;
 
                 return (
-                  <button
-                    key={category.label}
-                    type="button"
-                    onClick={() => {
-                      setSelectedCategory(category);
-                      setIsCategoryOpen(false);
-                    }}
+                  <Link
+                    key={module.label}
+                    href={module.href}
+                    onClick={() => setIsModuleOpen(false)}
                     className={cn(
                       "flex w-full cursor-pointer items-center justify-between gap-3 px-3 py-2.5 text-left text-sm",
                       isSelected
@@ -216,14 +213,14 @@ export function Navbar({ title, tabs = [] }: ModuleHeaderProps) {
                     <span className="flex items-center gap-3">
                       <Icon className="h-4 w-4 shrink-0" />
                       <span className="max-w-60 min-w-40 truncate">
-                        {category.label}
+                        {module.label}
                       </span>
                     </span>
 
                     {isSelected && (
                       <Check className="text-brand-primary ml-auto h-4 w-4 shrink-0" />
                     )}
-                  </button>
+                  </Link>
                 );
               })}
             </div>
@@ -231,16 +228,16 @@ export function Navbar({ title, tabs = [] }: ModuleHeaderProps) {
         </div>
 
         {tabs.length > 0 && (
-          <nav className="ml-4 flex flex-1 items-center gap-4 whitespace-nowrap">
+          <nav className="ml-4 flex flex-1 items-center gap-1 whitespace-nowrap">
             {tabs.map((tab, index) => {
-              const isActiveTab = index === activeIndex;
+              const isActiveTab = index === selectedTabIndex;
 
               return (
                 <Link
                   key={tab.label}
                   href={tab.href}
                   className={cn(
-                    "relative flex max-w-[18.75rem] cursor-pointer rounded-[6px] px-2 py-1 text-[13px] font-medium transition-colors",
+                    "relative flex max-w-[18.75rem] cursor-pointer rounded-[6px] px-3 py-1 text-[13px] font-medium transition-colors",
                     isActiveTab
                       ? "text-brand-primary"
                       : "hover:bg-surface-soft-hover text-gray-500",

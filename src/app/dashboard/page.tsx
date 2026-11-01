@@ -1,26 +1,32 @@
 import { AppShell } from "@/components/AppShell";
 import type { Metadata } from "next";
+import { moduleName, navbarPreset } from "./struct";
+
+const pageName = "Overview";
 
 export const metadata: Metadata = {
-  title: "Dashboard",
-};
+  title: `${moduleName} - ${pageName}`,
+}
 
-export default function DashboardPage() {
+export default function OverviewPage() {
+  navbarPreset.selectedTabIndex = 0;
+
   return (
-    <AppShell
-      title="Dashboard"
-      tabs={[
-        { label: "Tab 1", href: "/null", isActive: true },
-        { label: "Tab 2", href: "/null" },
-        { label: "Tab 3", href: "/null" },
-      ]}
-    >
+    <AppShell navbarPreset={navbarPreset}>
+      {/* DELETE FROM HERE */}
       <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="text-xl font-semibold text-gray-900">For Development</h2>
+        <h2 className="text-xl font-semibold text-gray-900">{pageName}</h2>
         <p className="mt-2 text-sm text-gray-600">
-          Mirror header tabs and actions to figma layouts for each module page.
+          WIP - Content belongs here.
+          <br />
+          Replace entire &lt;div&gt; inside &lt;AppShell&gt; with content.
+          <br />
+          Page padding is implemented in AppShell.tsx.
+          <br />
+          Do not specify page padding here.
         </p>
       </div>
+      {/* DELETE TO HERE */}
     </AppShell>
   );
 }
