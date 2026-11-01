@@ -1,14 +1,18 @@
 import { AppShell } from "@/components/AppShell";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Dashboard",
+};
 
 export default function DashboardPage() {
   return (
     <AppShell
       title="Dashboard"
-      subtitle="Page Description"
       tabs={[
-        { label: "Prospects", href: "/null", isActive: true },
-        { label: "Proposals", href: "/null" },
-        { label: "Reports", href: "/null" },
+        { label: "Tab 1", href: "/null", isActive: true },
+        { label: "Tab 2", href: "/null" },
+        { label: "Tab 3", href: "/null" },
       ]}
     >
       <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">

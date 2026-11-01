@@ -5,11 +5,19 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-ibm-plex-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-ibm-plex-sans);
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-danger: var(--brand-danger);
+  --color-brand-100: var(--brand-100);
+  --color-brand-50: var(--brand-50);
+  --color-surface-soft: var(--surface-soft);
+  --color-surface-soft-hover: var(--surface-soft-hover);
+  --color-surface-white: var(--surface-white);
+  --color-surface-amber: var(--surface-amber);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-border-soft: var(--border-soft);
+  --color-border-strong: var(--border-strong);
 }
 
 :root {
@@ -33,8 +41,8 @@
   --ring: oklch(0.708 0 0);
   --radius: 0.625rem;
 
-  --brand-900: #801313;
-  --brand-800: #6d1010;
+  --brand-primary: #6b0f0f;
+  --brand-danger: #fa4454;
   --brand-100: #fdf2f0;
   --brand-50: #fce8e6;
   --surface-soft: #f3f2f1;

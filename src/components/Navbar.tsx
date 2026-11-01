@@ -38,10 +38,22 @@ interface ProfileLabel {
 }
 
 const categoryOptions = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutGrid },
-  { label: "Donor conversion", href: "/conv-unit/lead-prospects-list", icon: UserPlus },
-  { label: "Donor retention", href: "/retn-unit/donor-profiles-list", icon: RefreshCw },
-  { label: "Donor care", href: "/care-unit/transactions-list", icon: Database },
+  {
+    label: "Dashboard",
+    href: "/dashboard",
+    icon: LayoutGrid,
+  },
+  {
+    label: "Donor Conversion",
+    href: "/conv-unit/lead-prospects-list",
+    icon: UserPlus,
+  },
+  {
+    label: "Donor Retention",
+    href: "/retn-unit/donor-profiles-list",
+    icon: RefreshCw,
+  },
+  { label: "Donor Care", href: "/care-unit/transactions-list", icon: Database },
   { label: "Notifications", href: "/notifications", icon: Bell },
   { label: "Preferences", href: "/preferences", icon: Sliders },
 ] as const;
@@ -54,13 +66,12 @@ const profileLabel: ProfileLabel = {
 
 let notificationCount = 10;
 
-export function Navbar({
-  title,
-  tabs = []
-}: ModuleHeaderProps) {
+export function Navbar({ title, tabs = [] }: ModuleHeaderProps) {
   const categoryMenuRef = useRef<HTMLDivElement>(null);
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<(typeof categoryOptions)[number]>(categoryOptions[0]);
+  const [selectedCategory, setSelectedCategory] = useState<
+    (typeof categoryOptions)[number]
+  >(categoryOptions[0]);
 
   useEffect(() => {
     if (!isCategoryOpen) return;
@@ -79,13 +90,16 @@ export function Navbar({
   }, [isCategoryOpen]);
 
   const SelectedCategoryIcon = selectedCategory.icon;
-  const activeIndex = tabs.findIndex((tab) => tab.isActive) >= 0 ? tabs.findIndex((tab) => tab.isActive) : 0;
+  const activeIndex =
+    tabs.findIndex((tab) => tab.isActive) >= 0
+      ? tabs.findIndex((tab) => tab.isActive)
+      : 0;
 
   return (
     <header className="bg-white">
-      <div className="flex items-center gap-4 border-b border-gray-200 bg-white px-4 py-2">
-        <div className="flex items-center gap-2 px-2">
-          <div className="relative h-9 w-9 overflow-hidden rounded-full shadow-sm">
+      <div className="flex items-center gap-10 border-b border-gray-300 bg-white px-4 py-2">
+        <div className="flex items-center gap-2">
+          <div className="relative min-h-9 min-w-9 overflow-hidden">
             <Image
               src="/caritas_logo.png"
               alt="Caritas Manila Logo"
@@ -97,136 +111,151 @@ export function Navbar({
           </div>
 
           <div className="leading-tight">
-            <div className="text-[16px] font-bold text-gray-900">Caritas Manila</div>
-            <div className="text-[12px] text-gray-400">FSD Donor System</div>
+            <div className="text-[16px] font-bold whitespace-nowrap text-gray-900">
+              Caritas Manila
+            </div>
+            <div className="text-[12px] whitespace-nowrap text-gray-400">
+              FSD Donor System
+            </div>
           </div>
         </div>
 
-        <div className="flex flex-1 items-center gap-3 rounded-2xl border border-gray-300 bg-[var(--surface-soft)] px-3 py-2.5 transition hover:bg-[var(--surface-soft-hover)]">
-          <Search className="h-4 w-4 text-gray-400" />
+        <div className="bg-surface-soft hover:bg-surface-soft-hover flex h-9 w-200 items-center rounded-[6px] border border-gray-300">
+          <Search className="mx-2 h-4 w-4 text-gray-400" />
           <input
             type="text"
             placeholder="Search prospects, donors, transactions or receipt no."
-            className="w-full border-none bg-transparent text-[12px] text-gray-700 placeholder:text-gray-400 focus:outline-none"
+            className="w-full border-none bg-transparent text-[13px] text-gray-700 placeholder:text-gray-400 focus:outline-none"
           />
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="ml-auto flex items-center gap-3">
           <button
             type="button"
-            className="cursor-pointer rounded-xl px-2 py-2 text-[12px] font-semibold text-[#5a2d2d] transition hover:bg-[var(--surface-soft-hover)]"
+            className="hover:bg-surface-soft-hover cursor-pointer rounded-[6px] border border-gray-300 p-2 text-[12px] font-semibold text-[#5a2d2d]"
           >
-            <span className="flex items-center gap-1">
-              <Plus className="h-3.5 w-3.5" />
+            <span className="flex items-center gap-2">
+              <Plus className="text-brand-primary h-3.5 w-3.5" />
               <span>New</span>
             </span>
           </button>
 
           <button
             type="button"
-            className="relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl text-gray-600 transition hover:bg-[var(--surface-soft-hover)]"
+            className="hover:bg-surface-soft-hover relative flex h-9 w-9 cursor-pointer items-center justify-center self-center rounded-[6px] text-gray-600"
             aria-label="Notifications"
           >
             <Bell className="h-4 w-4 text-[#4b4b4b]" />
-            <span className="absolute -right-0 -top-0 flex h- min-w-[16px] items-center justify-center rounded-full bg-[var(--brand-900)] px-1 text-[10px] font-semibold text-white">
-              {notificationCount}
-            </span>
+            {notificationCount > 0 && (
+              <span className="h- bg-brand-danger absolute -top-0 -right-0 flex min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-semibold text-white">
+                {notificationCount <= 99 ? notificationCount : "99+"}
+              </span>
+            )}
           </button>
 
+          <div
+            className="my-2 w-[1px] self-stretch bg-gray-300"
+            aria-hidden="true"
+          />
+
           <button
-            className="flex cursor-pointer items-center gap-3 rounded-xl px-2 py-1.5 hover:bg-[var(--surface-soft-hover)]"
-            type="button">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--brand-50)] text-[11px] font-bold text-[var(--brand-900)]">
+            className="hover:bg-surface-soft-hover flex cursor-pointer items-center self-center rounded-[6px] px-2 py-1.5"
+            type="button"
+          >
+            <div className="bg-brand-50 text-brand-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold">
               {profileLabel.iconLabel}
             </div>
-            <div className="flex flex-col items-start leading-none">
-              <span className="text-[12px] font-medium text-gray-800">
+            <div className="ml-1.5 flex flex-col items-start leading-none">
+              <span className="max-w-50 truncate text-left text-[12px] font-medium whitespace-nowrap text-gray-800">
                 {profileLabel.name}
               </span>
-              <span className="mt-1 text-[10px] text-gray-500">
+              <span className="mt-1 max-w-50 truncate text-left text-[10px] whitespace-nowrap text-gray-500">
                 {profileLabel.description}
               </span>
             </div>
-            <ChevronDown className="h-4 w-4 text-gray-400" />
+            <ChevronDown className="ml-5 h-4 w-4 text-gray-400" />
           </button>
         </div>
       </div>
 
-      <div className="border-b border-gray-200 px-4 py-1">
-        <div className="flex items-center justify-between">
-          <div className="flex min-w-0 flex-1 items-center">
-            <div ref={categoryMenuRef} className="relative flex shrink-0 items-center border-r border-gray-200 pr-4">
-              <button
-                type="button"
-                onClick={() => setIsCategoryOpen((open) => !open)}
-                className="flex cursor-pointer items-center gap-2 rounded-lg bg-transparent px-2 py-1 text-left text-[15px] font-semibold text-gray-900 transition hover:bg-[var(--surface-soft-hover)]"
-              >
-                <SelectedCategoryIcon className="h-4 w-4 text-[var(--brand-900)]" />
-                <span>{selectedCategory.label}</span>
-                <ChevronDown className="h-4 w-4 text-gray-500" />
-              </button>
+      <div className="flex border-b border-gray-300 px-4 py-1">
+        <div
+          ref={categoryMenuRef}
+          className="relative flex items-center border-r border-gray-300 pr-4"
+        >
+          <button
+            type="button"
+            onClick={() => setIsCategoryOpen((open) => !open)}
+            className="hover:bg-surface-soft-hover flex max-w-60 cursor-pointer items-center gap-2 rounded-[6px] bg-transparent px-2 py-1 text-left text-[15px] font-semibold text-gray-900"
+          >
+            <SelectedCategoryIcon className="text-brand-primary h-4 w-4 shrink-0" />
+            <span className="truncate">{selectedCategory.label}</span>
+            <ChevronDown className="h-4 w-4 shrink-0 text-gray-500" />
+          </button>
+          {isCategoryOpen && (
+            <div className="absolute top-[calc(100%+1px)] left-0 z-20 overflow-hidden rounded-[6px] border border-gray-300 bg-white shadow-lg">
+              {categoryOptions.map((category) => {
+                const Icon = category.icon;
+                const isSelected = category.label === selectedCategory.label;
 
-              {isCategoryOpen && (
-                <div className="absolute left-0 top-[calc(100%+1px)] z-20 w-64 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg">
-                  {categoryOptions.map((category) => {
-                    const Icon = category.icon;
-                    const isSelected = category.label === selectedCategory.label;
+                return (
+                  <button
+                    key={category.label}
+                    type="button"
+                    onClick={() => {
+                      setSelectedCategory(category);
+                      setIsCategoryOpen(false);
+                    }}
+                    className={cn(
+                      "flex w-full cursor-pointer items-center justify-between gap-3 px-3 py-2.5 text-left text-sm",
+                      isSelected
+                        ? "bg-brand-100 text-brand-primary"
+                        : "hover:bg-surface-soft-hover text-gray-700",
+                    )}
+                  >
+                    <span className="flex items-center gap-3">
+                      <Icon className="h-4 w-4 shrink-0" />
+                      <span className="max-w-60 min-w-40 truncate">
+                        {category.label}
+                      </span>
+                    </span>
 
-                    return (
-                      <button
-                        key={category.label}
-                        type="button"
-                        onClick={() => {
-                          setSelectedCategory(category);
-                          setIsCategoryOpen(false);
-                        }}
-                        className={cn(
-                          "flex w-full cursor-pointer items-center justify-between gap-3 px-3 py-2.5 text-left text-sm transition",
-                          isSelected
-                            ? "bg-[var(--brand-100)] text-[var(--brand-900)]"
-                            : "text-gray-700 hover:bg-[var(--surface-soft-hover)]"
-                        )}
-                      >
-                        <span className="flex items-center gap-3">
-                          <Icon className="h-4 w-4 shrink-0" />
-                          <span>{category.label}</span>
-                        </span>
-
-                        {isSelected && (
-                          <Check className="ml-auto h-4 w-4 shrink-0 text-[var(--brand-900)]" />
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
+                    {isSelected && (
+                      <Check className="text-brand-primary ml-auto h-4 w-4 shrink-0" />
+                    )}
+                  </button>
+                );
+              })}
             </div>
-
-            {tabs.length > 0 && (
-              <nav className="ml-4 flex flex-1 items-center gap-4 whitespace-nowrap">
-                {tabs.map((tab, index) => {
-                  const isActiveTab = index === activeIndex;
-
-                  return (
-                    <Link
-                      key={tab.label}
-                      href={tab.href}
-                      className={cn(
-                        "relative cursor-pointer rounded-xl px-2 py-1 text-[13px] font-medium transition-colors",
-                        isActiveTab ? "text-[var(--brand-900)]" : "text-gray-500 hover:bg-[var(--surface-soft-hover)]"
-                      )}
-                    >
-                      {tab.label}
-                      {isActiveTab && (
-                        <span className="absolute -bottom-[20%] left-0 right-0 h-[2px] bg-[var(--brand-900)]" />
-                      )}
-                    </Link>
-                  );
-                })}
-              </nav>
-            )}
-          </div>
+          )}
         </div>
+
+        {tabs.length > 0 && (
+          <nav className="ml-4 flex flex-1 items-center gap-4 whitespace-nowrap">
+            {tabs.map((tab, index) => {
+              const isActiveTab = index === activeIndex;
+
+              return (
+                <Link
+                  key={tab.label}
+                  href={tab.href}
+                  className={cn(
+                    "relative flex max-w-[18.75rem] cursor-pointer rounded-[6px] px-2 py-1 text-[13px] font-medium transition-colors",
+                    isActiveTab
+                      ? "text-brand-primary"
+                      : "hover:bg-surface-soft-hover text-gray-500",
+                  )}
+                >
+                  <span className="truncate">{tab.label}</span>
+
+                  {isActiveTab && (
+                    <span className="bg-brand-primary absolute right-0 -bottom-[20%] left-0 h-[2px]" />
+                  )}
+                </Link>
+              );
+            })}
+          </nav>
+        )}
       </div>
     </header>
   );

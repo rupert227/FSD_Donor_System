@@ -1,5 +1,13 @@
 import "./globals.css";
 import { IBM_Plex_Sans, Poppins } from "next/font/google";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: {
+    default: "Caritas Manila",
+    template: "%s",
+  },
+};
 
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ["latin"],
