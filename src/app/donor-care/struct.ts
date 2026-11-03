@@ -16,8 +16,8 @@ export const navbarPreset: NavbarPreset = {
       href: `${moduleRoute}/receipts`
     },
     {
-      label: "Data Quality",
-      href: `${moduleRoute}/data-quality`
+      label: "Duplicates",
+      href: `${moduleRoute}/duplicates`
     },
     {
       label: "Reports",

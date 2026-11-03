@@ -8,7 +8,7 @@ import { BarChart3, Download, Eye, RotateCcw } from "lucide-react";
 
 import { cn } from "cn";
 import { useEffect, useMemo, useState } from "react";
-import { navbarPreset } from "../struct";
+import { navbarPreset } from "@/app/donor-conversion/struct";
 
 import {
   formatCurrency,

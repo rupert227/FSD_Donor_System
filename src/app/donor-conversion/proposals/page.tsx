@@ -1,6 +1,6 @@
 import { AppShell } from "@/components/AppShell";
 import type { Metadata } from "next";
-import { moduleName, navbarPreset } from "../struct";
+import { moduleName, navbarPreset } from "@/app/donor-conversion/struct";
 
 const pageName = "Proposals";
 

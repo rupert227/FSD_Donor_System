@@ -1,6 +1,6 @@
 import { AppShell } from "@/components/AppShell";
 import type { Metadata } from "next";
-import { moduleName, navbarPreset } from "../struct";
+import { moduleName, navbarPreset } from "@/app/donor-care/struct";
 
 const pageName = "Transactions";
 
@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   title: `${moduleName} - ${pageName}`,
 };
 
-export default function DonorsPage() {
+export default function TransactionsPage() {
   navbarPreset.selectedTabIndex = 0;
 
   return (
