@@ -69,12 +69,11 @@ const profileLabel: ProfileLabel = {
   iconLabel: "UP",
 };
 
-let notificationCount = 10;
-
 export function Navbar({ navbarPreset }: NavbarProps) {
   const { selectedModuleIndex, selectedTabIndex, tabs = [] } = navbarPreset;
   const moduleMenuRef = useRef<HTMLDivElement>(null);
   const [isModuleOpen, setIsModuleOpen] = useState(false);
+  const [notificationCount, setNotificationCount] = useState(10);
 
   const selectedModule = moduleOptions[selectedModuleIndex];
   const SelectedModuleIcon = selectedModule.icon;
@@ -111,10 +110,10 @@ export function Navbar({ navbarPreset }: NavbarProps) {
           </div>
 
           <div className="leading-tight">
-            <div className="text-[16px] font-bold whitespace-nowrap text-gray-900">
+            <div className="text-[1rem] font-bold whitespace-nowrap text-gray-900">
               Caritas Manila
             </div>
-            <div className="text-[12px] whitespace-nowrap text-gray-400">
+            <div className="text-[0.75rem] whitespace-nowrap text-gray-400">
               FSD Donor System
             </div>
           </div>
@@ -125,14 +124,14 @@ export function Navbar({ navbarPreset }: NavbarProps) {
           <input
             type="text"
             placeholder="Search prospects, donors, transactions or receipt no."
-            className="w-full border-none bg-transparent text-[13px] text-gray-700 placeholder:text-gray-400 focus:outline-none"
+            className="w-full border-none bg-transparent text-[0.9rem] text-gray-700 placeholder:text-gray-400 focus:outline-none"
           />
         </div>
 
         <div className="ml-auto flex items-center gap-3">
           <button
             type="button"
-            className="hover:bg-surface-soft-hover cursor-pointer rounded-[6px] border border-gray-300 p-2 text-[12px] font-semibold text-[#5a2d2d]"
+            className="hover:bg-surface-soft-hover cursor-pointer rounded-[6px] border border-gray-300 p-2 text-[0.75rem] font-semibold text-[#5a2d2d]"
           >
             <span className="flex items-center gap-2">
               <Plus className="text-brand-primary h-3.5 w-3.5" />
@@ -147,7 +146,7 @@ export function Navbar({ navbarPreset }: NavbarProps) {
           >
             <Bell className="h-4 w-4 text-[#4b4b4b]" />
             {notificationCount > 0 && (
-              <span className="h- bg-brand-danger absolute -top-0 -right-0 flex min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-semibold text-white">
+              <span className="h- bg-brand-danger absolute -top-0 -right-0 flex min-w-4 items-center justify-center rounded-full px-1 text-[0.6rem] font-semibold text-white">
                 {notificationCount <= 99 ? notificationCount : "99+"}
               </span>
             )}
@@ -162,14 +161,14 @@ export function Navbar({ navbarPreset }: NavbarProps) {
             className="hover:bg-surface-soft-hover flex cursor-pointer items-center self-center rounded-[6px] px-2 py-1.5"
             type="button"
           >
-            <div className="bg-brand-50 text-brand-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold">
+            <div className="bg-brand-50 text-brand-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[0.75rem] font-bold">
               {profileLabel.iconLabel}
             </div>
             <div className="ml-1.5 flex flex-col items-start leading-none">
-              <span className="max-w-50 truncate text-left text-[12px] font-medium whitespace-nowrap text-gray-800">
+              <span className="max-w-50 truncate text-left text-[0.75rem] font-medium whitespace-nowrap text-gray-800">
                 {profileLabel.name}
               </span>
-              <span className="mt-1 max-w-50 truncate text-left text-[10px] whitespace-nowrap text-gray-500">
+              <span className="mt-1 max-w-50 truncate text-left text-[0.7rem] whitespace-nowrap text-gray-500">
                 {profileLabel.description}
               </span>
             </div>
@@ -186,7 +185,7 @@ export function Navbar({ navbarPreset }: NavbarProps) {
           <button
             type="button"
             onClick={() => setIsModuleOpen((open) => !open)}
-            className="hover:bg-surface-soft-hover flex max-w-60 cursor-pointer items-center gap-2 rounded-[6px] bg-transparent px-2 py-1 text-left text-[15px] font-semibold text-gray-900"
+            className="hover:bg-surface-soft-hover flex max-w-60 cursor-pointer items-center gap-2 rounded-[6px] bg-transparent px-2 py-1 text-left text-[1rem] font-semibold text-gray-900"
           >
             <SelectedModuleIcon className="text-brand-primary h-4 w-4 shrink-0" />
             <span className="truncate">{selectedModule.label}</span>
@@ -237,7 +236,7 @@ export function Navbar({ navbarPreset }: NavbarProps) {
                   key={tab.label}
                   href={tab.href}
                   className={cn(
-                    "relative flex max-w-[18.75rem] cursor-pointer rounded-[6px] px-3 py-1 text-[13px] font-medium transition-colors",
+                    "relative flex max-w-[18.75rem] cursor-pointer rounded-[6px] px-3 py-1 text-[1rem] font-medium transition-colors",
                     isActiveTab
                       ? "text-brand-primary"
                       : "hover:bg-surface-soft-hover text-gray-500",
@@ -246,7 +245,7 @@ export function Navbar({ navbarPreset }: NavbarProps) {
                   <span className="truncate">{tab.label}</span>
 
                   {isActiveTab && (
-                    <span className="bg-brand-primary absolute right-0 -bottom-[20%] left-0 h-[2px]" />
+                    <span className="bg-brand-primary absolute right-0 -bottom-[0.25rem] left-0 h-[2px]" />
                   )}
                 </Link>
               );
