@@ -9,6 +9,8 @@
   --color-brand-danger: var(--brand-danger);
   --color-brand-100: var(--brand-100);
   --color-brand-50: var(--brand-50);
+  --color-button-stroke: var(--button-stroke);
+  --color-dropdown-stroke: var(--dropdown-stroke);
   --color-surface-soft: var(--surface-soft);
   --color-surface-soft-hover: var(--surface-soft-hover);
   --color-surface-white: var(--surface-white);
@@ -18,6 +20,22 @@
   --color-text-muted: var(--text-muted);
   --color-border-soft: var(--border-soft);
   --color-border-strong: var(--border-strong);
+  --color-graph-bar-primary: var(--graph-bar-primary);
+  --color-graph-bar-secondary: var(--graph-bar-secondary);
+  --radius-button: var(--button-radius);
+  --radius-dropdown: var(--dropdown-radius);
+  --shadow-soft: var(--shadow-soft);
+}
+
+@layer utilities {
+  .dropdown-scrollbar {
+    scrollbar-width: 3rem;
+    scrollbar-color: var(--text-secondary);
+  }
+
+  .dropdown-scrollbar::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+  }
 }
 
 :root {
@@ -49,12 +67,18 @@
   --surface-soft-hover: #eceae8;
   --surface-white: #ffffff;
   --surface-amber: #fff7ed;
-  --text-primary: #111827;
-  --text-secondary: #6b7280;
+  --text-primary: #1c1a1a;
+  --text-secondary: #5c5757;
   --text-muted: #9ca3af;
-  --border-soft: #e5e7eb;
+  --border-soft: #e3dfdf;
   --border-strong: #d1d5db;
   --shadow-soft: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --button-radius: 5px;
+  --button-stroke: #8a8484;
+  --dropdown-stroke: #8a8484;
+  --dropdown-radius: 6px;
+  --graph-bar-primary: #1f4e79;
+  --graph-bar-secondary: #4a90d9;
 }
 
 html,

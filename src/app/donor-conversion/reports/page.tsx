@@ -1,286 +1,109 @@
 "use client";
 
 import { AppShell } from "@/components/AppShell";
-import { SAMPLE_LEADS } from "@/lib/mock-data/leads";
-import { Check, ChevronDown } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { DropdownList, type DropdownOption } from "@/components/prefabs";
+import { LeadReport, emptyLeadReport } from "@/lib/types";
+
+import { BarChart3, Download, Eye, RotateCcw } from "lucide-react";
+
+import { cn } from "cn";
+import { useEffect, useMemo, useState } from "react";
 import { navbarPreset } from "../struct";
 
-const pageName = "Reports";
-const BAR_BLUE = "#2d5f8f";
+import {
+  formatCurrency,
+  formatNumber,
+  formatPercent,
+  generateDropdownOptionValue,
+  generateDropdownOptions,
+} from "@/lib/utils";
 
-type SelectOption = {
-  value: string;
+type SummaryRow = {
+  type: "header" | "row" | "section";
   label: string;
+  values: number[];
 };
-
-function formatCurrency(value: number | null | undefined): string {
-  if (!Number.isFinite(Number(value)) || Number(value) <= 0) {
-    return "—";
-  }
-
-  return new Intl.NumberFormat("en-PH", {
-    style: "currency",
-    currency: "PHP",
-    maximumFractionDigits: 0,
-  }).format(Number(value));
-}
-
-function formatPercent(value: number | null | undefined): string {
-  if (!Number.isFinite(Number(value))) {
-    return "—";
-  }
-
-  return `${Number(value).toFixed(1)}%`;
-}
-
-function toSafeNumber(value: unknown): number {
-  if (typeof value === "number" && Number.isFinite(value)) return value;
-  if (typeof value === "string") {
-    const parsed = Number(value.replace(/[^0-9.-]+/g, ""));
-    return Number.isFinite(parsed) ? parsed : 0;
-  }
-  return 0;
-}
-
-function getQuarterFromDate(dateValue: string | null | undefined): number {
-  if (!dateValue) return 0;
-
-  const parsed = new Date(dateValue);
-  if (Number.isNaN(parsed.getTime())) return 0;
-
-  return Math.floor(parsed.getMonth() / 3);
-}
-
-function getFiscalYearFromDate(dateValue: string | null | undefined): number {
-  if (!dateValue) return 0;
-
-  const parsed = new Date(dateValue);
-  if (Number.isNaN(parsed.getTime())) return 0;
-
-  return parsed.getFullYear();
-}
-
-function Dropdown({
-  label,
-  value,
-  onChange,
-  options,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  options: SelectOption[];
-}) {
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const [isOpen, setIsOpen] = useState(false);
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    function handlePointerDown(event: MouseEvent) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
-      }
-    }
-
-    document.addEventListener("mousedown", handlePointerDown);
-    return () => document.removeEventListener("mousedown", handlePointerDown);
-  }, [isOpen]);
-
-  return (
-    <div ref={dropdownRef} className="relative">
-      <button
-        type="button"
-        onClick={() => setIsOpen((open) => !open)}
-        className="flex min-w-[180px] items-center justify-between gap-3 rounded-[6px] border border-[var(--border-soft)] bg-white px-3 py-2 text-left text-[13px] text-[var(--text-primary)] shadow-[var(--shadow-soft)] transition hover:border-[var(--border-strong)]"
-      >
-        <span className="truncate">{value || label}</span>
-        <ChevronDown className="h-4 w-4 shrink-0 text-[var(--text-secondary)]" />
-      </button>
-
-      {isOpen && (
-        <div className="absolute top-[calc(100%+6px)] left-0 z-20 min-w-[180px] overflow-hidden rounded-[6px] border border-[var(--border-soft)] bg-white shadow-lg">
-          {options.map((option) => {
-            const isSelected = option.value === value;
-
-            return (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => {
-                  onChange(option.value);
-                  setIsOpen(false);
-                }}
-                className={[
-                  "flex w-full cursor-pointer items-center justify-between gap-3 px-3 py-2.5 text-left text-sm",
-                  isSelected
-                    ? "bg-[var(--brand-100)] text-[var(--brand-primary)]"
-                    : "text-[var(--text-primary)] hover:bg-[var(--surface-soft)]",
-                ].join(" ")}>
-                <span className="max-w-[150px] truncate">{option.label}</span>
-                {isSelected && <Check className="h-4 w-4 shrink-0" />}
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
 
 export default function ReportsPage() {
   navbarPreset.selectedTabIndex = 2;
 
-  const allLeads = useMemo(
-    () =>
-      Array.isArray(SAMPLE_LEADS)
-        ? SAMPLE_LEADS.filter(
-            (lead) => lead && typeof lead === "object" && lead.prospect_name,
-          )
-        : [],
-    [],
+  const [reportContent, setReportContent] = useState<LeadReport | null>(null);
+
+  const [fiscalYear, setFiscalYear] = useState<string>("");
+  const [donorType, setDonorType] = useState<string>("");
+  const [pipelineStage, setPipelineStage] = useState<string>("");
+
+  const [graphBarColor, setGraphBarColor] = useState<string | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    fetch("/api/lead-pipeline-report", { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const content = (await response.json()) as LeadReport;
+        setReportContent(content);
+
+        setFiscalYear(
+          generateDropdownOptionValue(content.fiscalYearOptions[0] ?? ""),
+        );
+        setDonorType(
+          generateDropdownOptionValue(content.donorTypeOptions[0] ?? ""),
+        );
+        setPipelineStage(
+          generateDropdownOptionValue(content.pipelineStageOptions[0] ?? ""),
+        );
+      })
+      .catch((err) => {
+        if (err.name === "AbortError") return;
+        setReportContent(emptyLeadReport);
+      });
+
+    return () => controller.abort();
+  }, []);
+
+  // doing this for now cuz it might be dynamic
+  useEffect(() => {
+    const graphBarColor = getComputedStyle(document.documentElement)
+      .getPropertyValue("--graph-bar-primary")
+      .trim();
+
+    setGraphBarColor(graphBarColor);
+  }, []);
+
+  const report = reportContent ?? emptyLeadReport;
+
+  const fiscalYearOptions = useMemo<DropdownOption[]>(
+    () => generateDropdownOptions(report.fiscalYearOptions),
+    [report.fiscalYearOptions],
   );
 
-  const [fiscalYear, setFiscalYear] = useState("FY 2026");
-  const [donorType, setDonorType] = useState("All types");
-  const [pipelineStage, setPipelineStage] = useState("All stages");
-
-  const fiscalYearOptions = useMemo<SelectOption[]>(() => {
-    const years = Array.from(
-      new Set(
-        allLeads
-          .map((lead) => getFiscalYearFromDate(lead.target_followup_date))
-          .filter((year) => year > 0),
-      ),
-    ).sort((a, b) => b - a);
-
-    return [
-      { value: "FY 2026", label: "FY 2026" },
-      ...years
-        .filter((year) => year !== 2026)
-        .map((year) => ({ value: `FY ${year}`, label: `FY ${year}` })),
-    ].filter(
-      (option, index, list) =>
-        list.findIndex((item) => item.value === option.value) === index,
-    );
-  }, [allLeads]);
-
-  const donorTypeOptions = useMemo<SelectOption[]>(() => {
-    const unique = Array.from(new Set(allLeads.map((lead) => lead.donor_type)));
-
-    return [
-      { value: "All types", label: "All types" },
-      ...unique.map((item) => ({ value: item, label: item })),
-    ];
-  }, [allLeads]);
-
-  const stageOptions = useMemo<SelectOption[]>(() => {
-    const unique = Array.from(
-      new Set(allLeads.map((lead) => lead.pipeline_status)),
-    );
-
-    return [
-      { value: "All stages", label: "All stages" },
-      ...unique.map((item) => ({ value: item, label: item })),
-    ];
-  }, [allLeads]);
-
-  const selectedFiscalYear = Number((fiscalYear || "FY 2026").replace(/[^0-9]/g, "")) || 2026;
-
-  const filteredLeads = useMemo(() => {
-    return allLeads.filter((lead) => {
-      const yearMatch =
-        !fiscalYear ||
-        fiscalYear === "All years" ||
-        getFiscalYearFromDate(lead.target_followup_date) === selectedFiscalYear;
-      const donorTypeMatch =
-        donorType === "All types" || lead.donor_type === donorType;
-      const stageMatch =
-        pipelineStage === "All stages" || lead.pipeline_status === pipelineStage;
-      return yearMatch && donorTypeMatch && stageMatch;
-    });
-  }, [allLeads, donorType, fiscalYear, pipelineStage, selectedFiscalYear]);
-
-  const totalPipelineValue = filteredLeads.reduce(
-    (sum, lead) => sum + toSafeNumber(lead.target_amount),
-    0,
+  const donorTypeOptions = useMemo<DropdownOption[]>(
+    () => generateDropdownOptions(report.donorTypeOptions),
+    [report.donorTypeOptions],
   );
 
-  const weightedForecast = filteredLeads.reduce((sum, lead) => {
-    const amount = toSafeNumber(lead.target_amount);
-    const probability = Number(lead.probability) || 0;
-    return sum + amount * (probability / 100);
-  }, 0);
-
-  const averageProbability = filteredLeads.length
-    ? filteredLeads.reduce((sum, lead) => {
-        const probability = Number(lead.probability) || 0;
-        return sum + probability;
-      }, 0) / filteredLeads.length
-    : 0;
-
-  const leadConversionRate = filteredLeads.length
-    ? (filteredLeads.filter((lead) => {
-        const status = String(lead.pipeline_status || "").trim().toLowerCase();
-        return status === "proposal sent" || status === "secured donor";
-      }).length /
-        filteredLeads.length) *
-      100
-    : 0;
+  const pipelineStageOptions = useMemo<DropdownOption[]>(
+    () => generateDropdownOptions(report.pipelineStageOptions),
+    [report.pipelineStageOptions],
+  );
 
   const leadSourceCounts = useMemo(() => {
-    const map = new Map<string, number>();
-
-    filteredLeads.forEach((lead) => {
-      const source = String(lead.lead_source || "Unknown").trim();
-      if (!source) return;
-      map.set(source, (map.get(source) ?? 0) + 1);
-    });
-
-    const entries = Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
-    return entries.length ? entries : [["No data", 0]];
-  }, [filteredLeads]);
+    const pairs = report.leadOrigins.flatMap((entry) => Object.entries(entry));
+    return pairs.length ? pairs : [["No data", 0]];
+  }, [report.leadOrigins]);
 
   const pipelineStageCounts = useMemo(() => {
-    const map = new Map<string, number>();
+    const pairs = report.pipelineStages.flatMap((entry) =>
+      Object.entries(entry),
+    );
+    return pairs.length ? pairs : [["No data", 0]];
+  }, [report.pipelineStages]);
 
-    filteredLeads.forEach((lead) => {
-      const stage = String(lead.pipeline_status || "Unknown").trim();
-      if (!stage) return;
-      map.set(stage, (map.get(stage) ?? 0) + 1);
-    });
-
-    const entries = Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
-    return entries.length ? entries : [["No data", 0]];
-  }, [filteredLeads]);
-
-  const newLeadIntake = useMemo(() => {
-    const defaultQuarterValues = [0, 0, 0, 0];
-
-    if (!filteredLeads.length) {
-      return defaultQuarterValues;
-    }
-
-    const quarterValues = [...defaultQuarterValues];
-
-    filteredLeads.forEach((lead, index) => {
-      const targetYear = getFiscalYearFromDate(lead.target_followup_date);
-      const inSelectedYear =
-        selectedFiscalYear === 0 || targetYear === selectedFiscalYear;
-
-      if (!inSelectedYear) return;
-
-      const dateQuarter = getQuarterFromDate(lead.target_followup_date);
-      const bucket = dateQuarter >= 0 && dateQuarter <= 3 ? dateQuarter : index % 4;
-      quarterValues[bucket] += 1;
-    });
-
-    return quarterValues;
-  }, [filteredLeads, selectedFiscalYear]);
+  const newLeadIntake = report.quarterNewLeads.length
+    ? report.quarterNewLeads
+    : [0, 0, 0, 0];
+  const intakeMax = Math.max(...newLeadIntake, 1);
 
   const barMaxSource = Math.max(
     ...leadSourceCounts.map(([, count]) => Number(count) || 0),
@@ -291,277 +114,446 @@ export default function ReportsPage() {
     1,
   );
 
-  const intakeMax = Math.max(...newLeadIntake, 1);
+  const horizontalBarStyle = (count: number, max: number) => {
+    const percentage = Math.max((count / max) * 100, count > 0 ? 8 : 0);
+    return {
+      width: `${Math.min(percentage, 100)}%`,
+      maxWidth: "calc(100% - 38px)",
+    };
+  };
+
+  const horizontalValueStyle = (count: number, max: number) => {
+    const percentage = Math.max((count / max) * 100, count > 0 ? 8 : 0);
+
+    if (percentage > 72) {
+      return {
+        left: `${Math.max(percentage - 18, 15)}%`,
+      };
+    }
+
+    return {
+      left: `${Math.min(percentage + 6, 94)}%`,
+    };
+  };
+
+  const summaryRows: SummaryRow[] = [
+    {
+      type: "section",
+      label: "Pipeline value (₱)",
+      values: [0, 0, 0, 0, 0],
+    },
+    {
+      type: "row",
+      label: "Total estimated value",
+      values: report.quarterlySummary.totalEstimatedValue,
+    },
+    {
+      type: "row",
+      label: "Probability-adjusted value",
+      values: report.quarterlySummary.probabilityAdjustedValue,
+    },
+    {
+      type: "row",
+      label: "Secured value",
+      values: report.quarterlySummary.securedValue,
+    },
+    {
+      type: "row",
+      label: "Unsecured balance",
+      values: report.quarterlySummary.unsecuredBalance,
+    },
+    { type: "section", label: "Conversion", values: [0, 0, 0, 0, 0] },
+    {
+      type: "row",
+      label: "Lead conversion rate",
+      values: report.conversion.leadConversionRate,
+    },
+    {
+      type: "row",
+      label: "Value realization rate",
+      values: report.conversion.valueRealizationRate,
+    },
+    { type: "section", label: "Leads Origin", values: [0, 0, 0, 0, 0] },
+    {
+      type: "row",
+      label: "Referral",
+      values: report.leadsOrigin.referral,
+    },
+    {
+      type: "row",
+      label: "Research",
+      values: report.leadsOrigin.research,
+    },
+    {
+      type: "row",
+      label: "Booths",
+      values: report.leadsOrigin.booths,
+    },
+    {
+      type: "row",
+      label: "Direct Call",
+      values: report.leadsOrigin.directCall,
+    },
+    {
+      type: "row",
+      label: "Walk-in",
+      values: report.leadsOrigin.walkIn,
+    },
+    {
+      type: "row",
+      label: "Total new leads",
+      values: report.totalNewLeads,
+    },
+  ];
+
+  const quarterHeaders = ["Q1", "Q2", "Q3", "Q4"];
+
+  const renderSummaryValue = (row: SummaryRow, value: number): string => {
+    if (row.type === "section") return "";
+
+    if (
+      row.label === "Lead conversion rate" ||
+      row.label === "Value realization rate"
+    ) {
+      return formatPercent(value);
+    }
+
+    return formatNumber(value);
+  };
 
   return (
     <AppShell navbarPreset={navbarPreset}>
-      <div className="min-w-[1100px] pb-4">
-        <div className="space-y-5">
-          <div className="flex items-center justify-between gap-4 px-1">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-[8px] border border-[var(--border-soft)] bg-[var(--surface-soft)] text-[var(--brand-primary)]">
-                <span className="text-[11px] font-semibold">RP</span>
+      <div className="space-y-5">
+        <div className="flex justify-between">
+          <div className="flex items-center gap-3">
+            <BarChart3 className="text-brand-primary h-10 w-10" />
+            <div>
+              <div className="text-text-primary text-[32px] leading-none font-bold tracking-tight">
+                Lead Pipeline Report
               </div>
-              <div className="leading-tight">
-                <div className="text-[12px] text-[var(--text-secondary)]">
-                  Reports / Lead pipeline report
-                </div>
-                <div className="text-[32px] font-bold tracking-tight text-[var(--text-primary)]">
-                  Lead pipeline report
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                className="inline-flex items-center gap-2 rounded-[6px] border border-[var(--border-soft)] bg-[var(--surface-soft)] px-3 py-2 text-[12px] font-medium text-[var(--text-primary)] transition hover:bg-[var(--surface-soft-hover)]"
-              >
-                <span className="inline-block h-2.5 w-2.5 rounded-full border border-[var(--text-secondary)] bg-white" />
-                Preview PDF
-              </button>
-              <button
-                type="button"
-                className="inline-flex items-center gap-2 rounded-[6px] border border-[var(--brand-primary)] bg-[var(--brand-primary)] px-3 py-2 text-[12px] font-medium text-white transition hover:opacity-90"
-              >
-                <span className="inline-block h-2.5 w-2.5 rounded-full border border-white bg-[var(--brand-primary)]" />
-                Download PDF
-              </button>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-end gap-3 px-1">
-            <div className="min-w-[170px]">
-              <label className="mb-1 block text-[12px] font-medium text-[var(--text-secondary)]">
-                Fiscal year
-              </label>
-              <Dropdown
-                label="Fiscal year"
-                value={fiscalYear}
-                onChange={setFiscalYear}
-                options={fiscalYearOptions}
-              />
-            </div>
-
-            <div className="min-w-[170px]">
-              <label className="mb-1 block text-[12px] font-medium text-[var(--text-secondary)]">
-                Donor type
-              </label>
-              <Dropdown
-                label="Donor type"
-                value={donorType}
-                onChange={setDonorType}
-                options={donorTypeOptions}
-              />
-            </div>
-
-            <div className="min-w-[170px]">
-              <label className="mb-1 block text-[12px] font-medium text-[var(--text-secondary)]">
-                Pipeline stage
-              </label>
-              <Dropdown
-                label="Pipeline stage"
-                value={pipelineStage}
-                onChange={setPipelineStage}
-                options={stageOptions}
-              />
-            </div>
-
-            <div className="ml-auto flex items-end">
-              <button
-                type="button"
-                onClick={() => {
-                  setFiscalYear("FY 2026");
-                  setDonorType("All types");
-                  setPipelineStage("All stages");
-                }}
-                className="rounded-[6px] border border-[var(--border-soft)] bg-white px-3 py-2 text-[12px] font-medium text-[var(--text-primary)] transition hover:bg-[var(--surface-soft)]"
-              >
-                Reset filters
-              </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-4 gap-4">
-            <div className="rounded-[10px] border border-[var(--border-soft)] bg-[var(--surface-white)] p-4 shadow-[var(--shadow-soft)]">
-              <div className="text-[12px] text-[var(--text-secondary)]">Weighted forecast</div>
-              <div className="mt-2 text-[24px] font-semibold leading-tight text-[var(--text-primary)]">
-                {formatCurrency(weightedForecast)}
-              </div>
-              <div className="mt-1 text-[11px] text-[var(--text-secondary)]">
-                {filteredLeads.length ? "Probability-adjusted pipeline" : "No viable data"}
-              </div>
-            </div>
-
-            <div className="rounded-[10px] border border-[var(--border-soft)] bg-[var(--surface-white)] p-4 shadow-[var(--shadow-soft)]">
-              <div className="text-[12px] text-[var(--text-secondary)]">Lead conversion rate</div>
-              <div className="mt-2 text-[24px] font-semibold leading-tight text-[var(--text-primary)]">
-                {formatPercent(leadConversionRate)}
-              </div>
-              <div className="mt-1 text-[11px] text-[var(--text-secondary)]">
-                {filteredLeads.length ? "Proposal sent + secured" : "Awaiting lead data"}
-              </div>
-            </div>
-
-            <div className="rounded-[10px] border border-[var(--border-soft)] bg-[var(--surface-white)] p-4 shadow-[var(--shadow-soft)]">
-              <div className="text-[12px] text-[var(--text-secondary)]">Total pipeline value</div>
-              <div className="mt-2 text-[24px] font-semibold leading-tight text-[var(--text-primary)]">
-                {formatCurrency(totalPipelineValue)}
-              </div>
-              <div className="mt-1 text-[11px] text-[var(--text-secondary)]">
-                {filteredLeads.length ? `${filteredLeads.length} active leads` : "No leads found"}
-              </div>
-            </div>
-
-            <div className="rounded-[10px] border border-[var(--border-soft)] bg-[var(--surface-white)] p-4 shadow-[var(--shadow-soft)]">
-              <div className="text-[12px] text-[var(--text-secondary)]">Average probability</div>
-              <div className="mt-2 text-[24px] font-semibold leading-tight text-[var(--text-primary)]">
-                {formatPercent(averageProbability)}
-              </div>
-              <div className="mt-1 text-[11px] text-[var(--text-secondary)]">
-                {filteredLeads.length ? "Average of all valid leads" : "No probability data"}
+              <div className="text-text-secondary text-[14px] tracking-tight">
+                Placeholder text for sum bullshi
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            <div className="rounded-[10px] border border-[var(--border-soft)] bg-[var(--surface-white)] p-4 shadow-[var(--shadow-soft)]">
-              <div className="mb-3 text-[14px] font-semibold text-[var(--text-primary)]">
-                Where leads come from
-              </div>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              className="border-border-soft bg-surface-soft text-text-primary hover:bg-surface-soft-hover inline-flex items-center gap-2 rounded-[6px] border bg-white px-3 py-2 text-[12px] font-medium"
+            >
+              <Eye className="h-5 w-5" />
+              Preview PDF
+            </button>
+            <button
+              type="button"
+              className="border-brand-primary bg-brand-primary inline-flex items-center gap-2 rounded-[6px] border px-3 py-2 text-[12px] font-medium text-white hover:opacity-90"
+            >
+              <Download className="h-5 w-5" />
+              Download PDF
+            </button>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-end gap-3">
+          <div>
+            <label className="text-text-secondary text-[12px] font-medium">
+              Fiscal Year
+            </label>
+            <DropdownList
+              label={fiscalYear}
+              value={fiscalYear}
+              onChange={setFiscalYear}
+              options={fiscalYearOptions}
+            />
+          </div>
+
+          <div>
+            <label className="text-text-secondary text-[12px] font-medium">
+              Donor Type
+            </label>
+            <DropdownList
+              label={donorType}
+              value={donorType}
+              onChange={setDonorType}
+              options={donorTypeOptions}
+            />
+          </div>
+
+          <div>
+            <label className="text-text-secondary text-[12px] font-medium">
+              Pipeline Stage
+            </label>
+            <DropdownList
+              label={pipelineStage}
+              value={pipelineStage}
+              onChange={setPipelineStage}
+              options={pipelineStageOptions}
+            />
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              setFiscalYear(fiscalYearOptions[0].value);
+              setDonorType(donorTypeOptions[0].value);
+              setPipelineStage(pipelineStageOptions[0].value);
+            }}
+            className="border-border-soft text-text-primary hover:bg-surface-soft flex h-9 items-center gap-1 rounded-[6px] border px-3 py-2 text-[13px]"
+          >
+            <RotateCcw className="text-text-secondary h-4 w-4 shrink-0" />
+            Reset Filters
+          </button>
+        </div>
+
+        <div className="grid grid-cols-4 gap-4">
+          <div className="border-border-soft bg-surface-white rounded-[10px] border p-4 shadow-sm">
+            <div className="text-text-secondary text-[14px] font-medium">
+              Weighted forecast
+            </div>
+            <div className="text-text-primary mt-1 text-[26px] font-semibold">
+              {formatCurrency(report.weightedForecast)}
+            </div>
+            <div className="text-text-secondary text-[11px]">
+              Probability-adjusted pipeline
+            </div>
+          </div>
+
+          <div className="border-border-soft bg-surface-white rounded-[10px] border p-4 shadow-sm">
+            <div className="text-text-secondary text-[14px] font-medium">
+              Lead conversion rate
+            </div>
+            <div className="text-text-primary mt-1 text-[26px] font-semibold">
+              {formatPercent(report.leadConversionRate)}
+            </div>
+            <div className="text-text-secondary text-[11px]">
+              Secured leads + all leads
+            </div>
+          </div>
+
+          <div className="border-border-soft bg-surface-white rounded-[10px] border p-4 shadow-sm">
+            <div className="text-text-secondary text-[14px] font-medium">
+              Total pipeline value
+            </div>
+            <div className="text-text-primary mt-1 text-[26px] font-semibold">
+              {formatCurrency(report.totalPipelineValue)}
+            </div>
+            <div className="text-text-secondary text-[11px]">
+              {report.totalNewLeads} leads, all stages
+            </div>
+          </div>
+
+          <div className="border-border-soft bg-surface-white rounded-[10px] border p-4 shadow-sm">
+            <div className="text-text-secondary text-[14px] font-medium">
+              Average probability
+            </div>
+            <div className="text-text-primary mt-1 text-[26px] font-semibold">
+              {formatPercent(report.averageProbability)}
+            </div>
+            <div className="text-text-secondary text-[11px]">
+              Weighted forecast + pipeline value
+            </div>
+          </div>
+        </div>
+
+        {/* TODO: Fix broken number spacing */}
+
+        <div className="grid grid-cols-3 gap-4">
+          <div className="border-border-soft bg-surface-white rounded-[10px] border p-4 shadow-sm">
+            <div className="text-text-primary mb-2 text-[17px] font-semibold">
+              Where leads come from
+            </div>
+            <div className="text-text-secondary text-[12px]">
+              <p className="text-text-secondary mb-3 text-[12px]">
+                New leads by origin, FY 2026
+              </p>
               <div className="space-y-3">
                 {leadSourceCounts.map(([source, count]) => {
                   const numericCount = Number(count) || 0;
-                  const barWidth = (numericCount / barMaxSource) * 100;
+                  const barStyle = horizontalBarStyle(
+                    numericCount,
+                    barMaxSource,
+                  );
+                  const valueStyle = horizontalValueStyle(
+                    numericCount,
+                    barMaxSource,
+                  );
 
                   return (
-                    <div key={source} className="flex items-center gap-3 text-[12px] text-[var(--text-secondary)]">
-                      <span className="w-20 min-w-[80px] truncate">{source}</span>
-                      <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-[var(--surface-soft)]">
+                    <div key={source} className="flex items-center gap-3">
+                      <span className="text-text-primary w-20 min-w-[80px] truncate">
+                        {source}
+                      </span>
+                      <div className="relative h-3.5 flex-1 overflow-hidden">
                         <div
-                          className="h-full rounded-full"
-                          style={{ width: `${barWidth}%`, backgroundColor: BAR_BLUE }}
+                          className="bg-graph-bar-primary h-full rounded-[4px]"
+                          style={barStyle} // leave for now
                         />
+                        <span
+                          className="text-text-primary absolute top-1/2 -translate-y-1/2 text-[12px] font-medium"
+                          style={valueStyle}
+                        >
+                          {numericCount}
+                        </span>
                       </div>
-                      <span className="w-6 text-right text-[var(--text-primary)]">{numericCount}</span>
                     </div>
                   );
                 })}
               </div>
             </div>
+          </div>
 
-            <div className="rounded-[10px] border border-[var(--border-soft)] bg-[var(--surface-white)] p-4 shadow-[var(--shadow-soft)]">
-              <div className="mb-3 text-[14px] font-semibold text-[var(--text-primary)]">
-                Leads by pipeline stage
-              </div>
+          {/* TODO: Fix broken number spacing */}
+
+          <div className="border-border-soft bg-surface-white rounded-[10px] border p-4 shadow-sm">
+            <div className="text-text-primary mb-3 text-[14px] font-semibold">
+              Leads by pipeline stage
+            </div>
+            <div className="text-text-secondary text-[12px]">
+              <p className="text-text-secondary mb-3 text-[12px]">
+                Count of open and secured leads
+              </p>
               <div className="space-y-3">
                 {pipelineStageCounts.map(([stage, count]) => {
                   const numericCount = Number(count) || 0;
-                  const barWidth = (numericCount / barMaxStage) * 100;
+                  const barStyle = horizontalBarStyle(
+                    numericCount,
+                    barMaxStage,
+                  );
+                  const valueStyle = horizontalValueStyle(
+                    numericCount,
+                    barMaxStage,
+                  );
 
                   return (
-                    <div key={stage} className="flex items-center gap-3 text-[12px] text-[var(--text-secondary)]">
-                      <span className="w-24 min-w-[90px] truncate">{stage}</span>
-                      <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-[var(--surface-soft)]">
+                    <div key={stage} className="flex items-center gap-3">
+                      <span className="text-text-primary w-24 min-w-[90px] truncate">
+                        {stage}
+                      </span>
+                      <div className="relative h-3.5 flex-1 overflow-hidden">
                         <div
-                          className="h-full rounded-full"
-                          style={{ width: `${barWidth}%`, backgroundColor: BAR_BLUE }}
+                          className="bg-graph-bar-secondary h-full rounded-[4px]"
+                          style={barStyle} // leave for now
                         />
+                        <span
+                          className="text-text-primary absolute top-1/2 -translate-y-1/2 text-[12px] font-medium"
+                          style={valueStyle}
+                        >
+                          {numericCount}
+                        </span>
                       </div>
-                      <span className="w-6 text-right text-[var(--text-primary)]">{numericCount}</span>
                     </div>
                   );
                 })}
               </div>
             </div>
+          </div>
 
-            <div className="rounded-[10px] border border-[var(--border-soft)] bg-[var(--surface-white)] p-4 shadow-[var(--shadow-soft)]">
-              <div className="mb-3 text-[14px] font-semibold text-[var(--text-primary)]">
-                New-lead intake
-              </div>
-              <div className="flex h-[190px] items-end gap-3 pt-4">
+          {/* TODO: Fix broken number spacing and make the bars actually work */}
+
+          <div className="border-border-soft bg-surface-white rounded-[10px] border p-4 shadow-sm">
+            <div className="text-text-primary mb-3 text-[14px] font-semibold">
+              New-lead intake
+            </div>
+            <div className="text-text-secondary text-[12px]">
+              <p className="text-text-secondary mb-3 text-[12px]">
+                New leads per quarter
+              </p>
+              <div className="flex h-[180px] items-end gap-3 pt-4">
                 {newLeadIntake.map((count, index) => {
                   const barHeight = count > 0 ? (count / intakeMax) * 100 : 0;
+
                   return (
-                    <div key={`${index}-bar`} className="flex flex-1 flex-col items-center justify-end gap-2">
-                      <span className="text-[11px] font-medium text-[var(--text-primary)]">{count}</span>
+                    <div
+                      key={`${index}-bar`}
+                      className="flex flex-1 flex-col items-center justify-end gap-2"
+                    >
+                      <span className="text-text-primary text-[11px] font-medium">
+                        {count}
+                      </span>
                       <div
-                        className="w-full rounded-t-[8px]"
+                        className="bg-graph-bar-primary w-full rounded-t-[8px]"
                         style={{
-                          backgroundColor: BAR_BLUE,
                           height: `${Math.max(barHeight, count > 0 ? 18 : 0)}%`,
                           minHeight: count > 0 ? 18 : 0,
                         }}
                       />
-                      <span className="text-[11px] text-[var(--text-secondary)]">Q{index + 1}</span>
+                      <span className="text-text-secondary text-[11px]">
+                        Q{index + 1}
+                      </span>
                     </div>
                   );
                 })}
               </div>
             </div>
           </div>
+        </div>
 
-          <div className="rounded-[10px] border border-[var(--border-soft)] bg-[var(--surface-white)] shadow-[var(--shadow-soft)]">
-            <div className="flex items-center justify-between border-b border-[var(--border-soft)] px-4 py-3">
-              <div className="text-[14px] font-semibold text-[var(--text-primary)]">
-                Quarterly summary
-              </div>
-              <div className="text-[11px] text-[var(--text-secondary)]">Same layout as the PDF report</div>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="min-w-[980px] w-full border-collapse text-left text-[12px]">
-                <thead>
-                  <tr className="bg-[var(--surface-soft)] text-[var(--text-secondary)]">
-                    <th className="px-3 py-3 font-medium">Metric</th>
-                    {Array.from({ length: 4 }, (_, index) => (
-                      <th key={`q-${index}`} className="px-3 py-3 font-medium text-center">
-                        Q{index + 1}
-                      </th>
-                    ))}
-                    <th className="px-3 py-3 font-medium text-center">FY {selectedFiscalYear || 2026}</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {([
-                    { label: "Pipeline value (₱)", values: [0,0,0,0], type: "currency" },
-                    { label: "Total estimated value", values: [0,0,0,0], type: "currency" },
-                    { label: "Probabilistic-adjusted value", values: [0,0,0,0], type: "currency" },
-                    { label: "Secured value", values: [0,0,0,0], type: "currency" },
-                    { label: "Unsecured balance", values: [0,0,0,0], type: "currency" },
-                    { label: "Lead conversion rate", values: [0,0,0,0], type: "percent" },
-                    { label: "Value realization rate", values: [0,0,0,0], type: "percent" },
-                    { label: "Lead origin", values: [0,0,0,0], type: "count" },
-                    { label: "Total leads", values: [0,0,0,0], type: "count" },
-                  ]).map((row) => (
-                    <tr key={row.label} className="border-t border-[var(--border-soft)] text-[var(--text-primary)]">
-                      <td className="px-3 py-3 font-medium text-[var(--text-primary)]">{row.label}</td>
-                      {row.values.map((value, index) => (
-                        <td key={`${row.label}-${index}`} className="px-3 py-3 text-center text-[var(--text-primary)]">
-                          {row.type === "currency"
-                            ? formatCurrency(value)
-                            : row.type === "percent"
-                              ? formatPercent(value)
-                              : value}
-                        </td>
-                      ))}
-                      <td className="px-3 py-3 text-center text-[var(--text-primary)]">
-                        {row.type === "currency"
-                          ? formatCurrency(row.values.reduce((sum, current) => sum + current, 0))
-                          : row.type === "percent"
-                            ? formatPercent(
-                                row.values.reduce((sum, current) => sum + current, 0) /
-                                  Math.max(row.values.length, 1),
-                              )
-                            : row.values.reduce((sum, current) => sum + current, 0)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        <div className="border-border-soft bg-surface-white rounded-[10px] border shadow-sm">
+          <div className="border-border-soft border-b px-4 py-3">
+            <div className="text-text-primary text-[14px] font-semibold">
+              Quarterly Summary
             </div>
           </div>
+          <table className="w-full text-left text-[14px]">
+            <thead>
+              <tr className="bg-surface-soft text-text-secondary">
+                <th className="px-3 py-3 font-medium">Metric</th>
+                {quarterHeaders.map((header) => (
+                  <th
+                    key={header}
+                    className="px-3 py-3 text-center font-medium"
+                  >
+                    {header}
+                  </th>
+                ))}
+                <th className="px-3 py-3 text-center font-medium">
+                  {
+                    fiscalYearOptions.find(
+                      (option) => option.value === fiscalYear,
+                    )?.label
+                  }
+                </th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {summaryRows.map((row, rowIndex) => {
+                const isSection = row.type === "section";
+                const isLastRow = rowIndex === summaryRows.length - 1;
+
+                return (
+                  <tr
+                    key={`${row.label}-${rowIndex}`}
+                    className={[
+                      "border-border-soft text-text-primary border-t",
+                      isSection ? "bg-surface-soft font-semibold" : "",
+                    ].join(" ")}
+                  >
+                    <td
+                      className={cn(
+                        "text-text-primary px-3 py-3",
+                        !isLastRow ? "" : "font-semibold",
+                      )}
+                    >
+                      {row.label}
+                    </td>
+                    {row.values.map((value, valueIndex) => (
+                      <td
+                        key={`${row.label}-${valueIndex}`}
+                        className={cn(
+                          "text-text-primary px-3 py-3 text-center",
+                          !isLastRow ? "" : "font-semibold",
+                        )}
+                      >
+                        {isSection ? "" : renderSummaryValue(row, value)}
+                      </td>
+                    ))}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       </div>
     </AppShell>
