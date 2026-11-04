@@ -12,16 +12,14 @@ import {
   ChevronDown,
   Database,
   LayoutGrid,
-  Plus,
   RefreshCw,
   Search,
   Sliders,
   UserPlus,
-  type LucideIcon,
 } from "lucide-react";
 
 export interface NavbarPreset {
-  selectedModuleIndex: number;
+  selectedModuleIndex?: number;
   selectedTabIndex?: number;
   tabs?: TabItem[];
 }
@@ -50,17 +48,19 @@ const moduleOptions = [
   },
   {
     label: "Donor Conversion",
-    href: "/donor-conversion/prospects",
+    href: "/donor-conv/prospects",
     icon: UserPlus,
   },
   {
     label: "Donor Retention",
-    href: "/donor-retention/donors",
+    href: "/donor-retn/donors",
     icon: RefreshCw,
   },
-  { label: "Donor Care", href: "/donor-care/transactions", icon: Database },
-  { label: "Notifications", href: "/notifications", icon: Bell },
-  { label: "Preferences", href: "/preferences", icon: Sliders },
+  {
+    label: "Donor Care",
+    href: "/donor-care/transactions",
+    icon: Database,
+  },
 ] as const;
 
 const profileLabel: ProfileLabel = {
@@ -72,40 +72,53 @@ const profileLabel: ProfileLabel = {
 export function Navbar({ navbarPreset }: NavbarProps) {
   const { selectedModuleIndex, selectedTabIndex, tabs = [] } = navbarPreset;
   const moduleMenuRef = useRef<HTMLDivElement>(null);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+
   const [isModuleOpen, setIsModuleOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [notificationCount, setNotificationCount] = useState(10);
 
-  const selectedModule = moduleOptions[selectedModuleIndex];
-  const SelectedModuleIcon = selectedModule.icon;
+  const selectedModule =
+    typeof selectedModuleIndex === "number" &&
+    selectedModuleIndex >= 0 &&
+    selectedModuleIndex < moduleOptions.length
+      ? moduleOptions[selectedModuleIndex]
+      : null;
+  const SelectedModuleIcon = selectedModule?.icon ?? LayoutGrid;
 
   useEffect(() => {
-    if (!isModuleOpen) return;
-
     function handlePointerDown(event: MouseEvent) {
+      const target = event.target as Node;
       if (
         moduleMenuRef.current &&
-        !moduleMenuRef.current.contains(event.target as Node)
+        !moduleMenuRef.current.contains(target)
       ) {
         setIsModuleOpen(false);
+      }
+      if (
+        profileMenuRef.current &&
+        !profileMenuRef.current.contains(target)
+      ) {
+        setIsProfileOpen(false);
       }
     }
 
     document.addEventListener("mousedown", handlePointerDown);
     return () => document.removeEventListener("mousedown", handlePointerDown);
-  }, [isModuleOpen]);
+  }, []);
 
   return (
     <header className="bg-white">
-      <div className="flex items-center gap-10 border-b border-gray-300 bg-white px-4 py-2">
+      <div className="flex border-b border-gray-300 px-4 py-2">
         <div className="flex items-center gap-2">
-          <div className="relative min-h-9 min-w-9 overflow-hidden">
+          <div className="border-brand-primary bg-brand-primary relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-[8px] border-2">
             <Image
-              src="/caritas_logo.png"
-              alt="Caritas Manila Logo"
-              sizes="36px"
-              fill
-              className="object-cover"
+              src="/brand/caritas-logo.svg"
+              alt="Caritas Manila"
+              width={26}
+              height={26}
               priority
+              className="object-contain"
             />
           </div>
 
@@ -119,7 +132,7 @@ export function Navbar({ navbarPreset }: NavbarProps) {
           </div>
         </div>
 
-        <div className="bg-surface-soft hover:bg-surface-soft-hover flex h-9 w-200 items-center rounded-[6px] border border-gray-300">
+        <div className="mx-6 flex w-md items-center rounded-[6px] bg-gray-100">
           <Search className="mx-2 h-4 w-4 text-gray-400" />
           <input
             type="text"
@@ -129,51 +142,71 @@ export function Navbar({ navbarPreset }: NavbarProps) {
         </div>
 
         <div className="ml-auto flex items-center gap-3">
-          <button
-            type="button"
-            className="hover:bg-surface-soft-hover cursor-pointer rounded-[6px] border border-gray-300 p-2 text-[0.75rem] font-semibold text-[#5a2d2d]"
-          >
-            <span className="flex items-center gap-2">
-              <Plus className="text-brand-primary h-3.5 w-3.5" />
-              <span>New</span>
-            </span>
-          </button>
-
-          <button
-            type="button"
+          <Link
+            href="/notifications"
             className="hover:bg-surface-soft-hover relative flex h-9 w-9 cursor-pointer items-center justify-center self-center rounded-[6px] text-gray-600"
             aria-label="Notifications"
           >
             <Bell className="h-4 w-4 text-[#4b4b4b]" />
             {notificationCount > 0 && (
-              <span className="h- bg-brand-danger absolute -top-0 -right-0 flex min-w-4 items-center justify-center rounded-full px-1 text-[0.6rem] font-semibold text-white">
+              <span className="bg-brand-danger absolute -top-0 -right-0 flex min-w-4 items-center justify-center rounded-full px-1 text-[0.6rem] font-semibold text-white">
                 {notificationCount <= 99 ? notificationCount : "99+"}
               </span>
             )}
-          </button>
+          </Link>
 
           <div
             className="my-2 w-[1px] self-stretch bg-gray-300"
             aria-hidden="true"
           />
 
-          <button
-            className="hover:bg-surface-soft-hover flex cursor-pointer items-center self-center rounded-[6px] px-2 py-1.5"
-            type="button"
-          >
-            <div className="bg-brand-50 text-brand-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[0.75rem] font-bold">
-              {profileLabel.iconLabel}
-            </div>
-            <div className="ml-1.5 flex flex-col items-start leading-none">
-              <span className="max-w-50 truncate text-left text-[0.75rem] font-medium whitespace-nowrap text-gray-800">
-                {profileLabel.name}
-              </span>
-              <span className="mt-1 max-w-50 truncate text-left text-[0.7rem] whitespace-nowrap text-gray-500">
-                {profileLabel.description}
-              </span>
-            </div>
-            <ChevronDown className="ml-5 h-4 w-4 text-gray-400" />
-          </button>
+          <div ref={profileMenuRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setIsProfileOpen((open) => !open)}
+              className="hover:bg-surface-soft-hover flex cursor-pointer items-center self-center rounded-[6px] px-2 py-1.5"
+              aria-label="User profile menu"
+              aria-expanded={isProfileOpen}
+            >
+              <div className="bg-brand-50 text-brand-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[0.75rem] font-bold">
+                {profileLabel.iconLabel}
+              </div>
+              <div className="ml-1.5 flex flex-col items-start leading-none">
+                <span className="max-w-50 truncate text-left text-[0.75rem] font-medium whitespace-nowrap text-gray-800">
+                  {profileLabel.name}
+                </span>
+                <span className="mt-1 max-w-50 truncate text-left text-[0.7rem] whitespace-nowrap text-gray-500">
+                  {profileLabel.description}
+                </span>
+              </div>
+              <ChevronDown
+                className={cn(
+                  "ml-5 h-4 w-4 text-gray-400 transition-transform duration-150",
+                  isProfileOpen && "rotate-180",
+                )}
+              />
+            </button>
+
+            {isProfileOpen && (
+              <div className="absolute right-0 top-[calc(100%+6px)] z-30 min-w-56 overflow-hidden rounded-[8px] border border-gray-300 bg-white py-1.5 shadow-lg">
+                <div className="border-b border-gray-100 px-3 py-2">
+                  <p className="text-xs font-semibold text-gray-900">{profileLabel.name}</p>
+                  <p className="text-[11px] text-gray-500">{profileLabel.description}</p>
+                </div>
+
+                <div className="pt-1">
+                  <Link
+                    href="/preferences"
+                    onClick={() => setIsProfileOpen(false)}
+                    className="hover:bg-surface-soft-hover flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-gray-700 transition-colors"
+                  >
+                    <Sliders className="h-3.5 w-3.5 text-gray-500" />
+                    <span>Preferences</span>
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -188,14 +221,16 @@ export function Navbar({ navbarPreset }: NavbarProps) {
             className="hover:bg-surface-soft-hover flex max-w-60 cursor-pointer items-center gap-2 rounded-[6px] bg-transparent px-2 py-1 text-left text-[1rem] font-semibold text-gray-900"
           >
             <SelectedModuleIcon className="text-brand-primary h-4 w-4 shrink-0" />
-            <span className="truncate">{selectedModule.label}</span>
+            <span className="truncate">
+              {selectedModule ? selectedModule.label : "Select Division"}
+            </span>
             <ChevronDown className="h-4 w-4 shrink-0 text-gray-500" />
           </button>
           {isModuleOpen && (
             <div className="absolute top-[calc(100%+1px)] left-0 z-20 overflow-hidden rounded-[6px] border border-gray-300 bg-white shadow-lg">
               {moduleOptions.map((module) => {
                 const Icon = module.icon;
-                const isSelected = module.label === selectedModule.label;
+                const isSelected = module.label === selectedModule?.label;
 
                 return (
                   <Link

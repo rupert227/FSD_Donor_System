@@ -5,6 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  --font-sans: var(--font-ibm-plex-sans), sans-serif;
   --color-brand-primary: var(--brand-primary);
   --color-brand-danger: var(--brand-danger);
   --color-brand-100: var(--brand-100);
@@ -83,6 +84,7 @@
 
 html,
 body {
+  font-family: var(--font-ibm-plex-sans), sans-serif;
   min-width: 1000px;
   overflow-x: auto;
 }

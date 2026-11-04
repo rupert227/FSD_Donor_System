@@ -65,3 +65,7 @@ export function toSafeNumber(value: unknown): number {
   }
   return 0;
 }
+
+export function cn(...classes: (string | undefined | null | false)[]) {
+  return classes.filter(Boolean).join(" ");
+}

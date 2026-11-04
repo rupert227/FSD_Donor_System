@@ -8,24 +8,8 @@ export const navbarPreset: NavbarPreset = {
 
   tabs: [
     {
-      label: "Overview",
-      href: `${moduleRoute}`
+      label: "Dashboard",
+      href: `${moduleRoute}`,
     },
-    {
-      label: "Prospects",
-      href: `${moduleRoute}/prospects`
-    },
-    {
-      label: "Donors",
-      href: `${moduleRoute}/donors`
-    },
-    {
-      label: "Transactions",
-      href: `${moduleRoute}/transactions`
-    },
-    {
-      label: "Reports",
-      href: `${moduleRoute}/reports`
-    }
-  ]
-}
+  ],
+};
