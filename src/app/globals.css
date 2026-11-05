@@ -24,16 +24,22 @@
   --color-graph-bar-secondary: var(--graph-bar-secondary);
   --radius-button: var(--button-radius);
   --radius-dropdown: var(--dropdown-radius);
+  --color-primary-scrollbar: var(--scrollbar-primary);
   --shadow-soft: var(--shadow-soft);
 }
 
 @layer utilities {
-  .dropdown-scrollbar {
-    scrollbar-width: 3rem;
-    scrollbar-color: var(--text-secondary);
+  .scrollbar-primary {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-primary) transparent;
   }
 
-  .dropdown-scrollbar::-webkit-scrollbar-thumb {
+  .scrollbar-primary::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-primary::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar-primary);
     border-radius: 9999px;
   }
 }
@@ -79,6 +85,7 @@
   --dropdown-radius: 6px;
   --graph-bar-primary: #1f4e79;
   --graph-bar-secondary: #4a90d9;
+  --scrollbar-primary: #cacaca;
 }
 
 html,
