@@ -13,12 +13,14 @@ export function DropdownList({
   onChange,
   options,
   width = 12,
+  height = 24,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   options: DropdownOption[];
   width?: number;
+  height?: number;
 }) {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -55,15 +57,25 @@ export function DropdownList({
         type="button"
         onClick={() => setIsOpen((open) => !open)}
         style={{
-          width: `${width}rem`
+          width: `${width}rem`,
         }}
         className="border-dropdown-stroke text-text-primary hover:bg-surface-soft-hover rounded-button flex h-9 items-center justify-between gap-1 border-[1px] bg-white px-3 text-left text-[0.8rem]"
       >
         <span className="truncate">{selectedOption?.label ?? label}</span>
-        <ChevronDown className="text-text-secondary p h-4 w-4 shrink-0" />
+        <ChevronDown
+          className={cn(
+            "text-text-secondary ml-5 h-4 w-4 shrink-0",
+            isOpen && "rotate-180",
+          )}
+        />
       </button>
       {isOpen && options.length > 0 && (
-        <div className="bg-surface-white border-border-soft scrollbar-primary absolute top-[calc(100%+1px)] left-0 z-20 max-h-100 w-full overflow-auto rounded-[6px] border p-1 shadow-lg">
+        <div
+          style={{
+            maxHeight: `${height}rem`,
+          }}
+          className="bg-surface-white border-border-soft scrollbar-primary absolute top-[calc(100%+1px)] left-0 z-20 w-full overflow-auto rounded-[6px] border p-1 shadow-lg"
+        >
           <div className="w-max min-w-full">
             {options.map((option, index) => {
               const isSelected = isSelectedOption(option);
