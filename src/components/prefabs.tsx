@@ -12,7 +12,7 @@ export function DropdownList({
   value,
   onChange,
   options,
-  width = 50,
+  width = 12,
 }: {
   label: string;
   value: string;
@@ -50,51 +50,42 @@ export function DropdownList({
     option.value === value || option.label === value;
 
   return (
-    <div ref={dropdownRef} className="relative">
+    <div ref={dropdownRef} className="relative flex">
       <button
         type="button"
         onClick={() => setIsOpen((open) => !open)}
-        className="border-dropdown-stroke text-text-primary hover:bg-surface-soft-hover rounded-button flex h-9 w-50 items-center justify-between gap-1 border-[1px] bg-white px-3 text-left text-[13px]"
+        style={{
+          width: `${width}rem`
+        }}
+        className="border-dropdown-stroke text-text-primary hover:bg-surface-soft-hover rounded-button flex h-9 items-center justify-between gap-1 border-[1px] bg-white px-3 text-left text-[0.8rem]"
       >
         <span className="truncate">{selectedOption?.label ?? label}</span>
-
-        <ChevronDown className="text-text-secondary h-4 w-4 shrink-0" />
+        <ChevronDown className="text-text-secondary p h-4 w-4 shrink-0" />
       </button>
-
-      {/* TODO: Fix dropdown label overflow where ellipses do not get applied when it label overflows a bit. */}
-
       {isOpen && options.length > 0 && (
-        <div className="border-border-soft rounded-dropdown absolute top-[calc(100%+1px)] z-20 max-w-75 w-50 overflow-auto border bg-white shadow-lg p-1">
-          <div className="dropdown-scrollbar max-h-52 overflow-auto ">
+        <div className="bg-surface-white border-border-soft scrollbar-primary absolute top-[calc(100%+1px)] left-0 z-20 max-h-100 w-full overflow-auto rounded-[6px] border p-1 shadow-lg">
+          <div className="w-max min-w-full">
             {options.map((option, index) => {
               const isSelected = isSelectedOption(option);
-              const isFirst = index === 0;
-              const isLast = index === options.length - 1;
-
               return (
-                <button
+                <div
                   key={option.value}
-                  type="button"
                   onClick={() => {
                     onChange(option.value);
                     setIsOpen(false);
                   }}
                   className={cn(
-                    "text-text-primary flex items-center gap-3 px-3 py-3",
-                    "first:hover:rounded-t-dropdown last:hover:rounded-b-dropdown",
+                    "text-text-primary flex h-7.5 w-full cursor-pointer items-center gap-2 px-3 first:rounded-t-[6px] last:rounded-b-[6px]",
                     isSelected
                       ? "bg-brand-100 text-brand-primary"
-                      : "text-text-primary hover:bg-surface-soft",
-                    {
-                      "rounded-t-dropdown": isSelected && isFirst,
-                      "rounded-b-dropdown": isSelected && isLast,
-                    },
+                      : "hover:bg-surface-soft-hover",
                   )}
                 >
-                  <span className="truncate">{option.label ?? label}</span>
-
-                  {isSelected && <Check className="h-4 w-4 shrink-0" />}
-                </button>
+                  <span className="text-[0.8rem] whitespace-nowrap">
+                    {option.label ?? label}
+                  </span>
+                  {isSelected && <Check className="ml-auto h-4 w-4 shrink-0" />}
+                </div>
               );
             })}
           </div>
