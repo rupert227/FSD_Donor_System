@@ -98,6 +98,12 @@ const searchBarAction = (input: string) => {
   console.log(`Searched: ${input}`);
 };
 
+export function useDocumentTitle(title: string) {
+  useEffect(() => {
+    document.title = title;
+  }, [title]);
+}
+
 export function Navbar({
   navbarPreset: { selectedModuleIndex, selectedTabIndex, tabs = [] },
 }: NavbarProps) {
