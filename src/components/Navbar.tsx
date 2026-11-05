@@ -219,9 +219,9 @@ export function Navbar({
             type="button"
             className="hover:bg-surface-soft-hover text-text-primary relative flex h-9 w-9 cursor-pointer items-center justify-center self-center rounded-[6px]"
           >
-            <Bell className="h-4 w-4 text-[#4b4b4b]" />
+            <Bell className="h-4 w-4 text-text-secondary" />
             {notificationCount > 0 && (
-              <span className="bg-brand-danger absolute top-0 right-0 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[0.6rem] font-semibold text-white">
+              <span className="bg-brand-danger absolute top-0 right-0 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[0.6rem] font-semibold text-surface-white">
                 {notificationCount <= 99 ? notificationCount : "99+"}
               </span>
             )}
