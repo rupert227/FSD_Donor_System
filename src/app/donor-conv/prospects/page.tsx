@@ -24,10 +24,14 @@ import {
 import { cn } from "cn";
 
 import { AppShell } from "@/components/AppShell";
-import { navbarPreset } from "@/app/donor-conv/struct";
+import { moduleName, navbarPreset } from "@/app/donor-conv/struct";
 
 import { SAMPLE_LEADS, type LeadDetail } from "@/lib/mock-data/leads";
 import type { PipelineStatusEnum } from "@/types";
+
+import { useDocumentTitle } from "@/components/Navbar";
+
+const pageName = "Prospects"
 
 const PAGE_SIZE = 10;
 
@@ -138,6 +142,7 @@ function csvCell(v: string | number | null) {
 }
 
 export default function ProspectsPage() {
+  useDocumentTitle(`${moduleName} - ${pageName}`);
   navbarPreset.selectedTabIndex = 0;
 
   const router = useRouter();

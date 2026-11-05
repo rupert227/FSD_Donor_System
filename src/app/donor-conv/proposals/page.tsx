@@ -1,14 +1,13 @@
+"use client";
+
 import { AppShell } from "@/components/AppShell";
-import type { Metadata } from "next";
 import { moduleName, navbarPreset } from "@/app/donor-conv/struct";
+import { useDocumentTitle } from "@/components/Navbar";
 
 const pageName = "Proposals";
 
-export const metadata: Metadata = {
-  title: `${moduleName} - ${pageName}`,
-};
-
 export default function ProposalsPage() {
+  useDocumentTitle(`${moduleName} - ${pageName}`);
   navbarPreset.selectedTabIndex = 1;
 
   return (

@@ -5,9 +5,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { navbarPreset } from "@/app/donor-conv/struct";
+import { moduleName, navbarPreset } from "@/app/donor-conv/struct";
+import { useDocumentTitle } from "@/components/Navbar";
+
+const pageName = "Add Prospect";
 
 export default function AddProspectPage() {
+  useDocumentTitle(`${moduleName} - ${pageName}`);
   navbarPreset.selectedTabIndex = 0;
   const router = useRouter();
 

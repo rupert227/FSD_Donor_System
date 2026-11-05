@@ -1,14 +1,13 @@
+"use client";
+
 import { AppShell } from "@/components/AppShell";
-import type { Metadata } from "next";
 import { moduleName, navbarPreset } from "@/app/dashboard/struct";
+import { useDocumentTitle } from "@/components/Navbar";
 
 const pageName = "Dashboard";
 
-export const metadata: Metadata = {
-  title: `${moduleName} - ${pageName}`,
-};
-
 export default function DashboardPage() {
+  useDocumentTitle(`${moduleName}`);
   navbarPreset.selectedTabIndex = 0;
 
   return (

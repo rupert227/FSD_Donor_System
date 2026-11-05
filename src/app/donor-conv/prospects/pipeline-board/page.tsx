@@ -23,10 +23,14 @@ import {
 import { cn } from "cn";
 
 import { AppShell } from "@/components/AppShell";
-import { navbarPreset } from "@/app/donor-conv/struct";
+import { moduleName, navbarPreset } from "@/app/donor-conv/struct";
 
 import { SAMPLE_LEADS, type LeadDetail } from "@/lib/mock-data/leads";
 import type { PipelineStatusEnum } from "@/types";
+
+import { useDocumentTitle } from "@/components/Navbar";
+
+const pageName = "Pipeline Board"
 
 // Cards shown per column before "Show N more"
 const CARDS_PER_COLUMN = 3;
@@ -124,6 +128,7 @@ function csvCell(v: string | number | null) {
 }
 
 export default function PipelineBoardPage() {
+  useDocumentTitle(`${moduleName} - ${pageName}`);
   navbarPreset.selectedTabIndex = 0;
 
   const today = useToday();

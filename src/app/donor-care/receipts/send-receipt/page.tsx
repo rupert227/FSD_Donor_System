@@ -1,14 +1,13 @@
+"use client";
+
 import { AppShell } from "@/components/AppShell";
-import type { Metadata } from "next";
 import { moduleName, navbarPreset } from "@/app/donor-care/struct";
+import { useDocumentTitle } from "@/components/Navbar";
 
 const pageName = "Send Receipt";
 
-export const metadata: Metadata = {
-  title: `${moduleName} - ${pageName}`,
-};
-
 export default function SendReceiptPage() {
+  useDocumentTitle(`${moduleName} - ${pageName}`);
   navbarPreset.selectedTabIndex = 1;
 
   return (

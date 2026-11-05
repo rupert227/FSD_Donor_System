@@ -1,14 +1,13 @@
+"use client";
+
 import { AppShell } from "@/components/AppShell";
-import type { Metadata } from "next";
 import { moduleName, navbarPreset } from "@/app/donor-care/struct";
+import { useDocumentTitle } from "@/components/Navbar";
 
 const pageName = "Add Transaction";
 
-export const metadata: Metadata = {
-  title: `${moduleName} - ${pageName}`,
-};
-
 export default function AddTransactionPage() {
+  useDocumentTitle(`${moduleName} - ${pageName}`);
   navbarPreset.selectedTabIndex = 0;
 
   return (

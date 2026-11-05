@@ -1,14 +1,13 @@
+"use client";
+
 import { AppShell } from "@/components/AppShell";
-import type { Metadata } from "next";
 import { moduleName, navbarPreset } from "@/app/donor-retn/struct";
+import { useDocumentTitle } from "@/components/Navbar";
 
 const pageName = "Preview Report";
 
-export const metadata: Metadata = {
-  title: `${moduleName} - ${pageName}`,
-};
-
 export default function PreviewReportPage() {
+  useDocumentTitle(`${moduleName} - ${pageName}`);
   navbarPreset.selectedTabIndex = 2;
 
   return (

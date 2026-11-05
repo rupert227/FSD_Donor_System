@@ -14,9 +14,12 @@ import {
   History as HistoryIcon,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { navbarPreset } from "@/app/donor-conv/struct";
+import { moduleName, navbarPreset } from "@/app/donor-conv/struct";
+import { useDocumentTitle } from "@/components/Navbar";
 import { SAMPLE_LEADS, type LeadDetail } from "@/lib/mock-data/leads";
 import type { PipelineStatusEnum } from "@/types";
+
+const pageName = "Edit Prospect";
 
 const PIPELINE_STAGES: PipelineStatusEnum[] = [
   "New Lead",
@@ -812,6 +815,7 @@ function EditProspectForm() {
 }
 
 export default function EditProspectPage() {
+  useDocumentTitle(`${moduleName} - ${pageName}`);
   navbarPreset.selectedTabIndex = 0;
 
   return (

@@ -1,14 +1,13 @@
+"use client";
+
 import { AppShell } from "@/components/AppShell";
-import type { Metadata } from "next";
 import { moduleName, navbarPreset } from "@/app/notifications/struct";
+import { useDocumentTitle } from "@/components/Navbar";
 
 const pageName = "Notifications";
 
-export const metadata: Metadata = {
-  title: `${moduleName}`,
-}
-
 export default function NotificationsPage() {
+  useDocumentTitle(`${moduleName}`);
   navbarPreset.selectedTabIndex = 0;
 
   return (
