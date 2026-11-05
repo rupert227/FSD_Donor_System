@@ -12,13 +12,13 @@ export function DropdownList({
   value,
   onChange,
   options,
-  className,
+  width = 50,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   options: DropdownOption[];
-  className?: string;
+  width?: number;
 }) {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -64,8 +64,8 @@ export function DropdownList({
       {/* TODO: Fix dropdown label overflow where ellipses do not get applied when it label overflows a bit. */}
 
       {isOpen && options.length > 0 && (
-        <div className="border-border-soft rounded-dropdown absolute top-[calc(100%+1px)] z-20 max-w-75 min-w-50 overflow-hidden border bg-white shadow-lg">
-          <div className="dropdown-scrollbar max-h-52 overflow-x-hidden overflow-y-auto p-1">
+        <div className="border-border-soft rounded-dropdown absolute top-[calc(100%+1px)] z-20 max-w-75 w-50 overflow-auto border bg-white shadow-lg p-1">
+          <div className="dropdown-scrollbar max-h-52 overflow-auto ">
             {options.map((option, index) => {
               const isSelected = isSelectedOption(option);
               const isFirst = index === 0;
@@ -80,7 +80,7 @@ export function DropdownList({
                     setIsOpen(false);
                   }}
                   className={cn(
-                    "flex h-9 w-full items-center justify-between gap-3 px-3 py-2.5 text-left text-sm",
+                    "text-text-primary flex items-center gap-3 px-3 py-3",
                     "first:hover:rounded-t-dropdown last:hover:rounded-b-dropdown",
                     isSelected
                       ? "bg-brand-100 text-brand-primary"

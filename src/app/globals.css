@@ -94,4 +94,5 @@ body {
   font-family: var(--font-ibm-plex-sans), sans-serif;
   min-width: 1000px;
   overflow-x: auto;
+  font-size: 30;
 }
