@@ -13,13 +13,13 @@ import {
   Database,
   Dot,
   LayoutGrid,
+  LucideIcon,
   LogOut,
   Menu,
   RefreshCw,
   Search,
   Settings,
   UserPlus,
-  type LucideIcon,
 } from "lucide-react";
 
 export interface NavbarPreset {
@@ -60,12 +60,12 @@ const moduleOptions: ListOption[] = [
   },
   {
     label: "Donor Conversion",
-    href: "/donor-conversion/prospects",
+    href: "/donor-conv/prospects",
     icon: UserPlus,
   },
   {
     label: "Donor Retention",
-    href: "/donor-retention/donors",
+    href: "/donor-retn/donors",
     icon: RefreshCw,
   },
   { label: "Donor Care", href: "/donor-care/transactions", icon: Database },
@@ -150,7 +150,7 @@ export function Navbar({
     document.addEventListener("mousedown", handlePointerDown);
 
     return () => document.removeEventListener("mousedown", handlePointerDown);
-  }, [isModuleOpen]);
+  }, []);
 
   useEffect(() => {
     if (!isProfileOpen) return;
@@ -296,12 +296,12 @@ export function Navbar({
       <div className="border-border-strong flex border-b px-4 py-1">
         <div
           ref={moduleRef}
-          className="border-border-strong relative border-r pr-4"
+          className="border-border-strong relative flex items-center border-r pr-4"
         >
           <button
             type="button"
             onClick={() => setIsModuleOpen((open) => !open)}
-            className="hover:bg-surface-soft-hover text-text-primary flex max-w-60 cursor-pointer items-center gap-2 rounded-[6px] bg-transparent px-2 py-1 font-semibold"
+            className="hover:bg-surface-soft-hover text-text-primary flex max-w-60 cursor-pointer items-center gap-3 rounded-[6px] bg-transparent px-2 py-1 font-semibold"
           >
             <SelectedModuleIcon className="text-brand-primary h-4 w-4 shrink-0" />
             <span className="truncate">{selectedModule.label}</span>
