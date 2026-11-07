@@ -10,24 +10,20 @@ export type DropdownOption = Primitives.DropdownOption;
 export function DropdownList({
   label,
   selectedKey,
-  onChange,
   options,
+  onChange,
   width = 12,
   height = 24,
 }: {
   label?: string | null | undefined;
   selectedKey?: string | null | undefined;
-  onChange?: (option: DropdownOption) => void | null | undefined;
   options?: DropdownOption[] | null | undefined;
+  onChange?: (option: DropdownOption) => void | null | undefined;
   width?: number;
   height?: number;
 }) {
   const dropdownRef = useRef<HTMLDivElement>(null);
-
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedOption, setSelectedOption] = useState(
-    options?.find((option) => option.key === selectedKey) ?? null,
-  );
 
   useEffect(() => {
     if (!isOpen) return;
@@ -44,6 +40,8 @@ export function DropdownList({
     document.addEventListener("mousedown", handlePointerDown);
     return () => document.removeEventListener("mousedown", handlePointerDown);
   }, [isOpen]);
+
+  const selectedOption = options?.find((option) => option.key === selectedKey) ?? null;
 
   return (
     <div ref={dropdownRef} className="relative flex">
@@ -87,7 +85,6 @@ export function DropdownList({
                   key={option.key}
                   onClick={() => {
                     onChange?.(option);
-                    setSelectedOption(option);
                     setIsOpen(false);
                   }}
                   className={cn(
