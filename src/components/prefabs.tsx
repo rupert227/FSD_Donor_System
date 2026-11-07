@@ -1,65 +1,66 @@
 "use client";
 
-import { cn } from "cn";
 import { Check, ChevronDown } from "lucide-react";
+import { Primitives } from "@/lib/types";
+import { cn } from "cn";
 import { useEffect, useRef, useState } from "react";
 
-export type DropdownOption = {
-  value: string;
-  label: string;
-};
+export type DropdownOption = Primitives.Option;
 
 export function DropdownList({
   label,
-  value,
+  selectedKey,
   onChange,
   options,
   width = 12,
   height = 24,
 }: {
   label?: string | null;
-  value?: string | null;
-  onChange?: (value: string) => void;
+  selectedKey?: string | null;
+  onChange?: (option: DropdownOption) => void;
   options?: DropdownOption[];
   width?: number;
   height?: number;
 }) {
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const [isOpen, setIsOpen] = useState(false);
 
-  const safeOptions = options ?? [];
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedOption, setSelectedOption] = useState(
+    options?.find((option) => option.key === selectedKey) ?? null,
+  );
 
   useEffect(() => {
     if (!isOpen) return;
 
-    function handlePointerDown(event: MouseEvent) {
+    const handlePointerDown = (event: MouseEvent) => {
       if (
         dropdownRef.current &&
         !dropdownRef.current.contains(event.target as Node)
       ) {
         setIsOpen(false);
       }
-    }
+    };
 
     document.addEventListener("mousedown", handlePointerDown);
     return () => document.removeEventListener("mousedown", handlePointerDown);
   }, [isOpen]);
-
-  const selectedOption =
-    safeOptions.find((o) => o.value === value || o.label === value) ?? null;
-
-  const isSelectedOption = (option: DropdownOption) =>
-    option.value === value || option.label === value;
 
   return (
     <div ref={dropdownRef} className="relative flex">
       <button
         type="button"
         onClick={() => setIsOpen((open) => !open)}
-        style={{ width: `${width}rem` }}
-        className="border-dropdown-stroke bg-surface-white text-text-primary hover:bg-surface-soft-hover rounded-button flex h-9 cursor-pointer items-center justify-between gap-1 border-[1px] px-3 text-left text-[0.8rem]"
+        style={{
+          width: `${width}rem`,
+          minWidth: `${width}rem`,
+          maxWidth: `${width}rem`,
+        }}
+        className={cn(
+          "border-dropdown-stroke bg-surface-white text-text-primary hover:bg-surface-soft-hover rounded-button flex h-9 cursor-pointer items-center justify-between border-[1px] px-3 text-left text-[0.8rem]",
+          !selectedOption && "text-text-muted",
+        )}
       >
-        <span className="truncate">{selectedOption?.label ?? label}</span>
+        <span className="truncate">{selectedOption?.value ?? label}</span>
         <ChevronDown
           className={cn(
             "text-text-secondary ml-5 h-4 w-4 shrink-0",
@@ -68,19 +69,25 @@ export function DropdownList({
         />
       </button>
 
-      {isOpen && safeOptions.length > 0 && (
+      {isOpen && (options?.length ?? 0) > 0 && (
         <div
-          style={{ maxHeight: `${height}rem` }}
+          style={{
+            width: `${width}rem`,
+            minWidth: `${width}rem`,
+            maxWidth: `${width}rem`,
+            maxHeight: `${height}rem`,
+          }}
           className="bg-surface-white border-border-soft scrollbar-primary absolute top-[calc(100%+1px)] left-0 z-20 w-full overflow-auto rounded-[6px] border p-1 shadow-lg"
         >
           <div className="w-max min-w-full">
-            {safeOptions.map((option) => {
-              const isSelected = isSelectedOption(option);
+            {options?.map((option) => {
+              const isSelected = option.key === selectedOption?.key;
               return (
                 <div
-                  key={option.value}
+                  key={option.key}
                   onClick={() => {
-                    onChange?.(option.value);
+                    onChange?.(option);
+                    setSelectedOption(option);
                     setIsOpen(false);
                   }}
                   className={cn(
@@ -91,7 +98,7 @@ export function DropdownList({
                   )}
                 >
                   <span className="text-[0.8rem] whitespace-nowrap">
-                    {option.label}
+                    {option.value}
                   </span>
                   {isSelected && <Check className="ml-auto h-4 w-4 shrink-0" />}
                 </div>

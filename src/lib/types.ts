@@ -1,33 +1,40 @@
+export namespace Primitives {
+  export interface Option {
+    key: string;
+    value: string | null | undefined;
+  };
+}
+
 export namespace Leads {
   export interface Report {
-    fiscalYearOptions: string[];
-    donorTypeOptions: string[];
-    pipelineStageOptions: string[];
-    weightedForecast: number | null;
-    leadConversionRate: number | null;
-    totalPipelineValue: number | null;
-    averageProbability: number | null;
-    leadOrigins: Record<string, number | null>[];
-    pipelineStages: Record<string, number | null>[];
-    quarterNewLeads: Record<string, number | null>[];
+    fiscalYearOptions: Primitives.Option | null | undefined;
+    donorTypeOptions: Primitives.Option | null | undefined;
+    pipelineStageOptions: Primitives.Option | null | undefined;
+    weightedForecast: number | null | undefined;
+    leadConversionRate: number | null | undefined;
+    totalPipelineValue: number | null | undefined;
+    averageProbability: number | null | undefined;
+    leadOrigins: Primitives.Option | null | undefined;
+    pipelineStages: Primitives.Option | null | undefined;
+    quarterNewLeads: Primitives.Option | null | undefined;
     quarterlySummary: {
-      totalEstimatedValue: number[];
-      probabilityAdjustedValue: number[];
-      securedValue: number[];
-      unsecuredBalance: number[];
+      totalEstimatedValue: number[] | null | undefined;
+      probabilityAdjustedValue: number[] | null | undefined;
+      securedValue: number[] | null | undefined;
+      unsecuredBalance: number[] | null | undefined;
     };
     conversion: {
-      leadConversionRate: number[];
-      valueRealizationRate: number[];
+      leadConversionRate: number[] | null | undefined;
+      valueRealizationRate: number[] | null | undefined;
     };
     leadsOrigin: {
-      referral: number[];
-      research: number[];
-      booths: number[];
-      directCall: number[];
-      walkIn: number[];
+      referral: number[] | null | undefined;
+      research: number[] | null | undefined;
+      booths: number[] | null | undefined;
+      directCall: number[] | null | undefined;
+      walkIn: number[] | null | undefined;
     };
-    totalNewLeads: number[];
+    totalNewLeads: number[] | null | undefined;
   }
 
   export interface ReportFilters {
@@ -37,33 +44,33 @@ export namespace Leads {
   }
 
   export const emptyReport: Report = {
-    fiscalYearOptions: ["All Years"],
-    donorTypeOptions: ["All Types"],
-    pipelineStageOptions: ["All Stages"],
-    weightedForecast: 0,
-    leadConversionRate: 0,
-    totalPipelineValue: 0,
-    averageProbability: 0,
-    leadOrigins: [{ "No data": 0 }],
-    pipelineStages: [{ "No data": 0 }],
-    quarterNewLeads: [{ "No data": 0 }],
+    fiscalYearOptions: undefined,
+    donorTypeOptions: undefined,
+    pipelineStageOptions: undefined,
+    weightedForecast: undefined,
+    leadConversionRate: undefined,
+    totalPipelineValue: undefined,
+    averageProbability: undefined,
+    leadOrigins: undefined,
+    pipelineStages: undefined,
+    quarterNewLeads: undefined,
     quarterlySummary: {
-      totalEstimatedValue: [0, 0, 0, 0, 0],
-      probabilityAdjustedValue: [0, 0, 0, 0, 0],
-      securedValue: [0, 0, 0, 0, 0],
-      unsecuredBalance: [0, 0, 0, 0, 0],
+      totalEstimatedValue: undefined,
+      probabilityAdjustedValue: undefined,
+      securedValue: undefined,
+      unsecuredBalance: undefined,
     },
     conversion: {
-      leadConversionRate: [0, 0, 0, 0, 0],
-      valueRealizationRate: [0, 0, 0, 0, 0],
+      leadConversionRate: undefined,
+      valueRealizationRate: undefined,
     },
     leadsOrigin: {
-      referral: [0, 0, 0, 0, 0],
-      research: [0, 0, 0, 0, 0],
-      booths: [0, 0, 0, 0, 0],
-      directCall: [0, 0, 0, 0, 0],
-      walkIn: [0, 0, 0, 0, 0],
+      referral: undefined,
+      research: undefined,
+      booths: undefined,
+      directCall: undefined,
+      walkIn: undefined,
     },
-    totalNewLeads: [0, 0, 0, 0, 0],
+    totalNewLeads: undefined,
   };
 }
