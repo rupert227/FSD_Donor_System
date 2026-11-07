@@ -1,97 +1,98 @@
+@import "shadcn/tailwind.css";
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "shadcn/tailwind.css";
-
-@custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-sans: var(--font-ibm-plex-sans), sans-serif;
-  --color-brand-primary: var(--brand-primary);
-  --color-brand-danger: var(--brand-danger);
-  --color-brand-100: var(--brand-100);
-  --color-brand-50: var(--brand-50);
-  --color-button-stroke: var(--button-stroke);
-  --color-dropdown-stroke: var(--dropdown-stroke);
-  --color-surface-soft: var(--surface-soft);
-  --color-surface-soft-hover: var(--surface-soft-hover);
-  --color-surface-white: var(--surface-white);
-  --color-surface-amber: var(--surface-amber);
-  --color-text-primary: var(--text-primary);
-  --color-text-secondary: var(--text-secondary);
-  --color-text-muted: var(--text-muted);
   --color-border-soft: var(--border-soft);
   --color-border-strong: var(--border-strong);
+  --color-brand-50: var(--brand-50);
+  --color-brand-100: var(--brand-100);
+  --color-brand-danger: var(--brand-danger);
+  --color-brand-primary: var(--brand-primary);
+  --color-button-stroke: var(--button-stroke);
+  --color-content-background: var(--content-background);
+  --color-dropdown-stroke: var(--dropdown-stroke);
   --color-graph-bar-primary: var(--graph-bar-primary);
   --color-graph-bar-secondary: var(--graph-bar-secondary);
+  --color-primary-scrollbar: var(--scrollbar-primary);
+  --color-surface-amber: var(--surface-amber);
+  --color-surface-soft-hover: var(--surface-soft-hover);
+  --color-surface-soft: var(--surface-soft);
+  --color-surface-white: var(--surface-white);
+  --color-text-muted: var(--text-muted);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --font-sans: var(--font-ibm-plex-sans), sans-serif;
   --radius-button: var(--button-radius);
   --radius-dropdown: var(--dropdown-radius);
-  --color-primary-scrollbar: var(--scrollbar-primary);
   --shadow-soft: var(--shadow-soft);
 }
 
 @layer utilities {
   .scrollbar-primary {
-    scrollbar-width: thin;
     scrollbar-color: var(--scrollbar-primary) transparent;
-  }
-
-  .scrollbar-primary::-webkit-scrollbar-track {
-    background: transparent;
+    scrollbar-width: thin;
   }
 
   .scrollbar-primary::-webkit-scrollbar-thumb {
     background-color: var(--scrollbar-primary);
     border-radius: 9999px;
   }
+
+  .scrollbar-primary::-webkit-scrollbar-track {
+    background: transparent;
+  }
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
+  --accent: oklch(0.97 0 0);
+  --background: oklch(1 0 0);
   --border: oklch(0.922 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --content-padding: 2.5rem;
+  --destructive: oklch(0.577 0.245 27.325);
+  --foreground: oklch(0.145 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --muted: oklch(0.97 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.205 0 0);
   --radius: 0.625rem;
+  --ring: oklch(0.708 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.97 0 0);
 
-  --brand-primary: #6b0f0f;
-  --brand-danger: #fa4454;
-  --brand-100: #fdf2f0;
-  --brand-50: #fce8e6;
-  --surface-soft: #f3f2f1;
-  --surface-soft-hover: #eceae8;
-  --surface-white: #ffffff;
-  --surface-amber: #fff7ed;
-  --text-primary: #1c1a1a;
-  --text-secondary: #5c5757;
-  --text-muted: #9ca3af;
   --border-soft: #e3dfdf;
   --border-strong: #d1d5db;
-  --shadow-soft: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --brand-50: #fce8e6;
+  --brand-100: #fdf2f0;
+  --brand-danger: #fa4454;
+  --brand-primary: #6b0f0f;
   --button-radius: 5px;
   --button-stroke: #8a8484;
-  --dropdown-stroke: #8a8484;
+  --content-background: #f7f6f6;
   --dropdown-radius: 6px;
+  --dropdown-stroke: #8a8484;
   --graph-bar-primary: #1f4e79;
   --graph-bar-secondary: #4a90d9;
   --scrollbar-primary: #cacaca;
+  --shadow-soft: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --surface-amber: #fff7ed;
+  --surface-soft-hover: #eceae8;
+  --surface-soft: #f3f2f1;
+  --surface-white: #ffffff;
+  --text-muted: #9ca3af;
+  --text-primary: #1c1a1a;
+  --text-secondary: #5c5757;
 }
 
 html,
 body {
   font-family: var(--font-ibm-plex-sans), sans-serif;
-  min-width: 1000px;
   overflow-x: auto;
+  min-width: 1000px;
 }
