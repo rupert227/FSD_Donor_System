@@ -46,7 +46,7 @@ export function getQuarterFromDate(
   return Math.floor(parsed.getMonth() / 3);
 }
 
-export function generateDropdownOptionValue(label: string) {
+export function generateDropdownOptionValue(label: string): string {
   return label.toLowerCase().replaceAll(" ", "-");
 }
 
