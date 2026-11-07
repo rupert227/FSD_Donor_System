@@ -17,15 +17,17 @@ export function DropdownList({
   width = 12,
   height = 24,
 }: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  options: DropdownOption[];
+  label?: string | null;
+  value?: string | null;
+  onChange?: (value: string) => void;
+  options?: DropdownOption[];
   width?: number;
   height?: number;
 }) {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [isOpen, setIsOpen] = useState(false);
+
+  const safeOptions = options ?? [];
 
   useEffect(() => {
     if (!isOpen) return;
@@ -40,15 +42,11 @@ export function DropdownList({
     }
 
     document.addEventListener("mousedown", handlePointerDown);
-
-    return () => {
-      document.removeEventListener("mousedown", handlePointerDown);
-    };
+    return () => document.removeEventListener("mousedown", handlePointerDown);
   }, [isOpen]);
 
-  const selectedOption = options.find(
-    (o) => o.value === value || o.label === value,
-  );
+  const selectedOption =
+    safeOptions.find((o) => o.value === value || o.label === value) ?? null;
 
   const isSelectedOption = (option: DropdownOption) =>
     option.value === value || option.label === value;
@@ -58,10 +56,8 @@ export function DropdownList({
       <button
         type="button"
         onClick={() => setIsOpen((open) => !open)}
-        style={{
-          width: `${width}rem`,
-        }}
-        className="border-dropdown-stroke cursor-pointer bg-surface-white text-text-primary hover:bg-surface-soft-hover rounded-button flex h-9 items-center justify-between gap-1 border-[1px] px-3 text-left text-[0.8rem]"
+        style={{ width: `${width}rem` }}
+        className="border-dropdown-stroke bg-surface-white text-text-primary hover:bg-surface-soft-hover rounded-button flex h-9 cursor-pointer items-center justify-between gap-1 border-[1px] px-3 text-left text-[0.8rem]"
       >
         <span className="truncate">{selectedOption?.label ?? label}</span>
         <ChevronDown
@@ -71,21 +67,20 @@ export function DropdownList({
           )}
         />
       </button>
-      {isOpen && options.length > 0 && (
+
+      {isOpen && safeOptions.length > 0 && (
         <div
-          style={{
-            maxHeight: `${height}rem`,
-          }}
-          className="bg-surface-primary bg-surface-white border-border-soft scrollbar-primary absolute top-[calc(100%+1px)] left-0 z-20 w-full overflow-auto rounded-[6px] border p-1 shadow-lg"
+          style={{ maxHeight: `${height}rem` }}
+          className="bg-surface-white border-border-soft scrollbar-primary absolute top-[calc(100%+1px)] left-0 z-20 w-full overflow-auto rounded-[6px] border p-1 shadow-lg"
         >
           <div className="w-max min-w-full">
-            {options.map((option) => {
+            {safeOptions.map((option) => {
               const isSelected = isSelectedOption(option);
               return (
                 <div
                   key={option.value}
                   onClick={() => {
-                    onChange(option.value);
+                    onChange?.(option.value);
                     setIsOpen(false);
                   }}
                   className={cn(
@@ -96,7 +91,7 @@ export function DropdownList({
                   )}
                 >
                   <span className="text-[0.8rem] whitespace-nowrap">
-                    {option.label ?? label}
+                    {option.label}
                   </span>
                   {isSelected && <Check className="ml-auto h-4 w-4 shrink-0" />}
                 </div>
