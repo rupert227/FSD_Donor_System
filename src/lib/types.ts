@@ -1,22 +1,28 @@
 export namespace Primitives {
-  export interface Option {
-    key: string;
-    value: string | null | undefined;
+  export interface ChartOption<K = string, L = string, V = number> {
+    key: K;
+    label: L | null | undefined;
+    value: V | null | undefined;
+  };
+
+  export interface DropdownOption<K = string, V = string> {
+    key: K;
+    label: V | null | undefined;
   };
 }
 
 export namespace Leads {
   export interface Report {
-    fiscalYearOptions: Primitives.Option[] | null | undefined;
-    donorTypeOptions: Primitives.Option[] | null | undefined;
-    pipelineStageOptions: Primitives.Option[] | null | undefined;
+    fiscalYearOptions: Primitives.DropdownOption[] | null | undefined;
+    donorTypeOptions: Primitives.DropdownOption[] | null | undefined;
+    pipelineStageOptions: Primitives.DropdownOption[] | null | undefined;
     weightedForecast: number | null | undefined;
     leadConversionRate: number | null | undefined;
     totalPipelineValue: number | null | undefined;
     averageProbability: number | null | undefined;
-    leadOrigins: Primitives.Option[] | null | undefined;
-    pipelineStages: Primitives.Option[] | null | undefined;
-    quarterNewLeads: Primitives.Option[] | null | undefined;
+    leadOrigins: Primitives.ChartOption[] | null | undefined;
+    pipelineStages: Primitives.ChartOption[] | null | undefined;
+    quarterNewLeads: Primitives.ChartOption[] | null | undefined;
     quarterlySummary: {
       totalEstimatedValue: number[] | null | undefined;
       probabilityAdjustedValue: number[] | null | undefined;

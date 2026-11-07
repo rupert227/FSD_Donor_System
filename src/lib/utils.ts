@@ -46,17 +46,6 @@ export function getQuarterFromDate(
   return Math.floor(parsed.getMonth() / 3);
 }
 
-export function generateDropdownOptionValue(label: string): string {
-  return label.toLowerCase().replaceAll(" ", "-");
-}
-
-export function generateDropdownOptions(options: string[]) {
-  return options.map((option) => ({
-    value: generateDropdownOptionValue(option),
-    label: option,
-  }));
-}
-
 export function toSafeNumber(value: unknown): number {
   if (typeof value === "number" && Number.isFinite(value)) return value;
   if (typeof value === "string") {

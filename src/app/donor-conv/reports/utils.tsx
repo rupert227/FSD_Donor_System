@@ -4,7 +4,7 @@ import { formatNumber, formatPercent } from "@/lib/utils";
 type SummaryRow = {
   type: "header" | "row" | "section";
   label: string;
-  values: number[];
+  values: number[] | null | undefined;
 };
 
 export function generateSummaryRows(report: Leads.Report): SummaryRow[] {

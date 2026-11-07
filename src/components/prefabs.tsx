@@ -5,7 +5,7 @@ import { Primitives } from "@/lib/types";
 import { cn } from "cn";
 import { useEffect, useRef, useState } from "react";
 
-export type DropdownOption = Primitives.Option;
+export type DropdownOption = Primitives.DropdownOption;
 
 export function DropdownList({
   label,
@@ -60,7 +60,7 @@ export function DropdownList({
           !selectedOption && "text-text-muted",
         )}
       >
-        <span className="truncate">{selectedOption?.value ?? label}</span>
+        <span className="truncate">{selectedOption?.label ?? label}</span>
         <ChevronDown
           className={cn(
             "text-text-secondary ml-5 h-4 w-4 shrink-0",
@@ -98,7 +98,7 @@ export function DropdownList({
                   )}
                 >
                   <span className="text-[0.8rem] whitespace-nowrap">
-                    {option.value}
+                    {option.label}
                   </span>
                   {isSelected && <Check className="ml-auto h-4 w-4 shrink-0" />}
                 </div>
