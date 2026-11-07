@@ -7,16 +7,16 @@ export namespace Primitives {
 
 export namespace Leads {
   export interface Report {
-    fiscalYearOptions: Primitives.Option | null | undefined;
-    donorTypeOptions: Primitives.Option | null | undefined;
-    pipelineStageOptions: Primitives.Option | null | undefined;
+    fiscalYearOptions: Primitives.Option[] | null | undefined;
+    donorTypeOptions: Primitives.Option[] | null | undefined;
+    pipelineStageOptions: Primitives.Option[] | null | undefined;
     weightedForecast: number | null | undefined;
     leadConversionRate: number | null | undefined;
     totalPipelineValue: number | null | undefined;
     averageProbability: number | null | undefined;
-    leadOrigins: Primitives.Option | null | undefined;
-    pipelineStages: Primitives.Option | null | undefined;
-    quarterNewLeads: Primitives.Option | null | undefined;
+    leadOrigins: Primitives.Option[] | null | undefined;
+    pipelineStages: Primitives.Option[] | null | undefined;
+    quarterNewLeads: Primitives.Option[] | null | undefined;
     quarterlySummary: {
       totalEstimatedValue: number[] | null | undefined;
       probabilityAdjustedValue: number[] | null | undefined;
