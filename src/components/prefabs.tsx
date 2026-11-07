@@ -1,3 +1,5 @@
+"use client";
+
 import { cn } from "cn";
 import { Check, ChevronDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -59,7 +61,7 @@ export function DropdownList({
         style={{
           width: `${width}rem`,
         }}
-        className="border-dropdown-stroke bg-surface-white text-text-primary hover:bg-surface-soft-hover rounded-button flex h-9 items-center justify-between gap-1 border-[1px] px-3 text-left text-[0.8rem]"
+        className="border-dropdown-stroke cursor-pointer bg-surface-white text-text-primary hover:bg-surface-soft-hover rounded-button flex h-9 items-center justify-between gap-1 border-[1px] px-3 text-left text-[0.8rem]"
       >
         <span className="truncate">{selectedOption?.label ?? label}</span>
         <ChevronDown
@@ -77,7 +79,7 @@ export function DropdownList({
           className="bg-surface-primary bg-surface-white border-border-soft scrollbar-primary absolute top-[calc(100%+1px)] left-0 z-20 w-full overflow-auto rounded-[6px] border p-1 shadow-lg"
         >
           <div className="w-max min-w-full">
-            {options.map((option, index) => {
+            {options.map((option) => {
               const isSelected = isSelectedOption(option);
               return (
                 <div
