@@ -15,10 +15,10 @@ export function DropdownList({
   width = 12,
   height = 24,
 }: {
-  label?: string | null;
-  selectedKey?: string | null;
-  onChange?: (option: DropdownOption) => void;
-  options?: DropdownOption[];
+  label?: string | null | undefined;
+  selectedKey?: string | null | undefined;
+  onChange?: (option: DropdownOption) => void | null | undefined;
+  options?: DropdownOption[] | null | undefined;
   width?: number;
   height?: number;
 }) {
