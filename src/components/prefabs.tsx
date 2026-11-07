@@ -75,7 +75,7 @@ export function DropdownList({
             maxWidth: `${width}rem`,
             maxHeight: `${height}rem`,
           }}
-          className="bg-surface-white border-border-soft scrollbar-primary absolute top-[calc(100%+1px)] left-0 z-20 w-full overflow-auto rounded-[6px] border p-1 shadow-lg"
+          className="bg-surface-white border-border-soft scrollbar-primary absolute top-[calc(100%+1px)] left-0 z-20 w-full overflow-auto rounded-dropdown border p-1 shadow-lg"
         >
           <div className="w-max min-w-full">
             {options?.map((option) => {
@@ -88,7 +88,7 @@ export function DropdownList({
                     setIsOpen(false);
                   }}
                   className={cn(
-                    "text-text-primary flex h-7.5 w-full cursor-pointer items-center gap-2 px-3 first:rounded-t-[6px] last:rounded-b-[6px]",
+                    "text-text-primary flex h-7.5 w-full cursor-pointer items-center gap-2 px-3 first:rounded-t-dropdown last:rounded-b-dropdown",
                     isSelected
                       ? "bg-brand-100 text-brand-primary"
                       : "hover:bg-surface-soft-hover",

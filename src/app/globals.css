@@ -25,6 +25,7 @@
   --font-sans: var(--font-ibm-plex-sans), sans-serif;
   --radius-button: var(--button-radius);
   --radius-dropdown: var(--dropdown-radius);
+  --radius-panel: var(--panel-radius);
   --shadow-soft: var(--shadow-soft);
 }
 
@@ -41,6 +42,39 @@
 
   .scrollbar-primary::-webkit-scrollbar-track {
     background: transparent;
+  }
+}
+
+@media print {
+  body {
+    background: white !important;
+    margin: 0 !important;
+  }
+
+  header {
+    display: none !important;
+  }
+
+  main {
+    padding: 0 !important;
+    background: white !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .pdf-sheet {
+    max-width: none !important;
+    width: 100% !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .pdf-sheet * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 }
 
@@ -79,6 +113,7 @@
   --dropdown-stroke: #8a8484;
   --graph-bar-primary: #1f4e79;
   --graph-bar-secondary: #4a90d9;
+  --panel-radius: 10px;
   --scrollbar-primary: #cacaca;
   --shadow-soft: 0 1px 2px rgba(15, 23, 42, 0.04);
   --surface-amber: #fff7ed;
