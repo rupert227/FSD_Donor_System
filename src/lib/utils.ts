@@ -1,10 +1,17 @@
-const phCurrencyFormat = Intl.NumberFormat("en-PH", {
+export const phCurrencyFormat = Intl.NumberFormat("en-PH", {
   style: "currency",
   currency: "PHP",
   maximumFractionDigits: 2,
 });
 
-const usFormat = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
+export const reportDateFormat = new Intl.DateTimeFormat("en-US", {
+  dateStyle: "medium",
+  timeStyle: "long",
+});
+
+export const usFormat = new Intl.NumberFormat("en-US", {
+  maximumFractionDigits: 0,
+});
 
 export function formatCurrency(value: number | null | undefined): string {
   if (!Number.isFinite(value) || value == null) return "—";
@@ -22,6 +29,12 @@ export function formatPercent(value: number | null | undefined): string {
   if (!Number.isFinite(value) || value == null) return "—";
 
   return `${value.toFixed(1)}%`;
+}
+
+export function formatReportDate(isoDate: string | null | undefined): string {
+  if (isoDate == null) return "—";
+
+  return reportDateFormat.format(new Date(isoDate)) ?? "—";
 }
 
 export function getFiscalYearFromDate(

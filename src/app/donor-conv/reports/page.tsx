@@ -1,47 +1,43 @@
 "use client";
 
 import { AppShell } from "@/components/AppShell";
-import { BarChart3, Check, Download, Eye, RotateCcw } from "lucide-react";
+import { BarChart3, Check, Eye, RotateCcw } from "lucide-react";
 import { DropdownList, type DropdownOption } from "@/components/prefabs";
 import { Leads } from "@/lib/types";
-
 import { cn } from "cn";
-import { useEffect, useMemo, useState } from "react";
 import { moduleName, navbarPreset } from "@/app/donor-conv/struct";
+import { useEffect, useState } from "react";
+import { useDocumentTitle } from "@/components/Navbar";
+import { useRouter } from "next/navigation";
 
 import {
   formatCurrency,
   formatNumber,
   formatPercent,
-  generateDropdownOptionValue,
-  generateDropdownOptions,
+  formatReportDate,
 } from "@/lib/utils";
 
-const pageName = "Reports";
+import {
+  generateSummaryRows,
+  renderSummaryValue,
+} from "@/app/donor-conv/reports/utils";
 
-type SummaryRow = {
-  type: "header" | "row" | "section";
-  label: string;
-  values: number[];
-};
+const pageName = "Reports";
+const reportContentStorageKey = "donor-conv-lead-pipeline-report-content";
 
 export default function ReportsPage() {
-  const useDocumentTitle = (title: string) => {
-    useEffect(() => {
-      document.title = title;
-    }, [title]);
-  };
-
   useDocumentTitle(`${moduleName} - ${pageName}`);
   navbarPreset.selectedTabIndex = 2;
 
-  const [reportContent, setReportContent] = useState<Leads.Report | null>(null);
+  const router = useRouter();
 
-  const [donorType, setDonorType] = useState<string>("");
-  const [fiscalYear, setFiscalYear] = useState<string>("");
-  const [pipelineStage, setPipelineStage] = useState<string>("");
-
+  const [donorType, setDonorType] = useState<DropdownOption | null>(null);
+  const [fiscalYear, setFiscalYear] = useState<DropdownOption | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [pipelineStage, setPipelineStage] = useState<DropdownOption | null>(
+    null,
+  );
+  const [reportContent, setReportContent] = useState<Leads.Report | null>(null);
 
   // Loading screen test
   useEffect(() => {
@@ -60,16 +56,6 @@ export default function ReportsPage() {
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const content = (await response.json()) as Leads.Report;
         setReportContent(content);
-
-        setFiscalYear(
-          generateDropdownOptionValue(content.fiscalYearOptions[0] ?? ""),
-        );
-        setDonorType(
-          generateDropdownOptionValue(content.donorTypeOptions[0] ?? ""),
-        );
-        setPipelineStage(
-          generateDropdownOptionValue(content.pipelineStageOptions[0] ?? ""),
-        );
       })
       .catch((err) => {
         if (err.name === "AbortError") return;
@@ -81,148 +67,42 @@ export default function ReportsPage() {
 
   const report = reportContent ?? Leads.emptyReport;
 
-  const donorTypeOptions = useMemo<DropdownOption[]>(
-    () => generateDropdownOptions(report.donorTypeOptions),
-    [report.donorTypeOptions],
-  );
+  const leadOriginMax =
+    report.leadOrigins?.reduce((m, s) => Math.max(m, s.value ?? 0), 0) ?? 0;
+  const pipelineStagesMax =
+    report.pipelineStages?.reduce((m, s) => Math.max(m, s.value ?? 0), 0) ?? 0;
+  const quarterNewLeadsMax =
+    report.quarterNewLeads?.reduce((m, s) => Math.max(m, s.value ?? 0), 0) ?? 0;
 
-  const fiscalYearOptions = useMemo<DropdownOption[]>(
-    () => generateDropdownOptions(report.fiscalYearOptions),
-    [report.fiscalYearOptions],
-  );
-
-  const pipelineStageOptions = useMemo<DropdownOption[]>(
-    () => generateDropdownOptions(report.pipelineStageOptions),
-    [report.pipelineStageOptions],
-  );
-
-  const quarterLeadsCounts = useMemo(() => {
-    const pairs = report.quarterNewLeads.flatMap((entry) =>
-      Object.entries(entry),
+  useEffect(() => {
+    window.sessionStorage.setItem(
+      reportContentStorageKey,
+      JSON.stringify(report),
     );
-    return pairs;
-  }, [report.quarterNewLeads]);
-
-  const leadSourceCounts = useMemo(() => {
-    const pairs = report.leadOrigins.flatMap((entry) => Object.entries(entry));
-    return pairs;
-  }, [report.leadOrigins]);
-
-  const pipelineStageCounts = useMemo(() => {
-    const pairs = report.pipelineStages.flatMap((entry) =>
-      Object.entries(entry),
-    );
-    return pairs;
-  }, [report.pipelineStages]);
-
-  const renderSummaryValue = (row: SummaryRow, value: number): string => {
-    if (row.type === "section") return "";
-
-    if (
-      row.label === "Lead conversion rate" ||
-      row.label === "Value realization rate"
-    ) {
-      return formatPercent(value);
-    }
-
-    return formatNumber(value);
-  };
+  }, [reportContent, fiscalYear, donorType, pipelineStage, report]);
 
   const applyFiltersAction = () => {
     const filterOptions: Leads.ReportFilters = {
-      fiscalYear: generateDropdownOptionValue(fiscalYear),
-      donorType: generateDropdownOptionValue(donorType),
-      pipelineStage: generateDropdownOptionValue(pipelineStage),
+      donorType: donorType?.key,
+      fiscalYear: fiscalYear?.key,
+      pipelineStage: pipelineStage?.key,
     };
 
     console.log(`Filters: ${JSON.stringify(filterOptions)}`);
   };
 
   const previewPDFAction = () => {
-    console.log("preview");
-  };
-
-  const downloadPDFAction = () => {
-    console.log("download");
+    router.push("/donor-conv/reports/preview-report");
   };
 
   const resetFiltersAction = () => {
-    setFiscalYear(fiscalYearOptions[0].value);
-    setDonorType(donorTypeOptions[0].value);
-    setPipelineStage(pipelineStageOptions[0].value);
+    setDonorType(null);
+    setFiscalYear(null);
+    setPipelineStage(null);
   };
 
-  const summaryRows: SummaryRow[] = [
-    {
-      type: "section",
-      label: "Pipeline value (₱)",
-      values: [0, 0, 0, 0, 0],
-    },
-    {
-      type: "row",
-      label: "Total estimated value",
-      values: report.quarterlySummary.totalEstimatedValue,
-    },
-    {
-      type: "row",
-      label: "Probability-adjusted value",
-      values: report.quarterlySummary.probabilityAdjustedValue,
-    },
-    {
-      type: "row",
-      label: "Secured value",
-      values: report.quarterlySummary.securedValue,
-    },
-    {
-      type: "row",
-      label: "Unsecured balance",
-      values: report.quarterlySummary.unsecuredBalance,
-    },
-    { type: "section", label: "Conversion", values: [0, 0, 0, 0, 0] },
-    {
-      type: "row",
-      label: "Lead conversion rate",
-      values: report.conversion.leadConversionRate,
-    },
-    {
-      type: "row",
-      label: "Value realization rate",
-      values: report.conversion.valueRealizationRate,
-    },
-    { type: "section", label: "Leads Origin", values: [0, 0, 0, 0, 0] },
-    {
-      type: "row",
-      label: "Referral",
-      values: report.leadsOrigin.referral,
-    },
-    {
-      type: "row",
-      label: "Research",
-      values: report.leadsOrigin.research,
-    },
-    {
-      type: "row",
-      label: "Booths",
-      values: report.leadsOrigin.booths,
-    },
-    {
-      type: "row",
-      label: "Direct Call",
-      values: report.leadsOrigin.directCall,
-    },
-    {
-      type: "row",
-      label: "Walk-in",
-      values: report.leadsOrigin.walkIn,
-    },
-    {
-      type: "row",
-      label: "Total new leads",
-      values: report.totalNewLeads,
-    },
-  ];
-
   const quarterHeaders = ["Q1", "Q2", "Q3", "Q4"];
+  const summaryRows = generateSummaryRows(report);
 
   if (isLoading) {
     return (
@@ -238,30 +118,22 @@ export default function ReportsPage() {
             <div className="flex items-center gap-3">
               <BarChart3 className="text-brand-primary h-10 w-10" />
               <div>
-                <div className="text-text-primary text-[2rem] leading-none font-bold tracking-tight">
+                <div className="text-text-primary text-[2rem] leading-[1.25] font-bold">
                   Lead Pipeline Report
                 </div>
                 <div className="text-text-secondary text-[1rem] tracking-tight">
-                  Placeholder text for description
+                  {formatReportDate(report.timestamp)}
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-start">
               <button
                 type="button"
                 onClick={previewPDFAction}
-                className="border-border-soft bg-surface-soft text-text-primary hover:bg-surface-soft-hover bg-surface-white inline-flex items-center gap-2 rounded-[6px] border px-3 py-2 text-[0.75rem] font-medium"
+                className="border-border-soft bg-surface-soft text-text-primary hover:bg-surface-soft-hover bg-surface-white rounded-button inline-flex cursor-pointer items-center gap-2 border px-3 py-2 text-[0.75rem] font-medium"
               >
                 <Eye className="h-5 w-5" />
-                Preview PDF
-              </button>
-              <button
-                type="button"
-                onClick={downloadPDFAction}
-                className="border-brand-primary bg-brand-primary text-surface-white inline-flex items-center gap-2 rounded-[6px] border px-3 py-2 text-[0.75rem] font-medium hover:opacity-80"
-              >
-                <Download className="h-5 w-5" />
-                Download PDF
+                Preview PDF Summary
               </button>
             </div>
           </div>
@@ -271,10 +143,10 @@ export default function ReportsPage() {
                 Fiscal Year
               </label>
               <DropdownList
-                label={fiscalYear}
-                value={fiscalYear}
+                label={"Select fiscal year"}
+                selectedKey={fiscalYear?.key}
+                options={report.fiscalYearOptions}
                 onChange={setFiscalYear}
-                options={fiscalYearOptions}
               />
             </div>
             <div>
@@ -282,10 +154,10 @@ export default function ReportsPage() {
                 Donor Type
               </label>
               <DropdownList
-                label={donorType}
-                value={donorType}
+                label={"Select donor type"}
+                selectedKey={donorType?.key}
+                options={report.donorTypeOptions}
                 onChange={setDonorType}
-                options={donorTypeOptions}
               />
             </div>
             <div>
@@ -293,16 +165,16 @@ export default function ReportsPage() {
                 Pipeline Stage
               </label>
               <DropdownList
-                label={pipelineStage}
-                value={pipelineStage}
+                label={"Select pipeline stage"}
+                selectedKey={pipelineStage?.key}
+                options={report.pipelineStageOptions}
                 onChange={setPipelineStage}
-                options={pipelineStageOptions}
               />
             </div>
             <button
               type="button"
               onClick={applyFiltersAction}
-              className="border-border-soft text-text-primary hover:bg-surface-soft-hover bg-surface-white flex h-9 items-center gap-1 rounded-[6px] border px-3 py-2 text-[0.75rem]"
+              className="border-border-soft text-text-primary hover:bg-surface-soft-hover bg-surface-white rounded-button flex h-9 cursor-pointer items-center gap-1 border px-3 py-2 text-[0.75rem]"
             >
               <Check className="text-text-secondary h-4 w-4 shrink-0" />
               Apply
@@ -310,14 +182,14 @@ export default function ReportsPage() {
             <button
               type="button"
               onClick={resetFiltersAction}
-              className="border-border-soft text-text-primary hover:bg-surface-soft-hover flex h-9 items-center gap-1 rounded-[6px] border px-3 py-2 text-[0.75rem]"
+              className="border-border-soft text-text-primary hover:bg-surface-soft-hover rounded-button flex h-9 cursor-pointer items-center gap-1 border px-3 py-2 text-[0.75rem]"
             >
               <RotateCcw className="text-text-secondary h-4 w-4 shrink-0" />
               Reset Filters
             </button>
           </div>
           <div className="grid grid-cols-4 gap-4 text-wrap break-all">
-            <div className="border-border-soft bg-surface-white rounded-[10px] border p-4 shadow-sm">
+            <div className="border-border-soft bg-surface-white rounded-panel border p-4 shadow-sm">
               <div className="text-text-secondary text-[0.9rem] font-medium">
                 Weighted forecast
               </div>
@@ -328,7 +200,7 @@ export default function ReportsPage() {
                 Probability-adjusted pipeline
               </div>
             </div>
-            <div className="border-border-soft bg-surface-white rounded-[10px] border p-4 shadow-sm">
+            <div className="border-border-soft bg-surface-white rounded-panel border p-4 shadow-sm">
               <div className="text-text-secondary text-[0.9rem] font-medium">
                 Lead conversion rate
               </div>
@@ -339,7 +211,7 @@ export default function ReportsPage() {
                 Secured leads + all leads
               </div>
             </div>
-            <div className="border-border-soft bg-surface-white rounded-[10px] border p-4 shadow-sm">
+            <div className="border-border-soft bg-surface-white rounded-panel border p-4 shadow-sm">
               <div className="text-text-secondary text-[0.9rem] font-medium">
                 Total pipeline value
               </div>
@@ -347,11 +219,15 @@ export default function ReportsPage() {
                 {formatCurrency(report.totalPipelineValue)}
               </div>
               <div className="text-text-secondary text-[0.8rem]">
-                {report.totalNewLeads.reduce((accum, curr) => accum + curr, 0)}{" "}
+                {report.totalNewLeads
+                  ? report.totalNewLeads
+                      .slice(0, -1)
+                      .reduce((accum, curr) => accum + curr, 0)
+                  : formatNumber(undefined)}{" "}
                 leads, all stages
               </div>
             </div>
-            <div className="border-border-soft bg-surface-white rounded-[10px] border p-4 shadow-sm">
+            <div className="border-border-soft bg-surface-white rounded-panel border p-4 shadow-sm">
               <div className="text-text-secondary text-[0.9rem] font-medium">
                 Average probability
               </div>
@@ -364,12 +240,12 @@ export default function ReportsPage() {
             </div>
           </div>
           <div className="grid grid-cols-3 gap-4">
-            <div className="border-border-soft bg-surface-white flex max-h-100 min-h-50 flex-col rounded-[10px] border p-4 shadow-sm">
+            <div className="border-border-soft bg-surface-white rounded-panel flex max-h-100 min-h-50 flex-col border p-4 shadow-sm">
               <div className="text-text-primary mb-1 text-[1rem] font-semibold">
                 Where leads come from
               </div>
               <p className="text-text-secondary text-[0.75rem]">
-                New leads by origin, FY 2026
+                New leads by origin
               </p>
               {!report.leadOrigins?.length ? (
                 <div className="text-text-secondary flex flex-1 items-center justify-center text-[0.8rem]">
@@ -377,32 +253,24 @@ export default function ReportsPage() {
                 </div>
               ) : (
                 <div className="scrollbar-primary mt-5 space-y-3 overflow-auto">
-                  {leadSourceCounts.map(([source, count]) => {
-                    const barMax = Math.max(
-                      ...leadSourceCounts.map(
-                        ([, count]) => Number(count) || 0,
-                      ),
-                    );
-
-                    const numericCount = Number(count);
-
+                  {report.leadOrigins?.map((entry) => {
                     return (
-                      <div key={source} className="flex">
+                      <div key={entry.key} className="flex">
                         <span className="text-text-primary mr-1 w-35 shrink-0 truncate text-[0.75rem] font-medium">
-                          {source}
+                          {entry.label}
                         </span>
                         <div className="flex flex-1 items-center">
                           <div
                             style={{
-                              width: `${(numericCount / barMax) * 80}%`,
+                              width: `${((entry.value ?? 0) / leadOriginMax) * 80}%`,
                             }}
                             className={cn(
-                              "bg-graph-bar-primary h-4 shrink-0 rounded-[4px]",
-                              numericCount > 0 && "mr-2 min-w-[1%]",
+                              "bg-graph-bar-primary h-4 shrink-0 rounded-r-[4px]",
+                              (entry.value ?? 0) > 0 && "mr-2 min-w-[1%]",
                             )}
                           />
                           <span className="text-text-primary shrink-0 text-[0.7rem] font-medium">
-                            {formatNumber(numericCount)}
+                            {formatNumber(entry.value)}
                           </span>
                         </div>
                       </div>
@@ -411,7 +279,7 @@ export default function ReportsPage() {
                 </div>
               )}
             </div>
-            <div className="border-border-soft bg-surface-white flex max-h-100 min-h-50 flex-col rounded-[10px] border p-4 shadow-sm">
+            <div className="border-border-soft bg-surface-white rounded-panel flex max-h-100 min-h-50 flex-col border p-4 shadow-sm">
               <div className="text-text-primary mb-1 text-[1rem] font-semibold">
                 Leads by pipeline stage
               </div>
@@ -424,32 +292,24 @@ export default function ReportsPage() {
                 </div>
               ) : (
                 <div className="scrollbar-primary mt-5 space-y-3 overflow-auto">
-                  {pipelineStageCounts.map(([source, count]) => {
-                    const barMax = Math.max(
-                      ...pipelineStageCounts.map(
-                        ([, count]) => Number(count) || 0,
-                      ),
-                    );
-
-                    const numericCount = Number(count);
-
+                  {report.pipelineStages?.map((entry) => {
                     return (
-                      <div key={source} className="flex">
+                      <div key={entry.key} className="flex">
                         <span className="text-text-primary mr-1 w-35 shrink-0 truncate text-[0.75rem] font-medium">
-                          {source}
+                          {entry.label}
                         </span>
                         <div className="flex flex-1 items-center">
                           <div
                             style={{
-                              width: `${(numericCount / barMax) * 80}%`,
+                              width: `${((entry.value ?? 0) / pipelineStagesMax) * 80}%`,
                             }}
                             className={cn(
-                              "bg-graph-bar-primary h-4 shrink-0 rounded-[4px]",
-                              numericCount > 0 && "mr-2 min-w-[1%]",
+                              "bg-graph-bar-primary h-4 shrink-0 rounded-r-[4px]",
+                              (entry.value ?? 0) > 0 && "mr-2 min-w-[1%]",
                             )}
                           />
                           <span className="text-text-primary shrink-0 text-[0.7rem] font-medium">
-                            {formatNumber(numericCount)}
+                            {formatNumber(entry.value)}
                           </span>
                         </div>
                       </div>
@@ -458,7 +318,7 @@ export default function ReportsPage() {
                 </div>
               )}
             </div>
-            <div className="border-border-soft bg-surface-white flex max-h-100 min-h-50 flex-col rounded-[10px] border p-4 shadow-sm">
+            <div className="border-border-soft bg-surface-white rounded-panel flex max-h-100 min-h-50 flex-col border p-4 shadow-sm">
               <div className="text-text-primary mb-1 text-[1rem] font-semibold">
                 New lead intake
               </div>
@@ -471,35 +331,26 @@ export default function ReportsPage() {
                 </div>
               ) : (
                 <div className="mt-5 flex max-h-100 flex-1 gap-3 overflow-hidden">
-                  {quarterLeadsCounts.map(([source, count]) => {
-                    const barMax = Math.max(
-                      ...quarterLeadsCounts.map(
-                        ([, count]) => Number(count) || 0,
-                      ),
-                    );
-
-                    const numericCount = Number(count);
-
+                  {report.quarterNewLeads?.map((entry) => {
                     return (
                       <div
-                        key={source}
+                        key={entry.key}
                         className="flex h-full min-w-0 flex-1 flex-col-reverse items-center"
                       >
-                        <span className="text-text-primary mt-1 w-full truncate pb-1 text-center text-[0.7rem] font-medium">
-                          {source}
+                        <span className="text-text-primary mt-1 mb-1 w-full truncate text-center text-[0.7rem] font-medium">
+                          {entry.label}
                         </span>
                         <div className="flex h-full w-full flex-col items-center justify-end">
                           <span className="text-text-primary w-full truncate text-center text-[0.7rem] font-medium">
-                            {formatNumber(numericCount)}
+                            {formatNumber(entry.value)}
                           </span>
                           <div
                             style={{
-                              height: `${(numericCount / barMax) * 100}%`,
+                              height: `${((entry.value ?? 0) / quarterNewLeadsMax) * 100}%`,
                             }}
-
                             className={cn(
                               "bg-graph-bar-primary w-full rounded-t-[4px]",
-                              numericCount > 0 && "mt-1 min-h-[1%]",
+                              (entry.value ?? 0) > 0 && "mt-1 min-h-[1%]",
                             )}
                           />
                         </div>
@@ -510,7 +361,7 @@ export default function ReportsPage() {
               )}
             </div>
           </div>
-          <div className="border-border-soft bg-surface-white rounded-[10px] border shadow-sm">
+          <div className="border-border-soft bg-surface-white rounded-panel border shadow-sm">
             <div className="border-border-soft border-b px-4 py-3">
               <div className="text-text-primary text-[1.0rem] font-semibold">
                 Quarterly Summary
@@ -529,11 +380,7 @@ export default function ReportsPage() {
                     </th>
                   ))}
                   <th className="px-3 py-3 text-center font-medium">
-                    {
-                      fiscalYearOptions.find(
-                        (option) => option.value === fiscalYear,
-                      )?.label
-                    }
+                    {fiscalYear?.label ?? "Year"}
                   </th>
                 </tr>
               </thead>
@@ -545,10 +392,10 @@ export default function ReportsPage() {
                   return (
                     <tr
                       key={`${row.label}-${rowIndex}`}
-                      className={[
+                      className={cn(
                         "border-border-soft text-text-primary border-t",
                         isSection ? "bg-surface-soft font-semibold" : "",
-                      ].join(" ")}
+                      )}
                     >
                       <td
                         className={cn(
@@ -558,7 +405,7 @@ export default function ReportsPage() {
                       >
                         {row.label}
                       </td>
-                      {row.values.map((value, valueIndex) => (
+                      {row.values?.map((value, valueIndex) => (
                         <td
                           key={`${row.label}-${valueIndex}`}
                           className={cn(

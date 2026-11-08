@@ -13,13 +13,17 @@ export namespace Primitives {
 
 export namespace Leads {
   export interface Report {
-    fiscalYearOptions: Primitives.DropdownOption[] | null | undefined;
-    donorTypeOptions: Primitives.DropdownOption[] | null | undefined;
-    pipelineStageOptions: Primitives.DropdownOption[] | null | undefined;
+    timestamp: string | null | undefined;
+    fiscalYear: string | null | undefined;
+    donorType: string | null | undefined;
+    pipelineStage: string | null | undefined;
     weightedForecast: number | null | undefined;
     leadConversionRate: number | null | undefined;
     totalPipelineValue: number | null | undefined;
     averageProbability: number | null | undefined;
+    fiscalYearOptions: Primitives.DropdownOption[] | null | undefined;
+    donorTypeOptions: Primitives.DropdownOption[] | null | undefined;
+    pipelineStageOptions: Primitives.DropdownOption[] | null | undefined;
     leadOrigins: Primitives.ChartOption[] | null | undefined;
     pipelineStages: Primitives.ChartOption[] | null | undefined;
     quarterNewLeads: Primitives.ChartOption[] | null | undefined;
@@ -50,13 +54,17 @@ export namespace Leads {
   }
 
   export const emptyReport: Report = {
-    fiscalYearOptions: undefined,
-    donorTypeOptions: undefined,
-    pipelineStageOptions: undefined,
+    timestamp: undefined,
+    fiscalYear: undefined,
+    donorType: undefined,
+    pipelineStage: undefined,
     weightedForecast: undefined,
     leadConversionRate: undefined,
     totalPipelineValue: undefined,
     averageProbability: undefined,
+    fiscalYearOptions: undefined,
+    donorTypeOptions: undefined,
+    pipelineStageOptions: undefined,
     leadOrigins: undefined,
     pipelineStages: undefined,
     quarterNewLeads: undefined,
