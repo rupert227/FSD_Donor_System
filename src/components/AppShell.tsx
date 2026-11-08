@@ -1,38 +1,50 @@
-import type { ReactNode } from "react";
+"use client";
 
-import { Navbar, type ActionButton, type TabItem } from "@/components/Navbar";
-import { Sidebar } from "@/components/Sidebar";
+import { type ReactNode, useEffect, useRef, useState } from "react";
+import { Navbar, NavbarPreset } from "@/components/Navbar";
 
 interface AppShellProps {
-  title: string;
-  subtitle: string;
-  tabs?: TabItem[];
-  actions?: ActionButton[];
+  navbarPreset: NavbarPreset;
   children: ReactNode;
 }
 
-export function AppShell({
-  title,
-  subtitle,
-  tabs = [],
-  actions = [],
-  children,
-}: AppShellProps) {
+export function AppShell({ navbarPreset, children }: AppShellProps) {
+  const [calculatedNavbarHeight, setCalculatedNavbarHeight] = useState("0rem");
+  const [contentPadding, setContentPadding] = useState("0rem");
+
+  const navbarRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setContentPadding(
+      getComputedStyle(document.documentElement)
+        .getPropertyValue("--content-padding")
+        .trim(),
+    );
+  }, []);
+
+  useEffect(() => {
+    if (!navbarRef.current) return;
+
+    setCalculatedNavbarHeight(
+      `${navbarRef.current.offsetHeight / (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16)}rem`,
+    );
+  }, [navbarPreset]);
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="flex h-screen w-full overflow-hidden">
-        <Sidebar />
-
-        <div className="flex min-w-0 flex-1 flex-col">
-          <Navbar
-            title={title}
-            subtitle={subtitle}
-            tabs={tabs}
-            actions={actions}
-          />
-
-          <main className="flex-1 overflow-auto bg-gray-50 p-8">{children}</main>
+    <div className="min-h-screen">
+      <div className="flex min-h-screen flex-col">
+        <div ref={navbarRef} className="fixed z-50 w-full shadow-sm">
+          <Navbar navbarPreset={navbarPreset} />
         </div>
+        <main
+          className="bg-content-background flex-1"
+          style={{
+            padding: contentPadding,
+            paddingTop: `calc(${contentPadding} + ${calculatedNavbarHeight})`,
+          }}
+        >
+          {children}
+        </main>
       </div>
     </div>
   );

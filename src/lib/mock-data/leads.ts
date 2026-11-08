@@ -39,7 +39,7 @@ export const SAMPLE_LEADS: LeadDetail[] = [
     target_followup_date: "2026-10-28",
     pipeline_status: "Outreach Started",
     donor_type: "Corporate",
-    lead_source: "Referral",
+    lead_source: "Research",
     title_designation: "Senior Director for CSR & Partnerships",
     street_address: "34th Floor, Tower One & Exchange Plaza, Ayala Triangle",
     city_province: "Makati City, Metro Manila",

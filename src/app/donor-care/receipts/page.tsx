@@ -1,0 +1,31 @@
+"use client";
+
+import { AppShell } from "@/components/AppShell";
+import { moduleName, navbarPreset } from "@/app/donor-care/struct";
+import { useDocumentTitle } from "@/components/Navbar";
+
+const pageName = "Receipts";
+
+export default function ReceiptsPage() {
+  useDocumentTitle(`${moduleName} - ${pageName}`);
+  navbarPreset.selectedTabIndex = 1;
+
+  return (
+    <AppShell navbarPreset={navbarPreset}>
+      {/* DELETE FROM HERE */}
+      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+        <h2 className="text-xl font-semibold text-gray-900">{pageName}</h2>
+        <p className="mt-2 text-sm text-gray-600">
+          WIP - Content belongs here.
+          <br />
+          Replace entire &lt;div&gt; inside &lt;AppShell&gt; with content.
+          <br />
+          Page padding is implemented in AppShell.tsx.
+          <br />
+          Do not specify page padding here.
+        </p>
+      </div>
+      {/* DELETE TO HERE */}
+    </AppShell>
+  );
+}
