@@ -58,7 +58,7 @@ export function DropdownList({
           !selectedOption && "text-text-muted",
         )}
       >
-        <span className="truncate">{selectedOption?.label ?? label}</span>
+        <p className="truncate">{selectedOption?.label ?? label}</p>
         <ChevronDown
           className={cn(
             "text-text-secondary ml-5 h-4 w-4 shrink-0",
@@ -94,9 +94,9 @@ export function DropdownList({
                       : "hover:bg-surface-soft-hover",
                   )}
                 >
-                  <span className="text-[0.8rem] whitespace-nowrap">
+                  <p className="text-[0.8rem] whitespace-nowrap">
                     {option.label}
-                  </span>
+                  </p>
                   {isSelected && <Check className="ml-auto h-4 w-4 shrink-0" />}
                 </div>
               );

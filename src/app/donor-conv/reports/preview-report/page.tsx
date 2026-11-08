@@ -94,12 +94,12 @@ export default function PreviewReportPage() {
                     />
                   </div>
                   <div className="leading-tight">
-                    <div className="text-[24pt] font-bold whitespace-nowrap">
+                    <p className="text-[24pt] font-bold whitespace-nowrap">
                       Caritas Manila
-                    </div>
-                    <div className="text-text-secondary text-[18pt] whitespace-nowrap">
+                    </p>
+                    <p className="text-text-secondary text-[18pt] whitespace-nowrap">
                       FSD Donor System
-                    </div>
+                    </p>
                   </div>
                 </div>
                 <p className="text-text-secondary text-[16pt] font-semibold tracking-[0.2em] uppercase">
@@ -117,18 +117,18 @@ export default function PreviewReportPage() {
                 </p>
               </div>
               <div className="text-slate-secondary text-right text-[12pt]">
-                <div>{formatReportDate(report.timestamp)}</div>
-                <div className="mt-[10pt]">Fiscal Year: {fiscalYearLabel}</div>
-                <div>Donor Type: {donorTypeLabel}</div>
-                <div>Stage: {pipelineStageLabel}</div>
+                <p>{formatReportDate(report.timestamp)}</p>
+                <p className="mt-[10pt]">Fiscal Year: {fiscalYearLabel}</p>
+                <p>Donor Type: {donorTypeLabel}</p>
+                <p>Stage: {pipelineStageLabel}</p>
               </div>
             </div>
           </div>
           <div className="border-border-soft bg-surface-white rounded-[4px] border shadow-sm">
             <div className="border-border-soft border-b px-4 py-3">
-              <div className="text-text-primary text-[14pt] font-semibold">
+              <p className="text-text-primary text-[14pt] font-semibold">
                 Quarterly Summary
-              </div>
+              </p>
             </div>
             <table className="w-full text-left text-[12pt]">
               <thead>
@@ -185,10 +185,10 @@ export default function PreviewReportPage() {
               </tbody>
             </table>
           </div>
-          <div className="text-text-muted mt-4 text-right">
+          <p className="text-text-muted mt-4 text-right">
             2002 Jesus Street, Pandacan, Manila · (02) 8562-0020 ·
             www.caritasmanila.org.ph
-          </div>
+          </p>
         </div>
       </div>
     </AppShell>

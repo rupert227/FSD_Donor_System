@@ -193,12 +193,12 @@ export function Navbar({
             />
           </div>
           <div className="leading-tight">
-            <div className="text-text-primary font-bold whitespace-nowrap">
+            <p className="text-text-primary font-bold whitespace-nowrap">
               Caritas Manila
-            </div>
-            <div className="text-text-secondary text-[0.75rem] whitespace-nowrap">
+            </p>
+            <p className="text-text-secondary text-[0.75rem] whitespace-nowrap">
               FSD Donor System
-            </div>
+            </p>
           </div>
         </div>
         <div className="bg-surface-soft hover:bg-surface-soft-hover border-border-soft flex h-9 w-200 items-center rounded-[6px] border">
@@ -227,9 +227,9 @@ export function Navbar({
           >
             <Bell className="h-4 w-4 text-text-secondary" />
             {notificationCount > 0 && (
-              <span className="bg-brand-danger absolute top-0 right-0 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[0.6rem] font-semibold text-surface-white">
+              <p className="bg-brand-danger absolute top-0 right-0 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[0.6rem] font-semibold text-surface-white">
                 {notificationCount <= 99 ? notificationCount : "99+"}
-              </span>
+              </p>
             )}
           </Link>
           <div
@@ -242,16 +242,16 @@ export function Navbar({
               onClick={() => setIsProfileOpen((open) => !open)}
               className="hover:bg-surface-soft-hover flex cursor-pointer items-center self-center rounded-[6px] px-2 py-1.5"
             >
-              <div className="bg-brand-50 text-brand-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[0.75rem] font-bold">
+              <p className="bg-brand-50 text-brand-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[0.75rem] font-bold">
                 {iconLabel}
-              </div>
+              </p>
               <div className="ml-1.5 flex flex-col items-start leading-[1.3]">
-                <span className="text-text-primary max-w-30 truncate text-[0.75rem] font-medium whitespace-nowrap">
+                <p className="text-text-primary max-w-30 truncate text-[0.75rem] font-medium whitespace-nowrap">
                   {displayName}
-                </span>
-                <span className="text-text-secondary max-w-30 truncate text-[0.7rem] whitespace-nowrap">
+                </p>
+                <p className="text-text-secondary max-w-30 truncate text-[0.7rem] whitespace-nowrap">
                   {description}
-                </span>
+                </p>
               </div>
               <ChevronDown
                 className={cn(
@@ -277,22 +277,22 @@ export function Navbar({
                       )}
                     >
                       <Icon className="h-4 w-4 shrink-0" />
-                      <span className="truncate text-[0.85rem]">
+                      <p className="truncate text-[0.85rem]">
                         {option.label}
-                      </span>
+                      </p>
                     </div>
                   );
                 })}
                 <div className="border-border-strong flex flex-col items-start border-t px-3 py-2">
-                  <span className="text-text-primary text-[0.8rem] leading-[1.3] font-medium break-all">
+                  <p className="text-text-primary text-[0.8rem] leading-[1.3] font-medium break-all">
                     {displayName}
-                  </span>
-                  <span className="text-text-muted mb-1 text-[0.75rem] tracking-tight break-all">
+                  </p>
+                  <p className="text-text-muted mb-1 text-[0.75rem] tracking-tight break-all">
                     {username}
-                  </span>
-                  <span className="text-text-secondary text-[0.75rem] text-wrap break-all">
+                  </p>
+                  <p className="text-text-secondary text-[0.75rem] text-wrap break-all">
                     {description}
-                  </span>
+                  </p>
                 </div>
               </div>
             )}
@@ -310,7 +310,7 @@ export function Navbar({
             className="hover:bg-surface-soft-hover text-text-primary flex max-w-60 cursor-pointer items-center gap-3 rounded-[6px] bg-transparent px-2 py-1 font-semibold"
           >
             <SelectedModuleIcon className="text-brand-primary h-4 w-4 shrink-0" />
-            <span className="truncate">{selectedModule.label}</span>
+            <p className="truncate">{selectedModule.label}</p>
             <ChevronDown
               className={cn(
                 "text-text-secondary h-4 w-4 shrink-0",
@@ -340,9 +340,9 @@ export function Navbar({
                         )}
                       >
                         <Icon className="h-4 w-4 shrink-0" />
-                        <span className="whitespace-nowrap">
+                        <p className="whitespace-nowrap">
                           {option.label}
-                        </span>
+                        </p>
                         {isSelected && (
                           <Check className="text-brand-primary ml-auto h-4 w-4 shrink-0" />
                         )}
@@ -370,11 +370,11 @@ export function Navbar({
                       : "hover:bg-surface-soft-hover",
                   )}
                 >
-                  <span className="text-text-primary truncate">
+                  <p className="text-text-primary truncate">
                     {tab.label}
-                  </span>
+                  </p>
                   {isActiveTab && (
-                    <span className="bg-brand-primary absolute right-0 -bottom-[0.25rem] left-0 h-[2px]" />
+                    <p className="bg-brand-primary absolute right-0 -bottom-[0.25rem] left-0 h-[2px]" />
                   )}
                 </Link>
               );

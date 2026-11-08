@@ -107,7 +107,7 @@ export default function ReportsPage() {
   if (isLoading) {
     return (
       <AppShell navbarPreset={navbarPreset}>
-        <div>Placeholder loading screen</div>
+        <p>Placeholder loading screen</p>
       </AppShell>
     );
   } else
@@ -118,12 +118,12 @@ export default function ReportsPage() {
             <div className="flex items-center gap-3">
               <BarChart3 className="text-brand-primary h-10 w-10" />
               <div>
-                <div className="text-text-primary text-[2rem] leading-[1.25] font-bold">
+                <p className="text-text-primary text-[2rem] leading-[1.25] font-bold">
                   Lead Pipeline Report
-                </div>
-                <div className="text-text-secondary text-[1rem] tracking-tight">
+                </p>
+                <p className="text-text-secondary text-[1rem] tracking-tight">
                   {formatReportDate(report.timestamp)}
-                </div>
+                </p>
               </div>
             </div>
             <div className="flex items-start">
@@ -190,75 +190,75 @@ export default function ReportsPage() {
           </div>
           <div className="grid grid-cols-4 gap-4 text-wrap break-all">
             <div className="border-border-soft bg-surface-white rounded-panel border p-4 shadow-sm">
-              <div className="text-text-secondary text-[0.9rem] font-medium">
+              <p className="text-text-secondary text-[0.9rem] font-medium">
                 Weighted forecast
-              </div>
-              <div className="text-text-primary mt-1 text-[1.75rem] font-semibold">
+              </p>
+              <p className="text-text-primary mt-1 text-[1.75rem] font-semibold">
                 {formatCurrency(report.weightedForecast)}
-              </div>
-              <div className="text-text-secondary text-[0.8rem]">
+              </p>
+              <p className="text-text-secondary text-[0.8rem]">
                 Probability-adjusted pipeline
-              </div>
+              </p>
             </div>
             <div className="border-border-soft bg-surface-white rounded-panel border p-4 shadow-sm">
-              <div className="text-text-secondary text-[0.9rem] font-medium">
+              <p className="text-text-secondary text-[0.9rem] font-medium">
                 Lead conversion rate
-              </div>
-              <div className="text-text-primary mt-1 text-[1.75rem] font-semibold">
+              </p>
+              <p className="text-text-primary mt-1 text-[1.75rem] font-semibold">
                 {formatPercent(report.leadConversionRate)}
-              </div>
-              <div className="text-text-secondary text-[0.8rem]">
+              </p>
+              <p className="text-text-secondary text-[0.8rem]">
                 Secured leads + all leads
-              </div>
+              </p>
             </div>
             <div className="border-border-soft bg-surface-white rounded-panel border p-4 shadow-sm">
-              <div className="text-text-secondary text-[0.9rem] font-medium">
+              <p className="text-text-secondary text-[0.9rem] font-medium">
                 Total pipeline value
-              </div>
-              <div className="text-text-primary mt-1 text-[1.75rem] font-semibold">
+              </p>
+              <p className="text-text-primary mt-1 text-[1.75rem] font-semibold">
                 {formatCurrency(report.totalPipelineValue)}
-              </div>
-              <div className="text-text-secondary text-[0.8rem]">
+              </p>
+              <p className="text-text-secondary text-[0.8rem]">
                 {report.totalNewLeads
                   ? report.totalNewLeads
                       .slice(0, -1)
                       .reduce((accum, curr) => accum + curr, 0)
                   : formatNumber(undefined)}{" "}
                 leads, all stages
-              </div>
+              </p>
             </div>
             <div className="border-border-soft bg-surface-white rounded-panel border p-4 shadow-sm">
-              <div className="text-text-secondary text-[0.9rem] font-medium">
+              <p className="text-text-secondary text-[0.9rem] font-medium">
                 Average probability
-              </div>
-              <div className="text-text-primary mt-1 text-[1.75rem] font-semibold">
+              </p>
+              <p className="text-text-primary mt-1 text-[1.75rem] font-semibold">
                 {formatPercent(report.averageProbability)}
-              </div>
-              <div className="text-text-secondary text-[0.8rem]">
+              </p>
+              <p className="text-text-secondary text-[0.8rem]">
                 Weighted forecast + pipeline value
-              </div>
+              </p>
             </div>
           </div>
           <div className="grid grid-cols-3 gap-4">
             <div className="border-border-soft bg-surface-white rounded-panel flex max-h-100 min-h-50 flex-col border p-4 shadow-sm">
-              <div className="text-text-primary mb-1 text-[1rem] font-semibold">
+              <p className="text-text-primary mb-1 text-[1rem] font-semibold">
                 Where leads come from
-              </div>
+              </p>
               <p className="text-text-secondary text-[0.75rem]">
                 New leads by origin
               </p>
               {!report.leadOrigins?.length ? (
-                <div className="text-text-secondary flex flex-1 items-center justify-center text-[0.8rem]">
+                <p className="text-text-secondary flex flex-1 items-center justify-center text-[0.8rem]">
                   No Data
-                </div>
+                </p>
               ) : (
                 <div className="scrollbar-primary mt-5 space-y-3 overflow-auto">
                   {report.leadOrigins?.map((entry) => {
                     return (
                       <div key={entry.key} className="flex">
-                        <span className="text-text-primary mr-1 w-35 shrink-0 truncate text-[0.75rem] font-medium">
+                        <p className="text-text-primary mr-1 w-35 shrink-0 truncate text-[0.75rem] font-medium">
                           {entry.label}
-                        </span>
+                        </p>
                         <div className="flex flex-1 items-center">
                           <div
                             style={{
@@ -269,9 +269,9 @@ export default function ReportsPage() {
                               (entry.value ?? 0) > 0 && "mr-2 min-w-[1%]",
                             )}
                           />
-                          <span className="text-text-primary shrink-0 text-[0.7rem] font-medium">
+                          <p className="text-text-primary shrink-0 text-[0.7rem] font-medium">
                             {formatNumber(entry.value)}
-                          </span>
+                          </p>
                         </div>
                       </div>
                     );
@@ -280,24 +280,24 @@ export default function ReportsPage() {
               )}
             </div>
             <div className="border-border-soft bg-surface-white rounded-panel flex max-h-100 min-h-50 flex-col border p-4 shadow-sm">
-              <div className="text-text-primary mb-1 text-[1rem] font-semibold">
+              <p className="text-text-primary mb-1 text-[1rem] font-semibold">
                 Leads by pipeline stage
-              </div>
+              </p>
               <p className="text-text-secondary text-[0.75rem]">
                 Count of open and secured leads
               </p>
               {!report.pipelineStages?.length ? (
-                <div className="text-text-secondary flex flex-1 items-center justify-center text-[0.8rem]">
+                <p className="text-text-secondary flex flex-1 items-center justify-center text-[0.8rem]">
                   No Data
-                </div>
+                </p>
               ) : (
                 <div className="scrollbar-primary mt-5 space-y-3 overflow-auto">
                   {report.pipelineStages?.map((entry) => {
                     return (
                       <div key={entry.key} className="flex">
-                        <span className="text-text-primary mr-1 w-35 shrink-0 truncate text-[0.75rem] font-medium">
+                        <p className="text-text-primary mr-1 w-35 shrink-0 truncate text-[0.75rem] font-medium">
                           {entry.label}
-                        </span>
+                        </p>
                         <div className="flex flex-1 items-center">
                           <div
                             style={{
@@ -308,9 +308,9 @@ export default function ReportsPage() {
                               (entry.value ?? 0) > 0 && "mr-2 min-w-[1%]",
                             )}
                           />
-                          <span className="text-text-primary shrink-0 text-[0.7rem] font-medium">
+                          <p className="text-text-primary shrink-0 text-[0.7rem] font-medium">
                             {formatNumber(entry.value)}
-                          </span>
+                          </p>
                         </div>
                       </div>
                     );
@@ -319,16 +319,16 @@ export default function ReportsPage() {
               )}
             </div>
             <div className="border-border-soft bg-surface-white rounded-panel flex max-h-100 min-h-50 flex-col border p-4 shadow-sm">
-              <div className="text-text-primary mb-1 text-[1rem] font-semibold">
+              <p className="text-text-primary mb-1 text-[1rem] font-semibold">
                 New lead intake
-              </div>
+              </p>
               <p className="text-text-secondary text-[0.75rem]">
                 New leads per quarter
               </p>
               {!report.quarterNewLeads?.length ? (
-                <div className="text-text-secondary flex flex-1 items-center justify-center text-[0.8rem]">
+                <p className="text-text-secondary flex flex-1 items-center justify-center text-[0.8rem]">
                   No Data
-                </div>
+                </p>
               ) : (
                 <div className="mt-5 flex max-h-100 flex-1 gap-3 overflow-hidden">
                   {report.quarterNewLeads?.map((entry) => {
@@ -337,13 +337,13 @@ export default function ReportsPage() {
                         key={entry.key}
                         className="flex h-full min-w-0 flex-1 flex-col-reverse items-center"
                       >
-                        <span className="text-text-primary mt-1 mb-1 w-full truncate text-center text-[0.7rem] font-medium">
+                        <p className="text-text-primary mt-1 mb-1 w-full truncate text-center text-[0.7rem] font-medium">
                           {entry.label}
-                        </span>
+                        </p>
                         <div className="flex h-full w-full flex-col items-center justify-end">
-                          <span className="text-text-primary w-full truncate text-center text-[0.7rem] font-medium">
+                          <p className="text-text-primary w-full truncate text-center text-[0.7rem] font-medium">
                             {formatNumber(entry.value)}
-                          </span>
+                          </p>
                           <div
                             style={{
                               height: `${((entry.value ?? 0) / quarterNewLeadsMax) * 100}%`,
@@ -363,9 +363,9 @@ export default function ReportsPage() {
           </div>
           <div className="border-border-soft bg-surface-white rounded-panel border shadow-sm">
             <div className="border-border-soft border-b px-4 py-3">
-              <div className="text-text-primary text-[1.0rem] font-semibold">
+              <p className="text-text-primary text-[1.0rem] font-semibold">
                 Quarterly Summary
-              </div>
+              </p>
             </div>
             <table className="w-full text-left text-[0.8rem]">
               <thead>
@@ -386,8 +386,8 @@ export default function ReportsPage() {
               </thead>
               <tbody>
                 {summaryRows.map((row, rowIndex) => {
-                  const isSection = row.type === "section";
                   const isLastRow = rowIndex === summaryRows.length - 1;
+                  const isSection = row.type === "section";
 
                   return (
                     <tr
