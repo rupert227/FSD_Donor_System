@@ -101,7 +101,6 @@ export default function ReportsPage() {
     setPipelineStage(null);
   };
 
-  const quarterHeaders = ["Q1", "Q2", "Q3", "Q4"];
   const summaryRows = generateSummaryRows(report);
 
   if (isLoading) {
@@ -121,7 +120,7 @@ export default function ReportsPage() {
                 <p className="text-text-primary text-[2rem] leading-[1.25] font-bold">
                   Lead Pipeline Report
                 </p>
-                <p className="text-text-secondary text-[1rem] tracking-tight">
+                <p className="text-text-secondary tracking-tight">
                   {formatReportDate(report.timestamp)}
                 </p>
               </div>
@@ -188,7 +187,7 @@ export default function ReportsPage() {
               Reset Filters
             </button>
           </div>
-          <div className="grid grid-cols-4 gap-4 text-wrap break-all">
+          <div className="grid grid-cols-4 gap-4 text-wrap">
             <div className="border-border-soft bg-surface-white rounded-panel border p-4 shadow-sm">
               <p className="text-text-secondary text-[0.9rem] font-medium">
                 Weighted forecast
@@ -219,10 +218,10 @@ export default function ReportsPage() {
                 {formatCurrency(report.totalPipelineValue)}
               </p>
               <p className="text-text-secondary text-[0.8rem]">
-                {report.totalNewLeads
-                  ? report.totalNewLeads
+                {report.quarterlySummary?.totalNewLeads
+                  ? report.quarterlySummary.totalNewLeads
                       .slice(0, -1)
-                      .reduce((accum, curr) => accum + curr, 0)
+                      .reduce((accum, curr) => (accum ?? 0) + (curr ?? 0), 0)
                   : formatNumber(undefined)}{" "}
                 leads, all stages
               </p>
@@ -241,17 +240,13 @@ export default function ReportsPage() {
           </div>
           <div className="grid grid-cols-3 gap-4">
             <div className="border-border-soft bg-surface-white rounded-panel flex max-h-100 min-h-50 flex-col border p-4 shadow-sm">
-              <p className="text-text-primary mb-1 text-[1rem] font-semibold">
+              <p className="text-text-primary mb-1 font-semibold">
                 Where leads come from
               </p>
               <p className="text-text-secondary text-[0.75rem]">
                 New leads by origin
               </p>
-              {!report.leadOrigins?.length ? (
-                <p className="text-text-secondary flex flex-1 items-center justify-center text-[0.8rem]">
-                  No Data
-                </p>
-              ) : (
+              {report.leadOrigins?.length ? (
                 <div className="scrollbar-primary mt-5 space-y-3 overflow-auto">
                   {report.leadOrigins?.map((entry) => {
                     return (
@@ -277,20 +272,20 @@ export default function ReportsPage() {
                     );
                   })}
                 </div>
+              ) : (
+                <p className="text-text-secondary flex flex-1 items-center justify-center text-[0.8rem]">
+                  No Data
+                </p>
               )}
             </div>
             <div className="border-border-soft bg-surface-white rounded-panel flex max-h-100 min-h-50 flex-col border p-4 shadow-sm">
-              <p className="text-text-primary mb-1 text-[1rem] font-semibold">
+              <p className="text-text-primary mb-1 font-semibold">
                 Leads by pipeline stage
               </p>
               <p className="text-text-secondary text-[0.75rem]">
                 Count of open and secured leads
               </p>
-              {!report.pipelineStages?.length ? (
-                <p className="text-text-secondary flex flex-1 items-center justify-center text-[0.8rem]">
-                  No Data
-                </p>
-              ) : (
+              {report.pipelineStages?.length ? (
                 <div className="scrollbar-primary mt-5 space-y-3 overflow-auto">
                   {report.pipelineStages?.map((entry) => {
                     return (
@@ -316,20 +311,20 @@ export default function ReportsPage() {
                     );
                   })}
                 </div>
+              ) : (
+                <p className="text-text-secondary flex flex-1 items-center justify-center text-[0.8rem]">
+                  No Data
+                </p>
               )}
             </div>
             <div className="border-border-soft bg-surface-white rounded-panel flex max-h-100 min-h-50 flex-col border p-4 shadow-sm">
-              <p className="text-text-primary mb-1 text-[1rem] font-semibold">
+              <p className="text-text-primary mb-1 font-semibold">
                 New lead intake
               </p>
               <p className="text-text-secondary text-[0.75rem]">
                 New leads per quarter
               </p>
-              {!report.quarterNewLeads?.length ? (
-                <p className="text-text-secondary flex flex-1 items-center justify-center text-[0.8rem]">
-                  No Data
-                </p>
-              ) : (
+              {report.quarterNewLeads?.length ? (
                 <div className="mt-5 flex max-h-100 flex-1 gap-3 overflow-hidden">
                   {report.quarterNewLeads?.map((entry) => {
                     return (
@@ -358,69 +353,89 @@ export default function ReportsPage() {
                     );
                   })}
                 </div>
+              ) : (
+                <p className="text-text-secondary flex flex-1 items-center justify-center text-[0.8rem]">
+                  No Data
+                </p>
               )}
             </div>
           </div>
-          <div className="border-border-soft bg-surface-white rounded-panel border shadow-sm">
+          <div className="border-border-soft bg-surface-white rounded-panel flex flex-col border break-all shadow-sm">
             <div className="border-border-soft border-b px-4 py-3">
               <p className="text-text-primary text-[1.0rem] font-semibold">
                 Quarterly Summary
               </p>
             </div>
-            <table className="w-full text-left text-[0.8rem]">
-              <thead>
-                <tr className="bg-surface-soft text-text-secondary">
-                  <th className="px-3 py-3 font-medium">Metric</th>
-                  {quarterHeaders.map((header) => (
-                    <th
-                      key={header}
-                      className="px-3 py-3 text-center font-medium"
-                    >
-                      {header}
+            {report.quarterlySummary && report.quarterNewLeads?.length! ? (
+              <table className="w-full table-fixed text-left text-[0.8rem]">
+                <thead>
+                  <tr className="bg-surface-soft text-text-secondary">
+                    <th className="w-1/3 px-3 py-3 font-medium">Metric</th>
+                    {report.quarterNewLeads?.map((option) => (
+                      <th
+                        key={option.key}
+                        className="w-[15%] px-3 py-3 text-right font-medium"
+                      >
+                        {option.label}
+                      </th>
+                    ))}
+                    <th className="w-[15%] px-3 py-3 text-right font-medium">
+                      {report.fiscalYearOptions?.find(
+                        (o) => o.key === report.fiscalYear,
+                      )?.label ?? "—"}
                     </th>
-                  ))}
-                  <th className="px-3 py-3 text-center font-medium">
-                    {fiscalYear?.label ?? "Year"}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {summaryRows.map((row, rowIndex) => {
-                  const isLastRow = rowIndex === summaryRows.length - 1;
-                  const isSection = row.type === "section";
+                  </tr>
+                </thead>
+                <tbody>
+                  {summaryRows.map((row, rowIndex) => {
+                    const isLastRow = rowIndex === summaryRows.length - 1;
+                    const isSection = row.type === "section";
+                    const columnCount = report.quarterNewLeads!.length + 1;
 
-                  return (
-                    <tr
-                      key={`${row.label}-${rowIndex}`}
-                      className={cn(
-                        "border-border-soft text-text-primary border-t",
-                        isSection ? "bg-surface-soft font-semibold" : "",
-                      )}
-                    >
-                      <td
+                    return (
+                      <tr
+                        key={`${row.label}-${rowIndex}`}
                         className={cn(
-                          "text-text-primary px-3 py-3",
-                          !isLastRow ? "" : "font-semibold",
+                          "border-border-soft text-text-primary border-t",
+                          isSection ? "bg-surface-soft font-semibold" : "",
                         )}
                       >
-                        {row.label}
-                      </td>
-                      {row.values?.map((value, valueIndex) => (
                         <td
-                          key={`${row.label}-${valueIndex}`}
                           className={cn(
-                            "text-text-primary px-3 py-3 text-center",
+                            "px-3 py-3",
                             !isLastRow ? "" : "font-semibold",
                           )}
                         >
-                          {isSection ? "" : renderSummaryValue(row, value)}
+                          {row.label}
                         </td>
-                      ))}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                        {Array.from({ length: columnCount }).map(
+                          (_, colIndex) => {
+                            const value = row.values?.[colIndex] ?? null;
+                            return (
+                              <td
+                                key={`${row.label}-${colIndex}`}
+                                className={cn(
+                                  "px-3 py-3 text-right",
+                                  !isLastRow ? "" : "font-semibold",
+                                )}
+                              >
+                                {isSection
+                                  ? ""
+                                  : renderSummaryValue(row, value)}
+                              </td>
+                            );
+                          },
+                        )}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            ) : (
+              <div className="flex min-h-50 flex-1 items-center justify-center">
+                <p className="text-text-secondary text-[0.8rem]">No Data</p>
+              </div>
+            )}
           </div>
         </div>
       </AppShell>

@@ -1,3 +1,9 @@
+const percentFormat = new Intl.NumberFormat("en-US", {
+  style: "percent",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
 export const phCurrencyFormat = Intl.NumberFormat("en-PH", {
   style: "currency",
   currency: "PHP",
@@ -28,7 +34,7 @@ export function formatNumber(value: number | null | undefined): string {
 export function formatPercent(value: number | null | undefined): string {
   if (!Number.isFinite(value) || value == null) return "—";
 
-  return `${value.toFixed(1)}%`;
+  return percentFormat.format(value);
 }
 
 export function formatReportDate(isoDate: string | null | undefined): string {

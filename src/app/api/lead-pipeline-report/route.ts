@@ -7,12 +7,12 @@ export async function GET() {
   const mockReport: Leads.Report = {
     timestamp: new Date().toISOString(),
     weightedForecast: 500000,
-    leadConversionRate: 45.6,
+    leadConversionRate: 0.456,
     totalPipelineValue: 1230000,
-    averageProbability: 12.3,
+    averageProbability: 0.8154,
     fiscalYear: "fy-2025",
-    donorType: undefined,
-    pipelineStage: undefined,
+    donorType: "donor-type-three",
+    pipelineStage: "stage-two",
     fiscalYearOptions: [
       { key: "fy-2025", label: "FY 2025" },
       { key: "fy-2026", label: "FY 2026" },
@@ -45,23 +45,25 @@ export async function GET() {
       { key: "q4", label: "Q4", value: 1 },
     ],
     quarterlySummary: {
-      totalEstimatedValue: [1010.12, 0, 0, 0, 0],
-      probabilityAdjustedValue: [0, 0, 0, 0, 0],
-      securedValue: [0, 0, 0, 0, 0],
-      unsecuredBalance: [0, 0, 0, 0, 0],
+      pipelineValue: {
+        totalEstimatedValue: [1010.12, 0, 0, 0, 0],
+        probabilityAdjustedValue: [0, 0, 0, 0, 0],
+        securedValue: [0, 0, 0, 0, 0],
+        unsecuredBalance: [0, 0, 0, 0, 0],
+      },
+      conversion: {
+        leadConversionRate: [0, 0, 0, 0, 0],
+        valueRealizationRate: [0, 0, 0, 0, 0],
+      },
+      leadsOrigin: {
+        referral: [0, 0, 1, 2, 0],
+        research: [0, 0, 0, 3, 0],
+        booths: [0, 0, 0, 0, 4],
+        directCall: [0, 0, 5, 0, 0],
+        walkIn: [0, 0, 0, 0, 0],
+      },
+      totalNewLeads: [1, 3, 2, 5, 69],
     },
-    conversion: {
-      leadConversionRate: [0, 0, 0, 0, 0],
-      valueRealizationRate: [0, 0, 0, 0, 0],
-    },
-    leadsOrigin: {
-      referral: [0, 0, 1, 2, 0],
-      research: [0, 0, 0, 3, 0],
-      booths: [0, 0, 0, 0, 4],
-      directCall: [0, 0, 5, 0, 0],
-      walkIn: [0, 0, 0, 0, 0],
-    },
-    totalNewLeads: [0, 100, 0, 0, 10],
   };
 
   try {
