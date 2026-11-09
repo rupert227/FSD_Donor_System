@@ -15,6 +15,8 @@
   --color-graph-bar-primary: var(--graph-bar-primary);
   --color-graph-bar-secondary: var(--graph-bar-secondary);
   --color-primary-scrollbar: var(--scrollbar-primary);
+  --color-skeleton-primary: var(--skeleton-primary);
+  --color-skeleton-secondary: var(--skeleton-secondary);
   --color-surface-amber: var(--surface-amber);
   --color-surface-soft-hover: var(--surface-soft-hover);
   --color-surface-soft: var(--surface-soft);
@@ -27,6 +29,8 @@
   --radius-dropdown: var(--dropdown-radius);
   --radius-panel: var(--panel-radius);
   --shadow-soft: var(--shadow-soft);
+  --spacing-content: var(--content-padding);
+  --spacing-navbar-height: var(--navbar-height);
 }
 
 @layer utilities {
@@ -56,8 +60,8 @@
   }
 
   main {
-    padding: 0 !important;
     background: white !important;
+    padding: 0 !important;
   }
 
   .no-print {
@@ -65,16 +69,16 @@
   }
 
   .pdf-sheet {
-    max-width: none !important;
-    width: 100% !important;
     box-shadow: none !important;
     margin: 0 !important;
+    max-width: none !important;
     padding: 0 !important;
+    width: 100% !important;
   }
 
   .pdf-sheet * {
-    -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
   }
 }
 
@@ -91,6 +95,7 @@
   --input: oklch(0.922 0 0);
   --muted-foreground: oklch(0.556 0 0);
   --muted: oklch(0.97 0 0);
+  --navbar-height: 6.25rem;
   --popover-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --primary-foreground: oklch(0.985 0 0);
@@ -116,6 +121,8 @@
   --panel-radius: 10px;
   --scrollbar-primary: #cacaca;
   --shadow-soft: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --skeleton-primary: #d1d5db;
+  --skeleton-secondary: #e5e7eb;
   --surface-amber: #fff7ed;
   --surface-soft-hover: #eceae8;
   --surface-soft: #f3f2f1;
@@ -128,7 +135,6 @@
 html,
 body {
   font-family: var(--font-ibm-plex-sans), sans-serif;
-  overflow-x: hidden;
-  max-width: 100vw;
-  width: 100%;
+  overflow-x: auto;
+  min-width: 48rem;
 }

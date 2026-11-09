@@ -1,3 +1,5 @@
+// TODO: Fix tab selector visual bug when opening navbar dropdowns
+
 "use client";
 
 import Image from "next/image";
@@ -42,7 +44,7 @@ interface ListOption {
 }
 
 interface NavbarProps {
-  navbarPreset: NavbarPreset;
+  navbarPreset?: NavbarPreset;
 }
 
 interface UserProfile {
@@ -105,7 +107,11 @@ export function useDocumentTitle(title: string) {
 }
 
 export function Navbar({
-  navbarPreset: { selectedModuleIndex, selectedTabIndex, tabs = [] },
+  navbarPreset: {
+    selectedModuleIndex = 0,
+    selectedTabIndex = 0,
+    tabs = [],
+  } = {},
 }: NavbarProps) {
   const moduleRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -225,9 +231,9 @@ export function Navbar({
             type="button"
             className="hover:bg-surface-soft-hover text-text-primary relative flex h-9 w-9 cursor-pointer items-center justify-center self-center rounded-[6px]"
           >
-            <Bell className="h-4 w-4 text-text-secondary" />
+            <Bell className="text-text-secondary h-4 w-4" />
             {notificationCount > 0 && (
-              <p className="bg-brand-danger absolute top-0 right-0 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[0.6rem] font-semibold text-surface-white">
+              <p className="bg-brand-danger text-surface-white absolute top-0 right-0 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[0.6rem] font-semibold">
                 {notificationCount <= 99 ? notificationCount : "99+"}
               </p>
             )}
@@ -277,9 +283,7 @@ export function Navbar({
                       )}
                     >
                       <Icon className="h-4 w-4 shrink-0" />
-                      <p className="truncate text-[0.85rem]">
-                        {option.label}
-                      </p>
+                      <p className="truncate text-[0.85rem]">{option.label}</p>
                     </div>
                   );
                 })}
@@ -340,9 +344,7 @@ export function Navbar({
                         )}
                       >
                         <Icon className="h-4 w-4 shrink-0" />
-                        <p className="whitespace-nowrap">
-                          {option.label}
-                        </p>
+                        <p className="whitespace-nowrap">{option.label}</p>
                         {isSelected && (
                           <Check className="text-brand-primary ml-auto h-4 w-4 shrink-0" />
                         )}
@@ -370,9 +372,7 @@ export function Navbar({
                       : "hover:bg-surface-soft-hover",
                   )}
                 >
-                  <p className="text-text-primary truncate">
-                    {tab.label}
-                  </p>
+                  <p className="text-text-primary truncate">{tab.label}</p>
                   {isActiveTab && (
                     <p className="bg-brand-primary absolute right-0 -bottom-[0.25rem] left-0 h-[2px]" />
                   )}

@@ -1,9 +1,14 @@
 "use client";
 
-import { Check, ChevronDown } from "lucide-react";
+import { Check, ChevronDown, Loader2 } from "lucide-react";
 import { Primitives } from "@/lib/types";
 import { cn } from "cn";
 import { useEffect, useRef, useState } from "react";
+
+interface LoadingScreenProps {
+  label?: string;
+  className?: string;
+}
 
 export type DropdownOption = Primitives.DropdownOption;
 
@@ -41,7 +46,8 @@ export function DropdownList({
     return () => document.removeEventListener("mousedown", handlePointerDown);
   }, [isOpen]);
 
-  const selectedOption = options?.find((option) => option.key === selectedKey) ?? null;
+  const selectedOption =
+    options?.find((option) => option.key === selectedKey) ?? null;
 
   return (
     <div ref={dropdownRef} className="relative flex">
@@ -75,7 +81,7 @@ export function DropdownList({
             maxWidth: `${width}rem`,
             maxHeight: `${height}rem`,
           }}
-          className="bg-surface-white border-border-soft scrollbar-primary absolute top-[calc(100%+1px)] left-0 z-20 w-full overflow-auto rounded-dropdown border p-1 shadow-lg"
+          className="bg-surface-white border-border-soft scrollbar-primary rounded-dropdown absolute top-[calc(100%+1px)] left-0 z-20 w-full overflow-auto border p-1 shadow-lg"
         >
           <div className="w-max min-w-full">
             {options?.map((option) => {
@@ -88,7 +94,7 @@ export function DropdownList({
                     setIsOpen(false);
                   }}
                   className={cn(
-                    "text-text-primary flex h-7.5 w-full cursor-pointer items-center gap-2 px-3 first:rounded-t-dropdown last:rounded-b-dropdown",
+                    "text-text-primary first:rounded-t-dropdown last:rounded-b-dropdown flex h-7.5 w-full cursor-pointer items-center gap-2 px-3",
                     isSelected
                       ? "bg-brand-100 text-brand-primary"
                       : "hover:bg-surface-soft-hover",
@@ -104,6 +110,23 @@ export function DropdownList({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+export function LoadingScreen({ label = "Loading", className }: LoadingScreenProps) {
+  return (
+    <div
+      className={cn(
+        "flex flex-1 flex-col items-center justify-center gap-3 overflow-hidden",
+        className,
+      )}
+      role="status"
+      aria-live="polite"
+    >
+      <Loader2 className="text-brand-primary h-8 w-8 animate-spin" />
+      <p className="text-text-primary text-[1.5rem] font-medium">{label}</p>
+      <p className="sr-only">{label}</p>
     </div>
   );
 }
