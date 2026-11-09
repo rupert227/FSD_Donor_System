@@ -1,6 +1,6 @@
 # FSD Donor System
 
-A Next.js App Router application built with React 19, TypeScript, Tailwind CSS, and shadcn/ui.
+The Fundraising and Stewardship Division (FSD) Donor System for Caritas Manila — built with Next.js App Router, React 19, TypeScript, Tailwind CSS, and Supabase.
 
 ---
 
@@ -9,9 +9,10 @@ A Next.js App Router application built with React 19, TypeScript, Tailwind CSS, 
 - **Framework**: Next.js (App Router, Turbopack)
 - **Library**: React 19
 - **Language**: TypeScript
-- **Styling**: Tailwind CSS v4
-- **Components**: shadcn/ui primitives
+- **Styling**: Tailwind CSS
+- **Database**: Supabase / PostgreSQL
 - **Icons**: Lucide React
+- **Fonts**: IBM Plex Sans (system base), Poppins (form typography)
 
 ---
 
@@ -19,70 +20,105 @@ A Next.js App Router application built with React 19, TypeScript, Tailwind CSS, 
 
 ```text
 FSD_Donor_System/
-├── docs/                        # Architecture and system specifications
-│   ├── 00-overview.md           # Architecture rules and system conventions
-│   ├── 01-schema.md             # Database schema design and entity models
-│   └── 02-screens.md            # Route specifications and screen contracts
+├── docs/                                  # System specifications and documentation
+│   ├── 00-overview.md                     # System conventions and architecture guidelines
+│   └── 01-schema.md                       # Database schema and entity models
 │
-├── public/                      # Static web assets and brand SVG icons
+├── public/                                # Static web assets
+│   └── brand/                             # Caritas Manila brand vectors and logos
 │
-├── src/                         # Application source code
-│   ├── middleware.ts            # Route guards and authentication redirects
+├── src/                                   # Application source code
+│   ├── app/                               # Next.js App Router
+│   │   ├── layout.tsx                     # Root shell & typography provider
+│   │   ├── globals.css                    # Tailwind CSS tokens and global base styles
+│   │   ├── page.tsx                       # Root route redirect
+│   │   │
+│   │   ├── dashboard/                     # Executive division overview
+│   │   │   ├── page.tsx                   # Division-wide KPI summary metrics
+│   │   │   └── struct.ts                  # Preset navigation configuration
+│   │   │
+│   │   ├── donor-conv/                    # Donor Conversion Division (Module 1)
+│   │   │   ├── prospects/                 # Lead directory and intake
+│   │   │   │   ├── page.tsx               # Prospects directory list
+│   │   │   │   ├── add-prospect/          # Lead intake registration form
+│   │   │   │   ├── edit-prospect/         # Record view, inline editor & call tracking
+│   │   │   │   └── pipeline-board/        # Visual conversion pipeline board
+│   │   │   ├── proposals/                 # Proposal builder and tracking
+│   │   │   │   ├── page.tsx               # Proposals registry
+│   │   │   │   └── send-proposal/         # Proposal commitment document generator
+│   │   │   ├── reports/                   # Conversion reporting
+│   │   │   │   ├── page.tsx               # Lead pipeline analytics report
+│   │   │   │   └── preview-report/        # PDF/print report preview
+│   │   │   └── struct.ts                  # Unit navigation and tab configuration
+│   │   │
+│   │   ├── donor-retn/                    # Donor Retention Division (Module 2)
+│   │   │   ├── donors/                    # Active donor stewardship
+│   │   │   │   ├── page.tsx               # Active donors registry
+│   │   │   │   ├── add-donor/             # Register active donor profile
+│   │   │   │   └── edit-donor/            # Update donor record and preferences
+│   │   │   ├── renewals/                  # Donor recommitment appeals
+│   │   │   │   ├── page.tsx               # Renewals tracking list
+│   │   │   │   └── send-renewal/          # Recommitment package generator
+│   │   │   ├── reports/                   # Retention reporting
+│   │   │   │   ├── page.tsx               # Retention analytics and tenure report
+│   │   │   │   └── preview-report/        # PDF/print report preview
+│   │   │   └── struct.ts                  # Unit navigation and tab configuration
+│   │   │
+│   │   ├── donor-care/                    # Donor Care Division (Module 3)
+│   │   │   ├── transactions/              # Remittance ledgers and bank deposits
+│   │   │   │   ├── page.tsx               # Remittance transaction history
+│   │   │   │   ├── add-transaction/       # Record new donation remittance
+│   │   │   │   └── edit-transaction/      # Adjust remittance details
+│   │   │   ├── duplicates/                # Data hygiene and reconciliation
+│   │   │   │   └── page.tsx               # Duplicate records resolution workspace
+│   │   │   ├── receipts/                  # Official receipts and tax certificates
+│   │   │   │   ├── page.tsx               # Receipt dispatch log
+│   │   │   │   └── send-receipt/          # Tax certificate generation
+│   │   │   ├── reports/                   # Donor care reporting
+│   │   │   │   ├── page.tsx               # Care operations summary report
+│   │   │   │   └── preview-report/        # PDF/print report preview
+│   │   │   └── struct.ts                  # Unit navigation and tab configuration
+│   │   │
+│   │   ├── notifications/                 # User alerts and system updates
+│   │   │   ├── page.tsx                   # Notification inbox
+│   │   │   └── struct.ts                  # Preset navigation configuration
+│   │   │
+│   │   ├── preferences/                   # User and application settings
+│   │   │   ├── page.tsx                   # Account preferences interface
+│   │   │   └── struct.ts                  # Preset navigation configuration
+│   │   │
+│   │   └── api/                           # API Route Handlers
+│   │       ├── health/                    # Health check endpoint
+│   │       └── lead-pipeline-report/      # Lead pipeline data endpoint
 │   │
-│   ├── actions/                 # Server Actions for business logic mutations
+│   ├── components/                        # Shared UI components
+│   │   ├── AppShell.tsx                   # Standard application layout wrapper
+│   │   ├── Navbar.tsx                     # Global navigation bar, module switcher & user menu
+│   │   └── prefabs.tsx                    # Shared card and layout container primitives
 │   │
-│   ├── app/                     # Next.js App Router (pages and layouts)
-│   │   ├── layout.tsx           # Root HTML shell and global font provider
-│   │   ├── globals.css          # Tailwind CSS tokens and utility layers
-│   │   ├── page.tsx             # Public landing page and marketing hero
-│   │   │
-│   │   ├── authentication/      # Authentication portal
-│   │   │   ├── layout.tsx       # Centered layout container for auth views
-│   │   │   └── page.tsx         # Sign-in and account access interface
-│   │   │
-│   │   ├── dashboard/           # Authenticated management workspace
-│   │   │   ├── layout.tsx       # Shell with responsive header and sidebar
-│   │   │   └── page.tsx         # Analytics overview and metrics dashboard
-│   │   │
-│   │   └── api/                 # API Route Handlers
-│   │       └── health/          # Health check endpoint
-│   │           └── route.ts     # Health status endpoint handler
+│   ├── lib/                               # Data adapters and utilities
+│   │   ├── db/                            # Database connection pool and query helpers
+│   │   ├── mock-data/                     # Development fixtures and test records
+│   │   ├── supabase/                      # Supabase browser and server client instances
+│   │   ├── types.ts                       # Module configuration types
+│   │   └── utils.ts                       # Class name merger helper (`cn`)
 │   │
-│   ├── components/              # Modular React UI components
-│   │   ├── authentication/      # Authentication widgets and login forms
-│   │   │   └── AuthForm.tsx     # Sign-in form with client-side validation
-│   │   │
-│   │   ├── common/              # Shared application chrome components
-│   │   │   ├── Header.tsx       # Top navigation bar and user profile menu
-│   │   │   └── Navbar.tsx      # Navigation navbar with route indicators
-│   │   │   └── Sidebar.tsx      # Navigation sidebar with route indicators
-│   │   │
-│   │   ├── dashboard/           # Dashboard data displays and widgets
-│   │   │   └── StatCard.tsx     # KPI summary card with trend indicators
-│   │   │
-│   │   └── ui/                  # Reusable atomic shadcn/ui primitives
-│   │       ├── badge.tsx        # Status pill and categorical badge tag
-│   │       ├── button.tsx       # Interactive button with variant styles
-│   │       ├── card.tsx         # Container panel with header and content
-│   │       └── input.tsx        # Text input field with focus state styles
-│   │
-│   ├── lib/                     # Utilities and backend client connections
-│   │   ├── db/                  # Database configuration and initializers
-│   │   │   └── index.ts         # Connection pool settings and client export
-│   │   └── utils.ts             # Class name merger helper (`cn = clsx + twMerge`)
-│   │
-│   └── types/                   # TypeScript interfaces and entity types
-│       ├── database.ts          # Core database tables and status enum types
-│       └── index.ts             # Shared application contracts and DTO types
+│   └── types/                             # TypeScript definitions
+│       ├── database.ts                    # Supabase database table definitions
+│       └── index.ts                       # Application domain interfaces and DTOs
 │
-├── .env.example                 # Environment variables template
-├── .env.local                   # Local configuration secrets (gitignored)
-├── .gitignore                   # Git version control exclusions
-├── components.json              # shadcn/ui component configuration
-├── eslint.config.mjs            # ESLint static analysis configuration
-├── next.config.ts               # Next.js framework configuration
-├── package.json                 # Project manifest and package dependencies
-└── tsconfig.json                # TypeScript compiler rules and path aliases
+├── supabase/                              # Database migrations
+│   └── schema.sql                         # PostgreSQL schema and enum definitions
+│
+├── .env.example                           # Environment variables template
+├── .env.local                             # Local environment secrets (gitignored)
+├── .gitignore                             # Git exclusions
+├── components.json                        # UI components configuration
+├── eslint.config.mjs                      # ESLint static analysis configuration
+├── next.config.ts                         # Next.js framework configuration
+├── package.json                           # Project dependencies and npm scripts
+├── prettier.config.js                     # Prettier formatting rules
+└── tsconfig.json                          # TypeScript compiler rules
 ```
 
 ---
@@ -99,15 +135,18 @@ npm install
 
 ### 2. Environment Setup
 
+Create `.env.local` based on `.env.example`:
+
 ```bash
 cp .env.example .env.local
 ```
 
-Required keys in `.env.local`:
+Required keys:
 
 ```ini
 NEXT_PUBLIC_APP_URL=http://localhost:3000
-AUTH_SECRET=your_auth_secret_here
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 DATABASE_URL=postgresql://user:password@localhost:5432/fsd_donor_db
 ```
 
@@ -123,7 +162,7 @@ Open [http://localhost:3000](http://localhost:3000) to view the application.
 
 ## Scripts
 
-- `npm run dev` - Starts the local development server with Turbopack
-- `npm run build` - Compiles the production application bundle
+- `npm run dev` - Starts the development server with Turbopack
+- `npm run build` - Builds the application for production
 - `npm run start` - Runs the compiled production build locally
-- `npm run lint` - Runs ESLint to check for code issues
+- `npm run lint` - Runs ESLint to check for code quality issues
