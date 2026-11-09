@@ -9,6 +9,32 @@ import { moduleName, navbarPreset } from "@/app/donor-conv/struct";
 import { useDocumentTitle } from "@/components/Navbar";
 
 const pageName = "Add Prospect";
+import { ProspectSelectMenu } from "@/components/ProspectSelectMenu";
+import { ProspectDatePicker } from "@/components/ProspectDatePicker";
+import { ProspectScoreField } from "@/components/ProspectScoreField";
+import { calculateProspectProbability } from "@/lib/prospect-score";
+
+const DONOR_TYPE_OPTIONS = ["Corporate", "Individual", "Community", "International"];
+const LEAD_SOURCE_OPTIONS = ["Research", "Booths", "Direct Call", "Referral", "Walk-in"];
+const TARGET_CAMPAIGN_OPTIONS = [
+  "Health and Disaster Relief",
+  "Youth Servant Leadership",
+  "In-Kind Social Enterprise",
+  "At-Risk Restorative Justice",
+  "Institute for Stewardship",
+];
+const PIPELINE_STATUS_OPTIONS = [
+  "New Lead",
+  "Under Research",
+  "Outreach Started",
+  "Proposal Sent",
+  "Secured Donor",
+];
+const ASSIGNED_OFFICER_OPTIONS = [
+  "Officer J. Reyes",
+  "Officer A. Tan",
+  "Officer M. Cruz",
+];
 
 export default function AddProspectPage() {
   useDocumentTitle(`${moduleName} - ${pageName}`);
@@ -34,6 +60,18 @@ export default function AddProspectPage() {
     actionPlan: "",
   });
 
+  // Calculate probability live using the deterministic formula
+  const prospectScore = calculateProspectProbability({
+    leadSource: formData.leadSource,
+    targetCampaign: formData.targetCampaign,
+    donorType: formData.donorType,
+    contactPerson: formData.contactPerson,
+    phone: formData.phone,
+    email: formData.email,
+    pipelineStatus: formData.pipelineStatus,
+    targetAmount: formData.targetAmount,
+  });
+
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
@@ -50,7 +88,7 @@ export default function AddProspectPage() {
 
   return (
     <AppShell navbarPreset={navbarPreset}>
-      <div className="w-full max-w-[954px] mx-auto space-y-1.5" style={{ fontFamily: "var(--font-poppins), sans-serif" }}>
+      <div className="w-[75%] max-w-full min-w-0 mx-auto space-y-2.5" style={{ fontFamily: "var(--font-poppins), sans-serif" }}>
         {/* Back Link */}
         <div className="flex items-center text-[11px] text-[#5c5757]">
           <Link
@@ -64,10 +102,10 @@ export default function AddProspectPage() {
 
         <form
           onSubmit={handleSubmit}
-          className="rounded-lg border border-[#e3dfdf] bg-white shadow-xs overflow-hidden"
+          className="rounded-lg border border-[#e3dfdf] bg-white shadow-xs overflow-visible w-full min-w-0"
         >
           {/* Card Header */}
-          <div className="flex items-center justify-between border-b border-[#e3dfdf] px-5 py-2 bg-white">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#e3dfdf] px-5 sm:px-6 py-2.5 bg-white">
             <h2 className="text-[13px] font-semibold text-[#1c1a1a]">
               Add New Lead Prospect Profile
             </h2>
@@ -76,14 +114,14 @@ export default function AddProspectPage() {
             </span>
           </div>
 
-          {/* Form Body - Exact V1 Measurements (30px inputs, 11px text) */}
-          <div className="px-5 py-2.5 space-y-2">
+          {/* Form Body - 75% width, collapses to 1 column when 3 columns do not fit */}
+          <div className="p-5 sm:p-6 space-y-4">
             {/* SECTION 1: PROSPECT BASIC INFORMATION */}
             <div>
-              <h3 className="text-[11px] font-bold text-[#3d0707] mb-1">
+              <h3 className="text-[11px] font-bold text-[#3d0707] mb-1.5">
                 Prospect Basic Information
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-1.5">
+              <div className="grid grid-cols-1 min-[1100px]:grid-cols-3 gap-x-4 gap-y-2.5">
                 <div>
                   <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
                     Organization / Prospect Name <span className="text-[#b42318]">*</span>
@@ -103,63 +141,38 @@ export default function AddProspectPage() {
                   <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
                     Donor Type <span className="text-[#b42318]">*</span>
                   </label>
-                  <div className="relative">
-                    <select
-                      name="donorType"
-                      value={formData.donorType}
-                      onChange={handleChange}
-                      required
-                      className="w-full h-[30px] px-2.5 pr-7 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition appearance-none cursor-pointer"
-                    >
-                      <option value="" disabled>Select donor type</option>
-                      <option value="Corporate">Corporate</option>
-                      <option value="Individual">Individual</option>
-                      <option value="Community">Community</option>
-                      <option value="International">International</option>
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[#5c5757]">
-                      <svg className="w-3 h-3 fill-current" viewBox="0 0 20 20">
-                        <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                      </svg>
-                    </div>
-                  </div>
+                  <ProspectSelectMenu
+                    value={formData.donorType}
+                    onChange={(val) =>
+                      setFormData((prev) => ({ ...prev, donorType: val }))
+                    }
+                    options={DONOR_TYPE_OPTIONS}
+                    placeholder="Select donor type"
+                  />
                 </div>
 
                 <div>
                   <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
                     Lead Source Origin <span className="text-[#b42318]">*</span>
                   </label>
-                  <div className="relative">
-                    <select
-                      name="leadSource"
-                      value={formData.leadSource}
-                      onChange={handleChange}
-                      required
-                      className="w-full h-[30px] px-2.5 pr-7 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition appearance-none cursor-pointer"
-                    >
-                      <option value="" disabled>Select source origin</option>
-                      <option value="Research">Research</option>
-                      <option value="Booths">Booths</option>
-                      <option value="Direct Call">Direct Call</option>
-                      <option value="Referral">Referral</option>
-                      <option value="Walk-in">Walk-in</option>
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[#5c5757]">
-                      <svg className="w-3 h-3 fill-current" viewBox="0 0 20 20">
-                        <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                      </svg>
-                    </div>
-                  </div>
+                  <ProspectSelectMenu
+                    value={formData.leadSource}
+                    onChange={(val) =>
+                      setFormData((prev) => ({ ...prev, leadSource: val }))
+                    }
+                    options={LEAD_SOURCE_OPTIONS}
+                    placeholder="Select source origin"
+                  />
                 </div>
               </div>
             </div>
 
             {/* SECTION 2: PRIMARY CONTACT & ADDRESS DETAILS */}
-            <div className="pt-1.5 border-t border-[#e3dfdf]">
-              <h3 className="text-[11px] font-bold text-[#3d0707] mb-1">
+            <div className="pt-3 border-t border-[#e3dfdf]">
+              <h3 className="text-[11px] font-bold text-[#3d0707] mb-1.5">
                 Primary Contact & Address Details
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-1.5">
+              <div className="grid grid-cols-1 min-[1100px]:grid-cols-3 gap-x-4 gap-y-2.5">
                 <div>
                   <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
                     Primary Contact Person <span className="text-[#b42318]">*</span>
@@ -249,36 +262,23 @@ export default function AddProspectPage() {
             </div>
 
             {/* SECTION 3: STEWARDSHIP & PROPOSAL TARGET */}
-            <div className="pt-1.5 border-t border-[#e3dfdf]">
-              <h3 className="text-[11px] font-bold text-[#3d0707] mb-1">
+            <div className="pt-3 border-t border-[#e3dfdf]">
+              <h3 className="text-[11px] font-bold text-[#3d0707] mb-1.5">
                 Stewardship & Proposal Target
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-1.5 mb-1.5">
+              <div className="grid grid-cols-1 min-[1100px]:grid-cols-3 gap-x-4 gap-y-2.5 mb-2.5">
                 <div>
                   <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
                     Target Campaign <span className="text-[#b42318]">*</span>
                   </label>
-                  <div className="relative">
-                    <select
-                      name="targetCampaign"
-                      value={formData.targetCampaign}
-                      onChange={handleChange}
-                      required
-                      className="w-full h-[30px] px-2.5 pr-7 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition appearance-none cursor-pointer"
-                    >
-                      <option value="" disabled>Select target campaign</option>
-                      <option value="Health and Disaster Relief">Health and Disaster Relief</option>
-                      <option value="Youth Servant Leadership">Youth Servant Leadership</option>
-                      <option value="In-Kind Social Enterprise">In-Kind Social Enterprise</option>
-                      <option value="At-Risk Restorative Justice">At-Risk Restorative Justice</option>
-                      <option value="Institute for Stewardship">Institute for Stewardship</option>
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[#5c5757]">
-                      <svg className="w-3 h-3 fill-current" viewBox="0 0 20 20">
-                        <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                      </svg>
-                    </div>
-                  </div>
+                  <ProspectSelectMenu
+                    value={formData.targetCampaign}
+                    onChange={(val) =>
+                      setFormData((prev) => ({ ...prev, targetCampaign: val }))
+                    }
+                    options={TARGET_CAMPAIGN_OPTIONS}
+                    placeholder="Select target campaign"
+                  />
                 </div>
 
                 <div>
@@ -301,89 +301,55 @@ export default function AddProspectPage() {
                   <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
                     Pipeline Status <span className="text-[#b42318]">*</span>
                   </label>
-                  <div className="relative">
-                    <select
-                      name="pipelineStatus"
-                      value={formData.pipelineStatus}
-                      onChange={handleChange}
-                      required
-                      className="w-full h-[30px] px-2.5 pr-7 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition appearance-none cursor-pointer"
-                    >
-                      <option value="New Lead">New Lead</option>
-                      <option value="Under Research">Under Research</option>
-                      <option value="Outreach Started">Outreach Started</option>
-                      <option value="Proposal Sent">Proposal Sent</option>
-                      <option value="Secured Donor">Secured Donor</option>
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[#5c5757]">
-                      <svg className="w-3 h-3 fill-current" viewBox="0 0 20 20">
-                        <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                      </svg>
-                    </div>
-                  </div>
+                  <ProspectSelectMenu
+                    value={formData.pipelineStatus}
+                    onChange={(val) =>
+                      setFormData((prev) => ({ ...prev, pipelineStatus: val }))
+                    }
+                    options={PIPELINE_STATUS_OPTIONS}
+                    placeholder="Select pipeline status"
+                    direction="up"
+                  />
                 </div>
 
                 <div>
                   <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
                     Probability Estimate (%)
                   </label>
-                  <div className="relative">
-                    <select
-                      name="probability"
-                      value={formData.probability}
-                      onChange={handleChange}
-                      className="w-full h-[30px] px-2.5 pr-7 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition appearance-none cursor-pointer"
-                    >
-                      <option value="" disabled>Select probability</option>
-                      <option value="20">20% - Low Likelihood</option>
-                      <option value="40">40% - Fair Likelihood</option>
-                      <option value="60">60% - Good Likelihood</option>
-                      <option value="80">80% - High Likelihood</option>
-                      <option value="100">100% - Secured Donor</option>
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[#5c5757]">
-                      <svg className="w-3 h-3 fill-current" viewBox="0 0 20 20">
-                        <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                      </svg>
-                    </div>
-                  </div>
+                  <ProspectScoreField
+                    value={prospectScore.tier}
+                    rawProbability={prospectScore.rawProbability}
+                    tierLabel={prospectScore.tierLabel}
+                    direction="up"
+                  />
                 </div>
 
                 <div>
                   <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
                     Assigned Officer <span className="text-[#b42318]">*</span>
                   </label>
-                  <div className="relative">
-                    <select
-                      name="assignedOfficer"
-                      value={formData.assignedOfficer}
-                      onChange={handleChange}
-                      required
-                      className="w-full h-[30px] px-2.5 pr-7 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition appearance-none cursor-pointer"
-                    >
-                      <option value="" disabled>Select officer</option>
-                      <option value="Officer J. Reyes">Officer J. Reyes</option>
-                      <option value="Officer A. Tan">Officer A. Tan</option>
-                      <option value="Officer M. Cruz">Officer M. Cruz</option>
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[#5c5757]">
-                      <svg className="w-3 h-3 fill-current" viewBox="0 0 20 20">
-                        <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                      </svg>
-                    </div>
-                  </div>
+                  <ProspectSelectMenu
+                    value={formData.assignedOfficer}
+                    onChange={(val) =>
+                      setFormData((prev) => ({ ...prev, assignedOfficer: val }))
+                    }
+                    options={ASSIGNED_OFFICER_OPTIONS}
+                    placeholder="Select officer"
+                    direction="up"
+                  />
                 </div>
 
                 <div>
                   <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
                     Target Follow-up Date
                   </label>
-                  <input
-                    type="date"
-                    name="followupDate"
+                  <ProspectDatePicker
                     value={formData.followupDate}
-                    onChange={handleChange}
-                    className="w-full h-[30px] px-2.5 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition"
+                    onChange={(val) =>
+                      setFormData((prev) => ({ ...prev, followupDate: val }))
+                    }
+                    placeholder="Select target date"
+                    direction="up"
                   />
                 </div>
               </div>
@@ -398,14 +364,14 @@ export default function AddProspectPage() {
                   onChange={handleChange}
                   rows={2}
                   placeholder="Enter next action plan steps..."
-                  className="w-full h-[48px] px-2.5 py-1 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition resize-none"
+                  className="w-full h-[64px] px-2.5 py-1.5 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition resize-none"
                 />
               </div>
             </div>
           </div>
 
           {/* Card Footer Actions */}
-          <div className="flex items-center justify-end gap-2 border-t border-[#e3dfdf] px-5 py-2 bg-white">
+          <div className="flex items-center justify-end gap-2 border-t border-[#e3dfdf] px-5 sm:px-6 py-2.5 bg-white">
             <button
               type="button"
               onClick={() => router.push("/donor-conv/prospects")}
