@@ -278,8 +278,10 @@ export default function PreviewReportPage() {
             </p>
           </div>
         </div>
-        <p className="text-text-muted no-print mt-8 text-center italic">
+        <p className="text-text-muted no-print mt-8 text-center">
           Vertical and horizontal spacing may vary when exported.
+          <br />
+          Set paper size and custom scale to match content during export.
         </p>
       </div>
     </AppShell>
