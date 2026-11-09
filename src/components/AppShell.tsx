@@ -8,11 +8,11 @@ interface AppShellProps {
 
 export function AppShell({ navbarPreset, children }: AppShellProps) {
   return (
-    <div className="min-h-screen">
-      <div className="flex min-h-screen min-w-[var(--min-width)] flex-col">
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden">
+      <div className="flex min-h-screen min-w-0 w-full max-w-full flex-col overflow-x-hidden">
         <Navbar navbarPreset={navbarPreset} />
 
-        <main className="flex-1 bg-[#f7f6f6] p-8">{children}</main>
+        <main className="flex-1 bg-[#f7f6f6] p-4 sm:p-6 lg:p-8 min-w-0 w-full max-w-full overflow-x-hidden">{children}</main>
       </div>
     </div>
   );

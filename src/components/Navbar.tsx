@@ -108,9 +108,9 @@ export function Navbar({ navbarPreset }: NavbarProps) {
   }, []);
 
   return (
-    <header className="bg-white">
-      <div className="flex border-b border-gray-300 px-4 py-2">
-        <div className="flex items-center gap-2">
+    <header className="bg-white w-full max-w-full overflow-hidden">
+      <div className="flex items-center border-b border-gray-300 px-3 sm:px-4 py-2 w-full max-w-full min-w-0">
+        <div className="flex items-center gap-2 shrink-0">
           <div className="border-brand-primary bg-brand-primary relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-[8px] border-2">
             <Image
               src="/brand/caritas-logo.svg"
@@ -122,7 +122,7 @@ export function Navbar({ navbarPreset }: NavbarProps) {
             />
           </div>
 
-          <div className="leading-tight">
+          <div className="leading-tight hidden min-[480px]:block">
             <div className="text-[1rem] font-bold whitespace-nowrap text-gray-900">
               Caritas Manila
             </div>
@@ -132,16 +132,16 @@ export function Navbar({ navbarPreset }: NavbarProps) {
           </div>
         </div>
 
-        <div className="mx-6 flex w-md items-center rounded-[6px] bg-gray-100">
-          <Search className="mx-2 h-4 w-4 text-gray-400" />
+        <div className="mx-2 sm:mx-4 flex flex-1 max-w-md min-w-0 items-center rounded-[6px] bg-gray-100">
+          <Search className="mx-2 h-4 w-4 text-gray-400 shrink-0" />
           <input
             type="text"
             placeholder="Search prospects, donors, transactions or receipt no."
-            className="w-full border-none bg-transparent text-[0.9rem] text-gray-700 placeholder:text-gray-400 focus:outline-none"
+            className="w-full border-none bg-transparent text-[0.9rem] text-gray-700 placeholder:text-gray-400 focus:outline-none min-w-0"
           />
         </div>
 
-        <div className="ml-auto flex items-center gap-3">
+        <div className="ml-auto flex items-center gap-2 sm:gap-3 shrink-0">
           <Link
             href="/notifications"
             className="hover:bg-surface-soft-hover relative flex h-9 w-9 cursor-pointer items-center justify-center self-center rounded-[6px] text-gray-600"
@@ -171,7 +171,7 @@ export function Navbar({ navbarPreset }: NavbarProps) {
               <div className="bg-brand-50 text-brand-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[0.75rem] font-bold">
                 {profileLabel.iconLabel}
               </div>
-              <div className="ml-1.5 flex flex-col items-start leading-none">
+              <div className="ml-1.5 hidden md:flex flex-col items-start leading-none">
                 <span className="max-w-50 truncate text-left text-[0.75rem] font-medium whitespace-nowrap text-gray-800">
                   {profileLabel.name}
                 </span>
@@ -181,7 +181,7 @@ export function Navbar({ navbarPreset }: NavbarProps) {
               </div>
               <ChevronDown
                 className={cn(
-                  "ml-5 h-4 w-4 text-gray-400 transition-transform duration-150",
+                  "ml-1.5 md:ml-3 h-4 w-4 text-gray-400 transition-transform duration-150",
                   isProfileOpen && "rotate-180",
                 )}
               />
@@ -210,7 +210,7 @@ export function Navbar({ navbarPreset }: NavbarProps) {
         </div>
       </div>
 
-      <div className="flex border-b border-gray-300 px-4 py-1">
+      <div className="flex border-b border-gray-300 px-3 sm:px-4 py-1 overflow-x-auto min-w-0 w-full max-w-full">
         <div
           ref={moduleMenuRef}
           className="relative flex items-center border-r border-gray-300 pr-4"
