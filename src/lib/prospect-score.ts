@@ -4,7 +4,7 @@
  * FORMULA:
  * P = 100 * (A / 55) * ((F + 45) / 90)
  * 
- * A = lead_source + initiative + donor_type (range 15 to 55)
+ * A = lead_source + campaign + donor_type (range 15 to 55)
  * F = details + pipeline + amount (range 15 to 45)
  */
 
@@ -21,11 +21,12 @@ export interface ProspectScoreInput {
 
 export interface ProspectScoreResult {
   rawProbability: number; // Unclamped / exact P (18.2 to 100.0)
-  tier: number; // 0, 20, 40, 60, 80, 100
-  tierLabel: "Deferred" | "Low" | "Fair" | "Good" | "High Likelihood" | "Secured Donor";
+  tier: number; // 20, 40, 60, 80, 100
+  tierLabel: "Low" | "Fair" | "Good" | "High Likelihood" | "Secured Donor";
   affinity: {
     leadSourceScore: number;
-    initiativeScore: number;
+    campaignScore: number;
+    initiativeScore: number; // alias for backwards compatibility
     donorTypeScore: number;
     totalAffinity: number;
     affinityRatio: number; // A / 55
@@ -59,14 +60,14 @@ export function getLeadSourceScore(source?: string | null): number {
 }
 
 /**
- * 2. Initiative (max 20)
+ * 2. Campaign (max 20)
  * Health and Disaster Relief: 20
  * Youth Servant Leadership: 15
  * In-Kind Social Enterprise: 10
  * At-Risk Restorative Justice: 5
  * Institute for Stewardship: 5
  */
-export function getInitiativeScore(campaign?: string | null): number {
+export function getCampaignScore(campaign?: string | null): number {
   if (!campaign) return 5;
   const c = campaign.toLowerCase().trim();
   if (c.includes("disaster") || c.includes("health")) return 20;
@@ -76,6 +77,8 @@ export function getInitiativeScore(campaign?: string | null): number {
   if (c.includes("stewardship") || c.includes("institute")) return 5;
   return 5;
 }
+
+export const getInitiativeScore = getCampaignScore;
 
 /**
  * 3. Donor Type (max 15)
@@ -151,6 +154,7 @@ export function calculateProspectProbability(input: ProspectScoreInput): Prospec
       tierLabel: "Secured Donor",
       affinity: {
         leadSourceScore: 20,
+        campaignScore: 20,
         initiativeScore: 20,
         donorTypeScore: 15,
         totalAffinity: 55,
@@ -167,34 +171,11 @@ export function calculateProspectProbability(input: ProspectScoreInput): Prospec
     };
   }
 
-  if (status.toLowerCase() === "deferred") {
-    return {
-      rawProbability: 0.0,
-      tier: 0,
-      tierLabel: "Deferred",
-      affinity: {
-        leadSourceScore: 5,
-        initiativeScore: 5,
-        donorTypeScore: 5,
-        totalAffinity: 15,
-        affinityRatio: 15 / 55,
-      },
-      feasibility: {
-        detailsScore: 5,
-        pipelineScore: 5,
-        amountScore: 5,
-        totalFeasibility: 15,
-        feasibilityMultiplier: 60 / 90,
-      },
-      isOverride: true,
-    };
-  }
-
   // AFFINITY (A)
   const leadSourceScore = getLeadSourceScore(input.leadSource);
-  const initiativeScore = getInitiativeScore(input.targetCampaign);
+  const campaignScore = getCampaignScore(input.targetCampaign);
   const donorTypeScore = getDonorTypeScore(input.donorType);
-  const A = leadSourceScore + initiativeScore + donorTypeScore; // Range 15 to 55
+  const A = leadSourceScore + campaignScore + donorTypeScore; // Range 15 to 55
   const affinityRatio = A / 55; // 0.27 to 1.00
 
   // FEASIBILITY (F)
@@ -227,7 +208,8 @@ export function calculateProspectProbability(input: ProspectScoreInput): Prospec
     tierLabel,
     affinity: {
       leadSourceScore,
-      initiativeScore,
+      campaignScore,
+      initiativeScore: campaignScore,
       donorTypeScore,
       totalAffinity: A,
       affinityRatio: Math.round(affinityRatio * 100) / 100,

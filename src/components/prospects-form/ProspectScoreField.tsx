@@ -123,7 +123,7 @@ export function ProspectScoreField({
             P = 100 × (A / 55) × ((F + 45) / 90)
           </div>
           <div className="text-[10.5px] text-white/90 space-y-0.5 font-normal">
-            <div>A (Affinity): lead source + initiative + donor type</div>
+            <div>A (Affinity): lead source + campaign + donor type</div>
             <div>F (Feasibility): details + pipeline status + amount</div>
           </div>
         </div>

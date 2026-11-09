@@ -9,9 +9,9 @@ import { moduleName, navbarPreset } from "@/app/donor-conv/struct";
 import { useDocumentTitle } from "@/components/Navbar";
 import { SAMPLE_LEADS, type LeadDetail } from "@/lib/mock-data/leads";
 import type { PipelineStatusEnum } from "@/types";
-import { ProspectSelectMenu } from "@/components/ProspectSelectMenu";
-import { ProspectDatePicker } from "@/components/ProspectDatePicker";
-import { ProspectScoreField } from "@/components/ProspectScoreField";
+import { ProspectSelectMenu } from "@/components/prospects-form/ProspectSelectMenu";
+import { ProspectDatePicker } from "@/components/prospects-form/ProspectDatePicker";
+import { ProspectScoreField } from "@/components/prospects-form/ProspectScoreField";
 import { calculateProspectProbability } from "@/lib/prospect-score";
 
 const pageName = "Edit Prospect";
@@ -24,7 +24,7 @@ const PIPELINE_STAGES: PipelineStatusEnum[] = [
   "Secured Donor",
 ];
 
-const DONOR_TYPE_OPTIONS = ["Corporate", "Individual", "Community", "International"];
+const DONOR_TYPE_OPTIONS = ["corporate", "individual", "community", "international"];
 const LEAD_SOURCE_OPTIONS = ["Research", "Booths", "Direct Call", "Referral", "Walk-in"];
 const TARGET_CAMPAIGN_OPTIONS = [
   "Health and Disaster Relief",
@@ -51,6 +51,31 @@ function EditProspectForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const idParam = searchParams.get("id");
+
+  // Enforce zero horizontal page scroll and responsiveness strictly on this page
+  useEffect(() => {
+    const prevMinWidth = document.body.style.minWidth;
+    const prevOverflowX = document.body.style.overflowX;
+    const prevHtmlMinWidth = document.documentElement.style.minWidth;
+    const prevHtmlOverflowX = document.documentElement.style.overflowX;
+
+    document.body.style.minWidth = "0px";
+    document.body.style.overflowX = "hidden";
+    document.body.style.width = "100%";
+    document.body.style.maxWidth = "100vw";
+
+    document.documentElement.style.minWidth = "0px";
+    document.documentElement.style.overflowX = "hidden";
+    document.documentElement.style.width = "100%";
+    document.documentElement.style.maxWidth = "100vw";
+
+    return () => {
+      document.body.style.minWidth = prevMinWidth;
+      document.body.style.overflowX = prevOverflowX;
+      document.documentElement.style.minWidth = prevHtmlMinWidth;
+      document.documentElement.style.overflowX = prevHtmlOverflowX;
+    };
+  }, []);
 
   const matchedLead: LeadDetail =
     SAMPLE_LEADS.find((lead) => String(lead.id) === idParam) ?? SAMPLE_LEADS[0];
@@ -236,9 +261,17 @@ function EditProspectForm() {
 
   return (
     <div
-      className="w-[75%] max-w-full min-w-0 mx-auto space-y-2.5 pb-8"
+      className="w-[75%] max-w-full min-w-0 mx-auto space-y-2.5 pb-8 overflow-hidden"
       style={{ fontFamily: "var(--font-poppins), sans-serif" }}
     >
+      <style dangerouslySetInnerHTML={{ __html: `
+        html, body {
+          min-width: 0 !important;
+          max-width: 100vw !important;
+          overflow-x: hidden !important;
+          width: 100% !important;
+        }
+      `}} />
       {/* Back Link */}
       <div className="flex items-center text-[11px] text-[#5c5757]">
         <Link
