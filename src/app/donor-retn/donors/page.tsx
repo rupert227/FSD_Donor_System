@@ -959,7 +959,7 @@ export default function DonorsPage() {
         </div>
 
         {/* Quick views and daily contact progress */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex flex-wrap gap-2">
           {VIEWS.map((v) => {
             const active = activeViewId === v.id;
@@ -969,7 +969,7 @@ export default function DonorsPage() {
                 type="button"
                 onClick={() => applyView(v.filters)}
                 className={cn(
-                  "flex items-center gap-2 rounded-full border px-4 py-1.5 text-[13px] font-medium",
+                  "flex h-9 shrink-0 items-center gap-2 rounded-full border px-4 text-[13px] font-medium",
                   active
                     ? "border-text-primary bg-text-primary text-white"
                     : "border-border-strong bg-white text-text-primary hover:bg-surface-soft-hover",

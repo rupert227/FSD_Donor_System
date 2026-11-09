@@ -390,9 +390,9 @@ export default function ProspectsPage() {
                   resetPage();
                 }}
                 className={cn(
-                  "flex items-center gap-2 rounded-full border px-4 py-1.5 text-[13px] font-medium",
+                  "flex h-9 items-center gap-2 rounded-full border px-4 text-[13px] font-medium",
                   active
-                    ? "border-brand-primary bg-text-primary text-white"
+                    ? "bg-text-primary text-white"
                     : "border-border-strong bg-white text-text-primary hover:bg-surface-soft-hover",
                 )}
               >
