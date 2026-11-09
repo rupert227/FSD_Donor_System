@@ -9,6 +9,7 @@ import { moduleName, navbarPreset } from "@/app/donor-conv/struct";
 import { useEffect, useState } from "react";
 import { useDocumentTitle } from "@/components/Navbar";
 import { useRouter } from "next/navigation";
+import { ReportsSkeleton } from "@/app/donor-conv/reports/skeleton";
 
 import {
   formatCurrency,
@@ -33,39 +34,52 @@ export default function ReportsPage() {
 
   const [donorType, setDonorType] = useState<DropdownOption | null>(null);
   const [fiscalYear, setFiscalYear] = useState<DropdownOption | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [pipelineStage, setPipelineStage] = useState<DropdownOption | null>(
     null,
   );
+
+  const [isFetchingReport, setIsFetchingReport] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [reportContent, setReportContent] = useState<Leads.Report | null>(null);
 
   // Loading screen test
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 100);
+    }, 500);
 
     return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
     const controller = new AbortController();
+    setIsFetchingReport(true);
 
-    fetch("/api/lead-pipeline-report", { signal: controller.signal })
-      .then(async (response) => {
+    const fetchReport = async () => {
+      try {
+        const response = await fetch("/api/lead-pipeline-report", {
+          signal: controller.signal,
+        });
+
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
         const content = (await response.json()) as Leads.Report;
         setReportContent(content);
-      })
-      .catch((err) => {
-        if (err.name === "AbortError") return;
+      } catch (err) {
+        if ((err as Error).name === "AbortError") return;
         setReportContent(Leads.emptyReport);
-      });
+      } finally {
+        setIsFetchingReport(false);
+      }
+    };
+
+    fetchReport();
 
     return () => controller.abort();
   }, []);
 
   const report = reportContent ?? Leads.emptyReport;
+  const showSkeleton = isLoading || isFetchingReport;
 
   const leadOriginMax =
     report.leadOrigins?.reduce((m, s) => Math.max(m, s.value ?? 0), 0) ?? 0;
@@ -103,10 +117,10 @@ export default function ReportsPage() {
 
   const summaryRows = generateSummaryRows(report);
 
-  if (isLoading) {
+  if (showSkeleton) {
     return (
       <AppShell navbarPreset={navbarPreset}>
-        <p>Placeholder loading screen</p>
+        <ReportsSkeleton />
       </AppShell>
     );
   } else
