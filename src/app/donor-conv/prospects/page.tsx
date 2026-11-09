@@ -392,7 +392,7 @@ export default function ProspectsPage() {
                 className={cn(
                   "flex items-center gap-2 rounded-full border px-4 py-1.5 text-[13px] font-medium",
                   active
-                    ? "border-brand-primary bg-brand-primary text-white"
+                    ? "border-brand-primary bg-text-primary text-white"
                     : "border-border-strong bg-white text-text-primary hover:bg-surface-soft-hover",
                 )}
               >
@@ -565,10 +565,10 @@ export default function ProspectsPage() {
                   </th>
                   <th className="px-3 py-3 font-medium">Prospect</th>
                   <th className="px-3 py-3 font-medium">Primary contact</th>
-                  <th className="px-3 py-3 font-medium">Phone</th>
+                  <th className="px-3 py-3 font-medium">Phone Number</th>
                   <th className="px-3 py-3 font-medium">Follow-up date</th>
                   <th className="px-3 py-3 font-medium">Target amount</th>
-                  <th className="px-3 py-3 font-medium">Pipeline stage</th>
+                  <th className="px-3 py-3 font-medium">Engagement status</th>
                   <th className="px-3 py-3 font-medium">Owner</th>
                 </tr>
               </thead>
@@ -635,7 +635,7 @@ export default function ProspectsPage() {
                       <td className="px-3 py-3">
                         <span
                           className={cn(
-                            "inline-flex items-center gap-1.5 rounded-[4px] border px-2 py-0.5 text-[11px] font-medium whitespace-nowrap",
+                            "inline-flex items-center gap-1.5 rounded-[4px] px-2 py-0.5 text-[11px] font-medium whitespace-nowrap",
                             style.badge,
                           )}
                         >
