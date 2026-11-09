@@ -174,7 +174,6 @@ export function Navbar({
   }, [isProfileOpen]);
 
   return (
-<<<<<<< HEAD
     <header className="bg-surface-white">
       <div className="border-border-strong flex items-center gap-10 border-b px-4 py-2">
         <div
@@ -184,12 +183,6 @@ export function Navbar({
           className="flex cursor-pointer items-center gap-2"
         >
           <div className="relative min-h-9 min-w-9 overflow-hidden">
-=======
-    <header className="bg-white w-full max-w-full overflow-hidden">
-      <div className="flex items-center border-b border-gray-300 px-3 sm:px-4 py-2 w-full max-w-full min-w-0">
-        <div className="flex items-center gap-2 shrink-0">
-          <div className="border-brand-primary bg-brand-primary relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-[8px] border-2">
->>>>>>> overhaul
             <Image
               src="/caritas_logo.png"
               alt="Caritas Manila Logo"
@@ -199,14 +192,8 @@ export function Navbar({
               priority
             />
           </div>
-<<<<<<< HEAD
           <div className="leading-tight">
             <p className="text-text-primary font-bold whitespace-nowrap">
-=======
-
-          <div className="leading-tight hidden min-[480px]:block">
-            <div className="text-[1rem] font-bold whitespace-nowrap text-gray-900">
->>>>>>> overhaul
               Caritas Manila
             </p>
             <p className="text-text-secondary text-[0.75rem] whitespace-nowrap">
@@ -214,7 +201,6 @@ export function Navbar({
             </p>
           </div>
         </div>
-<<<<<<< HEAD
         <div className="bg-surface-soft hover:bg-surface-soft-hover border-border-soft flex h-9 w-200 items-center rounded-[6px] border">
           <Search className="text-text-muted ml-2 h-4 w-4 shrink-0" />
           <input
@@ -234,19 +220,6 @@ export function Navbar({
           />
         </div>
         <div className="ml-auto flex items-center gap-3">
-=======
-
-        <div className="mx-2 sm:mx-4 flex flex-1 max-w-md min-w-0 items-center rounded-[6px] bg-gray-100">
-          <Search className="mx-2 h-4 w-4 text-gray-400 shrink-0" />
-          <input
-            type="text"
-            placeholder="Search prospects, donors, transactions or receipt no."
-            className="w-full border-none bg-transparent text-[0.9rem] text-gray-700 placeholder:text-gray-400 focus:outline-none min-w-0"
-          />
-        </div>
-
-        <div className="ml-auto flex items-center gap-2 sm:gap-3 shrink-0">
->>>>>>> overhaul
           <Link
             href="/notifications"
             type="button"
@@ -269,7 +242,6 @@ export function Navbar({
               onClick={() => setIsProfileOpen((open) => !open)}
               className="hover:bg-surface-soft-hover flex cursor-pointer items-center self-center rounded-[6px] px-2 py-1.5"
             >
-<<<<<<< HEAD
               <p className="bg-brand-50 text-brand-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[0.75rem] font-bold">
                 {iconLabel}
               </p>
@@ -284,22 +256,6 @@ export function Navbar({
               <ChevronDown
                 className={cn(
                   "text-text-secondary ml-5 h-4 w-4 shrink-0",
-=======
-              <div className="bg-brand-50 text-brand-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[0.75rem] font-bold">
-                {profileLabel.iconLabel}
-              </div>
-              <div className="ml-1.5 hidden md:flex flex-col items-start leading-none">
-                <span className="max-w-50 truncate text-left text-[0.75rem] font-medium whitespace-nowrap text-gray-800">
-                  {profileLabel.name}
-                </span>
-                <span className="mt-1 max-w-50 truncate text-left text-[0.7rem] whitespace-nowrap text-gray-500">
-                  {profileLabel.description}
-                </span>
-              </div>
-              <ChevronDown
-                className={cn(
-                  "ml-1.5 md:ml-3 h-4 w-4 text-gray-400 transition-transform duration-150",
->>>>>>> overhaul
                   isProfileOpen && "rotate-180",
                 )}
               />
@@ -343,12 +299,7 @@ export function Navbar({
           </div>
         </div>
       </div>
-<<<<<<< HEAD
       <div className="border-border-strong flex border-b px-4 py-1">
-=======
-
-      <div className="flex border-b border-gray-300 px-3 sm:px-4 py-1 overflow-x-auto min-w-0 w-full max-w-full">
->>>>>>> overhaul
         <div
           ref={moduleRef}
           className="border-border-strong relative flex items-center border-r pr-4"
