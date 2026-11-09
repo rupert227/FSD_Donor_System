@@ -67,7 +67,7 @@ export default function PreviewReportPage() {
             <button
               type="button"
               onClick={() => router.push("/donor-conv/reports")}
-              className="border-border-soft bg-surface-soft text-text-primary hover:bg-surface-soft-hover bg-surface-white rounded-button inline-flex items-center gap-2 border px-3 py-2 text-[0.75rem] font-medium"
+              className="border-border-soft bg-surface-soft text-text-primary hover:bg-surface-soft-hover bg-surface-white rounded-button inline-flex cursor-pointer items-center gap-2 border px-3 py-2 text-[0.75rem] font-medium"
             >
               <ChevronLeft className="h-5 w-5" />
               Back to Reports
@@ -75,7 +75,7 @@ export default function PreviewReportPage() {
             <button
               type="button"
               onClick={() => window.print()}
-              className="border-brand-primary bg-brand-primary text-surface-white rounded-button inline-flex items-center gap-2 border px-3 py-2 text-[0.75rem] font-medium hover:opacity-80"
+              className="border-brand-primary bg-brand-primary text-surface-white rounded-button inline-flex cursor-pointer items-center gap-2 border px-3 py-2 text-[0.75rem] font-medium hover:opacity-80"
             >
               <Download className="h-5 w-5" />
               Download PDF
@@ -216,7 +216,7 @@ export default function PreviewReportPage() {
                       ))}
                       <th className="w-[15%] px-3 py-3 text-right font-medium">
                         {report.fiscalYearOptions?.find(
-                          (o) => o.key === report.fiscalYear,
+                          (option) => option.key === report.fiscalYear,
                         )?.label ?? "—"}
                       </th>
                     </tr>
