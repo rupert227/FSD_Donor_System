@@ -1,5 +1,3 @@
-// TODO: Fix tab selector visual bug when opening navbar dropdowns
-
 "use client";
 
 import Image from "next/image";
