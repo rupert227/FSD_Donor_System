@@ -47,3 +47,12 @@ next-env.d.ts
 *.swo
 
 ref.tsx
+# deployment / containers
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# AI tooling & local utilities
+.codex/
+.gemini/
+docs/handoffs/
