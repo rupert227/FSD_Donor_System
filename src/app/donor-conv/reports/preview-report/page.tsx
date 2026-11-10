@@ -6,7 +6,7 @@ import { AppShell } from "@/components/AppShell";
 import { ChevronLeft, Download } from "lucide-react";
 import { Leads } from "@/lib/types";
 import { cn } from "cn";
-import { moduleName, navbarPreset } from "@/app/donor-conv/struct";
+import { getNavbarPreset, moduleName } from "@/app/donor-conv/struct";
 import { useDocumentTitle } from "@/components/Navbar";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -28,7 +28,7 @@ const previewStorageKey = "donor-conv-lead-pipeline-report-content";
 
 export default function PreviewReportPage() {
   useDocumentTitle(`${moduleName} - ${pageName}`);
-  navbarPreset.selectedTabIndex = 2;
+  const navbarPreset = getNavbarPreset(2);
 
   const router = useRouter();
 

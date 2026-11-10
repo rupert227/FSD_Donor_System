@@ -24,7 +24,7 @@ import {
 import { cn } from "cn";
 
 import { AppShell } from "@/components/AppShell";
-import { moduleName, navbarPreset } from "@/app/donor-conv/struct";
+import { getNavbarPreset, moduleName } from "@/app/donor-conv/struct";
 
 import { SAMPLE_LEADS, type LeadDetail } from "@/lib/mock-data/leads";
 import type { PipelineStatusEnum } from "@/types";
@@ -143,7 +143,7 @@ function csvCell(v: string | number | null) {
 
 export default function ProspectsPage() {
   useDocumentTitle(`${moduleName} - ${pageName}`);
-  navbarPreset.selectedTabIndex = 0;
+  const navbarPreset = getNavbarPreset(0);
 
   const router = useRouter();
   const today = useToday();

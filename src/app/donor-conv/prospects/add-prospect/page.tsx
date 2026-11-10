@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { moduleName, navbarPreset } from "@/app/donor-conv/struct";
+import { getNavbarPreset, moduleName } from "@/app/donor-conv/struct";
 import { useDocumentTitle } from "@/components/Navbar";
 
 const pageName = "Add Prospect";
@@ -38,7 +38,7 @@ const ASSIGNED_OFFICER_OPTIONS = [
 
 export default function AddProspectPage() {
   useDocumentTitle(`${moduleName} - ${pageName}`);
-  navbarPreset.selectedTabIndex = 0;
+  const navbarPreset = getNavbarPreset(0);
   const router = useRouter();
 
   // Enforce zero horizontal page scroll and responsiveness strictly on this page

@@ -17,7 +17,7 @@ import {
 import { cn } from "cn";
 
 import { AppShell } from "@/components/AppShell";
-import { moduleName, navbarPreset } from "@/app/donor-retn/struct";
+import { getNavbarPreset, moduleName } from "@/app/donor-retn/struct";
 import { useDocumentTitle } from "@/components/Navbar";
 import { DropdownList } from "@/components/prefabs";
 import type {
@@ -768,7 +768,7 @@ function FieldDropdown({
 
 export default function DonorsPage() {
   useDocumentTitle(`${moduleName} - ${pageName}`);
-  navbarPreset.selectedTabIndex = 0;
+  const navbarPreset = getNavbarPreset(0);
 
   const router = useRouter();
   const today = useToday();

@@ -1,14 +1,14 @@
 "use client";
 
 import { AppShell } from "@/components/AppShell";
-import { moduleName, navbarPreset } from "@/app/donor-care/struct";
+import { getNavbarPreset, moduleName } from "@/app/donor-care/struct";
 import { useDocumentTitle } from "@/components/Navbar";
 
 const pageName = "Receipts";
 
 export default function ReceiptsPage() {
   useDocumentTitle(`${moduleName} - ${pageName}`);
-  navbarPreset.selectedTabIndex = 1;
+  const navbarPreset = getNavbarPreset(1);
 
   return (
     <AppShell navbarPreset={navbarPreset}>

@@ -108,7 +108,7 @@ export function useDocumentTitle(title: string) {
 
 export function Navbar({
   navbarPreset: {
-    selectedModuleIndex = 0,
+    selectedModuleIndex = undefined,
     selectedTabIndex = 0,
     tabs = [],
   } = {},
@@ -129,7 +129,7 @@ export function Navbar({
   });
 
   const selectedModule =
-    selectedModuleIndex != null
+    selectedModuleIndex != undefined
       ? moduleOptions[selectedModuleIndex]
       : moduleOptionsPlaceholder;
 
@@ -162,7 +162,7 @@ export function Navbar({
     document.addEventListener("mousedown", handlePointerDown);
 
     return () => document.removeEventListener("mousedown", handlePointerDown);
-  }, []);
+  }, [isModuleOpen]);
 
   useEffect(() => {
     if (!isProfileOpen) return;

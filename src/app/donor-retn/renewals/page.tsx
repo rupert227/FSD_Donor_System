@@ -1,14 +1,14 @@
 "use client";
 
 import { AppShell } from "@/components/AppShell";
-import { moduleName, navbarPreset } from "@/app/donor-retn/struct";
+import { getNavbarPreset, moduleName } from "@/app/donor-retn/struct";
 import { useDocumentTitle } from "@/components/Navbar";
 
 const pageName = "Renewals";
 
 export default function RenewalsPage() {
   useDocumentTitle(`${moduleName} - ${pageName}`);
-  navbarPreset.selectedTabIndex = 1;
+  const navbarPreset = getNavbarPreset(1);
 
   return (
     <AppShell navbarPreset={navbarPreset}>

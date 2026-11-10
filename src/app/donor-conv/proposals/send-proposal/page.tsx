@@ -1,14 +1,14 @@
 "use client";
 
 import { AppShell } from "@/components/AppShell";
-import { moduleName, navbarPreset } from "@/app/donor-conv/struct";
+import { getNavbarPreset, moduleName } from "@/app/donor-conv/struct";
 import { useDocumentTitle } from "@/components/Navbar";
 
 const pageName = "Send Proposal";
 
 export default function SendProposalPage() {
   useDocumentTitle(`${moduleName} - ${pageName}`);
-  navbarPreset.selectedTabIndex = 1;
+  const navbarPreset = getNavbarPreset(1);
 
   return (
     <AppShell navbarPreset={navbarPreset}>

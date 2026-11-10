@@ -7,7 +7,7 @@ import { Leads } from "@/lib/types";
 import { ReportsSkeleton } from "@/app/donor-conv/reports/skeleton";
 import { useEffect, useState } from "react";
 import { cn } from "cn";
-import { moduleName, navbarPreset } from "@/app/donor-conv/struct";
+import { getNavbarPreset, moduleName } from "@/app/donor-conv/struct";
 import { useDocumentTitle } from "@/components/Navbar";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
@@ -28,7 +28,7 @@ const reportContentStorageKey = "donor-conv-lead-pipeline-report-content";
 
 export default function ReportsPageContent() {
   useDocumentTitle(`${moduleName} - ${pageName}`);
-  navbarPreset.selectedTabIndex = 2;
+  const navbarPreset = getNavbarPreset(2);
 
   const router = useRouter();
   const searchParams = useSearchParams();
