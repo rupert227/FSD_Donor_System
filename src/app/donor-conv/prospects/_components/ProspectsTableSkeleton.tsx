@@ -44,7 +44,7 @@ export function ProspectsTableSkeleton() {
 
         {/* Table representation */}
         <div className="overflow-x-auto min-h-[440px]">
-          <table className="w-full text-center text-[12px]">
+          <table className="w-full text-center text-[0.75rem]">
             <thead className="bg-surface-soft text-text-secondary">
               <tr className="border-y border-border-soft">
                 {["Prospect", "Primary Contact", "Contact Info", "Campaign", "Target Amount", "Probability", "Follow-up", "Officer", "Actions"].map((col, idx) => (

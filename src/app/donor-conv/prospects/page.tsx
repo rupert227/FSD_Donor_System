@@ -503,7 +503,7 @@ export default function ProspectsPage() {
 
           <div className="flex items-center gap-3">
             {/* List / Board toggle */}
-            <div className="flex rounded-button border border-border-strong bg-white p-0.5 text-[13px]">
+            <div className="flex rounded-button border border-border-strong bg-white p-0.5 text-[0.8125rem]">
               <span className="flex items-center gap-1.5 rounded-[4px] bg-surface-soft px-3 py-1.5 font-medium text-text-primary">
                 <List className="h-3.5 w-3.5" /> List
               </span>
@@ -518,7 +518,7 @@ export default function ProspectsPage() {
             <button
               type="button"
               onClick={exportCsv}
-              className="flex h-9 items-center gap-2 rounded-button border border-button-stroke bg-white px-3 text-[13px] font-medium text-text-primary hover:bg-surface-soft-hover"
+              className="flex h-9 items-center gap-2 rounded-button border border-button-stroke bg-white px-3 text-[0.8125rem] font-medium text-text-primary hover:bg-surface-soft-hover"
             >
               <Download className="h-3.5 w-3.5" />
               Export CSV
@@ -526,7 +526,7 @@ export default function ProspectsPage() {
 
             <Link
               href="/donor-conv/prospects/add-prospect"
-              className="flex h-9 items-center gap-2 rounded-button bg-brand-primary px-4 text-[13px] font-semibold text-white hover:opacity-90"
+              className="flex h-9 items-center gap-2 rounded-button bg-brand-primary px-4 text-[0.8125rem] font-semibold text-white hover:opacity-90"
             >
               <Plus className="h-3.5 w-3.5" />
               New prospect
@@ -545,7 +545,7 @@ export default function ProspectsPage() {
               setPage(1);
             }}
             className={cn(
-              "flex h-9 items-center gap-2 rounded-full border px-4 text-[13px] font-medium transition-colors cursor-pointer",
+              "flex h-9 items-center gap-2 rounded-full border px-4 text-[0.8125rem] font-medium transition-colors cursor-pointer",
               isAllView
                 ? "bg-text-primary text-white border-text-primary"
                 : "border-border-strong bg-white text-text-primary hover:bg-surface-soft-hover",
@@ -554,7 +554,7 @@ export default function ProspectsPage() {
             All
             <span
               className={cn(
-                "rounded-full px-1.5 text-[11px] font-semibold",
+                "rounded-full px-1.5 text-[0.6875rem] font-semibold",
                 isAllView
                   ? "bg-white/20 text-white"
                   : "bg-surface-soft text-text-secondary",
@@ -573,7 +573,7 @@ export default function ProspectsPage() {
               setPage(1);
             }}
             className={cn(
-              "flex h-9 items-center gap-2 rounded-full border px-4 text-[13px] font-medium transition-colors cursor-pointer",
+              "flex h-9 items-center gap-2 rounded-full border px-4 text-[0.8125rem] font-medium transition-colors cursor-pointer",
               isDueTodayView
                 ? "bg-text-primary text-white border-text-primary"
                 : "border-border-strong bg-white text-text-primary hover:bg-surface-soft-hover",
@@ -582,7 +582,7 @@ export default function ProspectsPage() {
             Due today
             <span
               className={cn(
-                "rounded-full px-1.5 text-[11px] font-semibold",
+                "rounded-full px-1.5 text-[0.6875rem] font-semibold",
                 isDueTodayView
                   ? "bg-white/20 text-white"
                   : "bg-surface-soft text-text-secondary",
@@ -601,7 +601,7 @@ export default function ProspectsPage() {
               setPage(1);
             }}
             className={cn(
-              "flex h-9 items-center gap-2 rounded-full border px-4 text-[13px] font-medium transition-colors cursor-pointer",
+              "flex h-9 items-center gap-2 rounded-full border px-4 text-[0.8125rem] font-medium transition-colors cursor-pointer",
               isOverdueView
                 ? "bg-text-primary text-white border-text-primary"
                 : "border-border-strong bg-white text-text-primary hover:bg-surface-soft-hover",
@@ -610,7 +610,7 @@ export default function ProspectsPage() {
             Overdue
             <span
               className={cn(
-                "rounded-full px-1.5 text-[11px] font-semibold",
+                "rounded-full px-1.5 text-[0.6875rem] font-semibold",
                 isOverdueView
                   ? "bg-white/20 text-white"
                   : "bg-surface-soft text-text-secondary",
@@ -631,7 +631,7 @@ export default function ProspectsPage() {
               setPage(1);
             }}
             className={cn(
-              "flex h-9 items-center gap-2 rounded-full border px-4 text-[13px] font-medium transition-colors cursor-pointer",
+              "flex h-9 items-center gap-2 rounded-full border px-4 text-[0.8125rem] font-medium transition-colors cursor-pointer",
               isMineView
                 ? "bg-text-primary text-white border-text-primary"
                 : "border-border-strong bg-white text-text-primary hover:bg-surface-soft-hover",
@@ -640,7 +640,7 @@ export default function ProspectsPage() {
             My prospects
             <span
               className={cn(
-                "rounded-full px-1.5 text-[11px] font-semibold",
+                "rounded-full px-1.5 text-[0.6875rem] font-semibold",
                 isMineView
                   ? "bg-white/20 text-white"
                   : "bg-surface-soft text-text-secondary",
@@ -661,7 +661,7 @@ export default function ProspectsPage() {
               setPage(1);
             }}
             className={cn(
-              "flex h-9 items-center gap-2 rounded-full border px-4 text-[13px] font-medium transition-colors cursor-pointer",
+              "flex h-9 items-center gap-2 rounded-full border px-4 text-[0.8125rem] font-medium transition-colors cursor-pointer",
               isProposalSentView
                 ? "bg-text-primary text-white border-text-primary"
                 : "border-border-strong bg-white text-text-primary hover:bg-surface-soft-hover",
@@ -670,7 +670,7 @@ export default function ProspectsPage() {
             Proposal sent
             <span
               className={cn(
-                "rounded-full px-1.5 text-[11px] font-semibold",
+                "rounded-full px-1.5 text-[0.6875rem] font-semibold",
                 isProposalSentView
                   ? "bg-white/20 text-white"
                   : "bg-surface-soft text-text-secondary",
@@ -696,7 +696,7 @@ export default function ProspectsPage() {
                 }}
                 placeholder="Search prospect or contact..."
                 aria-label="Search prospect or contact person"
-                className="h-9 w-full bg-transparent text-[13px] text-text-primary placeholder:text-text-muted focus:outline-none"
+                className="h-9 w-full bg-transparent text-[0.8125rem] text-text-primary placeholder:text-text-muted focus:outline-none"
               />
             </div>
 
@@ -713,7 +713,7 @@ export default function ProspectsPage() {
                 }}
                 aria-expanded={filterOpen}
                 className={cn(
-                  "flex h-9 items-center gap-1.5 rounded-button border px-3 text-[13px] font-medium transition-colors cursor-pointer",
+                  "flex h-9 items-center gap-1.5 rounded-button border px-3 text-[0.8125rem] font-medium transition-colors cursor-pointer",
                   appliedFilterCount > 0
                     ? "border-[#5c5757] bg-surface-soft text-text-primary"
                     : "border-border-strong bg-white text-text-primary hover:bg-surface-soft-hover",
@@ -742,7 +742,7 @@ export default function ProspectsPage() {
                   >
                     {/* Popup Header */}
                     <div className="mb-4 flex items-center justify-between border-b border-[#e3dfdf] pb-3">
-                      <h3 className="text-[13px] font-semibold text-[#1c1a1a]">
+                      <h3 className="text-[0.8125rem] font-semibold text-[#1c1a1a]">
                         Filters
                       </h3>
                       <button
@@ -759,7 +759,7 @@ export default function ProspectsPage() {
                     <div className="grid grid-cols-2 gap-x-5 gap-y-4">
                       {/* 1. Pipeline Status */}
                       <div>
-                        <label className="block text-[11px] font-medium text-[#5c5757] mb-1.5">
+                        <label className="block text-[0.6875rem] font-medium text-[#5c5757] mb-1.5">
                           Pipeline Status
                         </label>
                         <ProspectSelectMenu
@@ -773,7 +773,7 @@ export default function ProspectsPage() {
 
                       {/* 2. Target Campaign */}
                       <div>
-                        <label className="block text-[11px] font-medium text-[#5c5757] mb-1.5">
+                        <label className="block text-[0.6875rem] font-medium text-[#5c5757] mb-1.5">
                           Target Campaign
                         </label>
                         <ProspectSelectMenu
@@ -787,7 +787,7 @@ export default function ProspectsPage() {
 
                       {/* 3. Target Amount */}
                       <div>
-                        <label className="block text-[11px] font-medium text-[#5c5757] mb-1.5">
+                        <label className="block text-[0.6875rem] font-medium text-[#5c5757] mb-1.5">
                           Target Amount
                         </label>
                         <ProspectSelectMenu
@@ -801,7 +801,7 @@ export default function ProspectsPage() {
 
                       {/* 4. Assigned Officer */}
                       <div>
-                        <label className="block text-[11px] font-medium text-[#5c5757] mb-1.5">
+                        <label className="block text-[0.6875rem] font-medium text-[#5c5757] mb-1.5">
                           Assigned Officer
                         </label>
                         <ProspectSelectMenu
@@ -815,7 +815,7 @@ export default function ProspectsPage() {
 
                       {/* 5. Donor Type */}
                       <div>
-                        <label className="block text-[11px] font-medium text-[#5c5757] mb-1.5">
+                        <label className="block text-[0.6875rem] font-medium text-[#5c5757] mb-1.5">
                           Donor Type
                         </label>
                         <ProspectSelectMenu
@@ -829,7 +829,7 @@ export default function ProspectsPage() {
 
                       {/* 6. Lead Source */}
                       <div>
-                        <label className="block text-[11px] font-medium text-[#5c5757] mb-1.5">
+                        <label className="block text-[0.6875rem] font-medium text-[#5c5757] mb-1.5">
                           Lead Source
                         </label>
                         <ProspectSelectMenu
@@ -877,7 +877,7 @@ export default function ProspectsPage() {
               </button>
               <div
                 role="tooltip"
-                className="pointer-events-none absolute right-0 top-full mt-1.5 hidden group-hover:block whitespace-nowrap rounded bg-[#1c1a1a] px-2 py-1 text-[11px] font-medium text-white shadow-md z-30"
+                className="pointer-events-none absolute right-0 top-full mt-1.5 hidden group-hover:block whitespace-nowrap rounded bg-[#1c1a1a] px-2 py-1 text-[0.6875rem] font-medium text-white shadow-md z-30"
               >
                 Reset filters
               </div>
@@ -887,25 +887,25 @@ export default function ProspectsPage() {
           {/* Table container with min-height of 10 rows automatically so filter popup is never cut */}
           <div className="overflow-x-auto min-h-[440px]">
             {/* Centered table columns with 12px font size */}
-            <table className="w-full text-center text-[12px]">
+            <table className="w-full text-center text-[0.75rem]">
               <thead className="bg-surface-soft text-text-secondary">
                 <tr className="border-y border-border-soft">
-                  <th className="px-3 py-2.5 font-medium text-center text-[12px]">
+                  <th className="px-3 py-2.5 font-medium text-center text-[0.75rem]">
                     Prospect
                   </th>
-                  <th className="px-3 py-2.5 font-medium text-center text-[12px]">
+                  <th className="px-3 py-2.5 font-medium text-center text-[0.75rem]">
                     Primary contact
                   </th>
-                  <th className="px-3 py-2.5 font-medium text-center text-[12px]">
+                  <th className="px-3 py-2.5 font-medium text-center text-[0.75rem]">
                     Phone Number
                   </th>
-                  <th className="px-3 py-2.5 font-medium text-center text-[12px]">
+                  <th className="px-3 py-2.5 font-medium text-center text-[0.75rem]">
                     Follow-up date
                   </th>
-                  <th className="px-3 py-2.5 font-medium text-center text-[12px]">
+                  <th className="px-3 py-2.5 font-medium text-center text-[0.75rem]">
                     Target amount
                   </th>
-                  <th className="px-3 py-2.5 font-medium text-center text-[12px]">
+                  <th className="px-3 py-2.5 font-medium text-center text-[0.75rem]">
                     Pipeline status
                   </th>
                 </tr>
@@ -915,7 +915,7 @@ export default function ProspectsPage() {
                   <tr>
                     <td
                       colSpan={6}
-                      className="px-4 py-24 text-center text-text-secondary text-[12px]"
+                      className="px-4 py-24 text-center text-text-secondary text-[0.75rem]"
                     >
                       <div className="flex flex-col items-center justify-center gap-2">
                         <p className="font-medium text-text-primary">
@@ -949,18 +949,18 @@ export default function ProspectsPage() {
                           }}
                           className="cursor-pointer border-b border-border-soft text-text-primary hover:bg-surface-soft focus:bg-surface-soft focus:outline-none h-[39px]"
                         >
-                          <td className="px-3 py-2.5 font-semibold text-center text-[12px]">
+                          <td className="px-3 py-2.5 font-semibold text-center text-[0.75rem]">
                             {r.prospect_name}
                           </td>
-                          <td className="px-3 py-2.5 text-center text-[12px]">
+                          <td className="px-3 py-2.5 text-center text-[0.75rem]">
                             {r.primary_contact_person}
                           </td>
-                          <td className="px-3 py-2.5 whitespace-nowrap text-center text-[12px]">
+                          <td className="px-3 py-2.5 whitespace-nowrap text-center text-[0.75rem]">
                             {r.phone_number}
                           </td>
                           <td
                             className={cn(
-                              "px-3 py-2.5 whitespace-nowrap text-center text-[12px]",
+                              "px-3 py-2.5 whitespace-nowrap text-center text-[0.75rem]",
                               !r.target_followup_date && "text-text-muted",
                               r.target_followup_date &&
                                 today &&
@@ -976,14 +976,14 @@ export default function ProspectsPage() {
                               ? "Due today"
                               : formatDate(r.target_followup_date)}
                           </td>
-                          <td className="px-3 py-2.5 whitespace-nowrap text-center text-[12px]">
+                          <td className="px-3 py-2.5 whitespace-nowrap text-center text-[0.75rem]">
                             {peso.format(r.target_amount)}
                           </td>
                           {/* Low-saturation badge without dot, centered */}
                           <td className="px-3 py-2.5 text-center">
                             <span
                               className={cn(
-                                "inline-flex items-center justify-center rounded-[4px] px-2.5 py-0.5 text-[11px] font-medium whitespace-nowrap",
+                                "inline-flex items-center justify-center rounded-[4px] px-2.5 py-0.5 text-[0.6875rem] font-medium whitespace-nowrap",
                                 style.badge,
                               )}
                             >
@@ -1041,7 +1041,7 @@ export default function ProspectsPage() {
                     onClick={() => setPage(p)}
                     aria-current={p === currentPage ? "page" : undefined}
                     className={cn(
-                      "h-8 min-w-8 rounded-button border px-2 text-[13px]",
+                      "h-8 min-w-8 rounded-button border px-2 text-[0.8125rem]",
                       p === currentPage
                         ? "border-brand-primary bg-brand-primary font-semibold text-white"
                         : "border-border-strong hover:bg-surface-soft-hover",

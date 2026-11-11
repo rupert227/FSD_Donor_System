@@ -12,7 +12,7 @@ export default function ProposalsPage() {
         <div className="bg-surface-soft flex size-10 shrink-0 items-center justify-center rounded-lg">
           <FileText className="size-5" aria-hidden="true" />
         </div>
-        <h1 className="text-[22px] leading-7 font-semibold">New proposal</h1>
+        <h1 className="text-[1.375rem] leading-7 font-semibold">New proposal</h1>
       </div>
 
       <ProposalBuilder />

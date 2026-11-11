@@ -558,21 +558,6 @@ const VIEWS: {
     warn: true,
     filters: { followUp: "overdue" },
   },
-  {
-    id: "renewal",
-    chip: "Renewal started",
-    filters: { engagement: "Renewal Started" },
-  },
-  {
-    id: "recommitted",
-    chip: "Recommitted",
-    filters: { engagement: "Recommitted" },
-  },
-  {
-    id: "lapsed",
-    chip: "Lapsed",
-    filters: { engagement: "Lapsed Donor" },
-  },
 ];
 
 const FOLLOW_UP_OPTIONS = [
@@ -739,7 +724,7 @@ function Badge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-[4px] px-2 py-0.5 text-[11px] font-medium whitespace-nowrap",
+        "inline-flex items-center gap-1.5 rounded-[4px] px-2 py-0.5 text-[0.6875rem] font-medium whitespace-nowrap",
         style.badge,
       )}
     >
@@ -964,14 +949,14 @@ export default function DonorsPage() {
             <button
               type="button"
               onClick={exportCsv}
-              className="flex h-9 items-center gap-2 rounded-button border border-button-stroke bg-white px-3 text-[13px] font-medium text-text-primary hover:bg-surface-soft-hover"
+              className="flex h-9 items-center gap-2 rounded-button border border-button-stroke bg-white px-3 text-[0.8125rem] font-medium text-text-primary hover:bg-surface-soft-hover"
             >
               <Download className="h-3.5 w-3.5" />
               Export CSV
             </button>
             <Link
               href="/donor-retn/donors/add-donor"
-              className="flex h-9 items-center gap-2 rounded-button bg-brand-primary px-4 text-[13px] font-semibold text-white hover:opacity-90"
+              className="flex h-9 items-center gap-2 rounded-button bg-brand-primary px-4 text-[0.8125rem] font-semibold text-white hover:opacity-90"
             >
               <Plus className="h-3.5 w-3.5" />
               New donor
@@ -980,8 +965,8 @@ export default function DonorsPage() {
         </div>
 
         {/* Quick views */}
-        <div className="flex flex-wrap gap-2">
-          {VIEWS.map((view) => {
+        <div className="flex flex-wrap items-center gap-2">
+            {VIEWS.map((view) => {
             const active = activeViewId === view.id;
             return (
               <button
@@ -989,7 +974,7 @@ export default function DonorsPage() {
                 type="button"
                 onClick={() => applyView(view.filters)}
                 className={cn(
-                  "flex h-9 shrink-0 items-center gap-2 rounded-full border px-4 text-[13px] font-medium",
+                  "flex h-9 shrink-0 items-center gap-2 rounded-full border px-4 text-[0.8125rem] font-medium",
                   active
                     ? "border-text-primary bg-text-primary text-white"
                     : "border-border-strong bg-white text-text-primary hover:bg-surface-soft-hover",
@@ -998,7 +983,7 @@ export default function DonorsPage() {
                 {view.chip}
                 <span
                   className={cn(
-                    "rounded-full px-1.5 text-[11px] font-semibold",
+                    "rounded-full px-1.5 text-[0.6875rem] font-semibold",
                     active
                       ? "bg-white/20 text-white"
                       : view.warn
@@ -1010,11 +995,11 @@ export default function DonorsPage() {
                 </span>
               </button>
             );
-          })}
+            })}
           {/* Contact progress */}
-        <section aria-label="Contact progress" className="ml-auto flex w-full max-w-[460px] shrink-0 items-center gap-3 rounded-[10px] border border-border-soft bg-white px-3 py-1">
+          <section aria-label="Contact progress" className="ml-auto flex w-full max-w-[460px] shrink-0 items-center gap-3 rounded-[10px] border border-border-soft bg-white px-3 py-1">
           <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-baseline gap-x-2 text-[13px]">
+            <div className="flex flex-wrap items-baseline gap-x-2 text-[0.8125rem]">
               <span className="whitespace-nowrap font-medium text-text-secondary">Your contacts {contactPeriod === "today" ? "today" : "this week"}</span>
               <span className="whitespace-nowrap font-semibold text-text-primary">{contactPeriod === "today" ? "84 / 126" : "402 / 630"}</span>
               <span className="whitespace-nowrap text-text-muted">{contactPeriod === "today" ? "42 to go" : "228 to go"}</span>
@@ -1031,11 +1016,11 @@ export default function DonorsPage() {
             </div>
           </div>
 
-          <div className="flex shrink-0 rounded-button border border-border-strong p-0.5 text-[13px]">
+          <div className="flex shrink-0 rounded-button border border-border-strong p-0.5 text-[0.8125rem]">
             <button type="button" onClick={() => setContactPeriod("today")} aria-pressed={contactPeriod === "today"} className={cn("rounded px-2.5 py-1 font-medium", contactPeriod === "today" ? "bg-text-primary text-white" : "text-text-secondary hover:bg-surface-soft")}>Today</button>
             <button type="button" onClick={() => setContactPeriod("week")} aria-pressed={contactPeriod === "week"} className={cn("rounded px-2.5 py-1 font-medium", contactPeriod === "week" ? "bg-text-primary text-white" : "text-text-secondary hover:bg-surface-soft")}>This week</button>
           </div>
-        </section>
+          </section>
         </div>
 
         {/* Table card */}
@@ -1052,7 +1037,7 @@ export default function DonorsPage() {
                 }}
                 placeholder="Search donor or contact"
                 aria-label="Search donor or contact person"
-                className="h-9 w-full bg-transparent text-[13px] text-text-primary placeholder:text-text-muted focus:outline-none"
+                className="h-9 w-full bg-transparent text-[0.8125rem] text-text-primary placeholder:text-text-muted focus:outline-none"
               />
             </div>
 
@@ -1062,7 +1047,7 @@ export default function DonorsPage() {
                 onClick={() => (filterOpen ? setFilterOpen(false) : openFilters())}
                 aria-expanded={filterOpen}
                 className={cn(
-                  "flex h-9 items-center gap-1.5 rounded-button border px-3 text-[13px] font-medium transition-colors",
+                  "flex h-9 items-center gap-1.5 rounded-button border px-3 text-[0.8125rem] font-medium transition-colors",
                   pills.length > 0
                     ? "border-[#5c5757] bg-surface-soft text-text-primary"
                     : "border-border-strong bg-white text-text-primary hover:bg-surface-soft-hover",
@@ -1079,7 +1064,7 @@ export default function DonorsPage() {
                   />
                   <div className="absolute left-0 top-full z-40 mt-1.5 w-[580px] max-w-[calc(100vw-32px)] rounded-xl border border-[#e3dfdf] bg-white p-5 shadow-2xl">
                     <div className="mb-4 flex items-center justify-between border-b border-[#e3dfdf] pb-3">
-                      <h3 className="text-[13px] font-semibold text-[#1c1a1a]">Filters</h3>
+                      <h3 className="text-[0.8125rem] font-semibold text-[#1c1a1a]">Filters</h3>
                       <button
                         type="button"
                         onClick={() => setFilterOpen(false)}
@@ -1092,11 +1077,11 @@ export default function DonorsPage() {
 
                     <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
                       <div>
-                        <label className="mb-1.5 block text-[11px] font-medium text-[#5c5757]">Engagement status</label>
+                        <label className="mb-1.5 block text-[0.6875rem] font-medium text-[#5c5757]">Engagement status</label>
                         <FieldDropdown label="All statuses" value={draft.engagement} onChange={(v) => updateDraft({ engagement: v as Filters["engagement"] })} options={[{ value: "all", label: "All statuses" }, ...ENGAGEMENT_STATUSES.map((s) => ({ value: s, label: s }))]} />
                       </div>
                       <div>
-                        <label className="mb-1.5 block text-[11px] font-medium text-[#5c5757]">Follow-up due</label>
+                        <label className="mb-1.5 block text-[0.6875rem] font-medium text-[#5c5757]">Follow-up due</label>
                         <FieldDropdown label="Any time" value={draft.followUp} onChange={(v) => updateDraft({ followUp: v as FollowUp, ...(v !== "custom" ? { dateFrom: "", dateTo: "" } : {}) })} options={FOLLOW_UP_OPTIONS} />
                       </div>
                       {draft.followUp === "custom" && (
@@ -1110,15 +1095,15 @@ export default function DonorsPage() {
                         </div>
                       )}
                       <div>
-                        <label className="mb-1.5 block text-[11px] font-medium text-[#5c5757]">Target campaign</label>
+                        <label className="mb-1.5 block text-[0.6875rem] font-medium text-[#5c5757]">Target campaign</label>
                         <FieldDropdown label="All campaigns" value={draft.campaign} onChange={(v) => updateDraft({ campaign: v as Filters["campaign"] })} options={[{ value: "all", label: "All campaigns" }, ...CAMPAIGNS.map((c) => ({ value: c, label: c }))]} />
                       </div>
                       <div>
-                        <label className="mb-1.5 block text-[11px] font-medium text-[#5c5757]">Donor type</label>
+                        <label className="mb-1.5 block text-[0.6875rem] font-medium text-[#5c5757]">Donor type</label>
                         <FieldDropdown label="All types" value={draft.donorType} onChange={(v) => updateDraft({ donorType: v as Filters["donorType"] })} options={[{ value: "all", label: "All types" }, ...DONOR_TYPES.map((t) => ({ value: t, label: sentence(t) }))]} />
                       </div>
                       <div>
-                        <label className="mb-1.5 block text-[11px] font-medium text-[#5c5757]">Last contacted</label>
+                        <label className="mb-1.5 block text-[0.6875rem] font-medium text-[#5c5757]">Last contacted</label>
                         <FieldDropdown label="Anytime" value={draft.lastContacted} onChange={(v) => updateDraft({ lastContacted: v as LastContacted })} options={LAST_CONTACTED_OPTIONS} />
                       </div>
                     </div>
@@ -1155,18 +1140,18 @@ export default function DonorsPage() {
           </div>
 
           <div className="min-h-[440px] overflow-x-auto">
-            <table className="w-full text-center text-[12px]">
+            <table className="w-full text-center text-[0.75rem]">
               <thead className="bg-surface-soft text-text-secondary">
                 <tr className="border-y border-border-soft">
-                  <th className="px-3 py-2.5 text-center text-[12px] font-medium">Donor</th>
-                  <th className="px-3 py-2.5 text-center text-[12px] font-medium">Contact number</th>
-                  <th className="px-3 py-2.5 text-center text-[12px] font-medium">Campaign</th>
-                  <th className="px-3 py-2.5 text-center text-[12px] font-medium">
+                  <th className="px-3 py-2.5 text-center text-[0.75rem] font-medium">Donor</th>
+                  <th className="px-3 py-2.5 text-center text-[0.75rem] font-medium">Contact number</th>
+                  <th className="px-3 py-2.5 text-center text-[0.75rem] font-medium">Campaign</th>
+                  <th className="px-3 py-2.5 text-center text-[0.75rem] font-medium">
                     Last contacted
                   </th>
-                  <th className="px-3 py-2.5 text-center text-[12px] font-medium">Follow-up date</th>
-                  <th className="px-3 py-2.5 text-center text-[12px] font-medium">Engagement status</th>
-                  <th className="px-3 py-2.5 text-center text-[12px] font-medium">Tenure</th>
+                  <th className="px-3 py-2.5 text-center text-[0.75rem] font-medium">Follow-up date</th>
+                  <th className="px-3 py-2.5 text-center text-[0.75rem] font-medium">Engagement status</th>
+                  <th className="px-3 py-2.5 text-center text-[0.75rem] font-medium">Tenure</th>
                 </tr>
               </thead>
               <tbody>
@@ -1174,7 +1159,7 @@ export default function DonorsPage() {
                   <tr>
                     <td
                       colSpan={7}
-                      className="px-3 py-24 text-center text-[12px] text-text-secondary"
+                      className="px-3 py-24 text-center text-[0.75rem] text-text-secondary"
                     >
                       No donors match your search or filters.
                     </td>
@@ -1194,7 +1179,7 @@ export default function DonorsPage() {
                       onKeyDown={(e) => {
                         if (e.key === "Enter") router.push(href);
                       }}
-                      className="h-[39px] cursor-pointer border-b border-border-soft text-[12px] text-text-primary hover:bg-surface-soft focus:bg-surface-soft focus:outline-none"
+                      className="h-[39px] cursor-pointer border-b border-border-soft text-[0.75rem] text-text-primary hover:bg-surface-soft focus:bg-surface-soft focus:outline-none"
                     >
                       <td
                         className="max-w-64 truncate px-3 py-2.5 text-center font-semibold"
@@ -1283,7 +1268,7 @@ export default function DonorsPage() {
                     onClick={() => setPage(p)}
                     aria-current={p === currentPage ? "page" : undefined}
                     className={cn(
-                      "h-8 min-w-8 rounded-button border px-2 text-[13px]",
+                      "h-8 min-w-8 rounded-button border px-2 text-[0.8125rem]",
                       p === currentPage
                         ? "border-brand-primary bg-brand-primary font-semibold text-white"
                         : "border-border-strong hover:bg-surface-soft-hover",

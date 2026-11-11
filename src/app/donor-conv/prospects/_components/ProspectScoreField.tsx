@@ -68,22 +68,22 @@ export function ProspectScoreField({
   return (
     <div className="relative" ref={containerRef}>
       {/* Read-Only Field Matching Standard 30px Input Tokens */}
-      <div className="w-full h-[30px] px-2.5 rounded-md border border-[#e3dfdf] bg-[#faf9f9] flex items-center justify-between text-[11px] select-none">
+      <div className="w-full h-[30px] px-2.5 rounded-md border border-[#e3dfdf] bg-[#faf9f9] flex items-center justify-between text-[0.6875rem] select-none">
         <div className="flex items-center gap-1.5 whitespace-nowrap min-w-0">
           <span
-            className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10.5px] font-medium border shrink-0 ${getBadgeStyle(
+            className={`inline-flex items-center px-1.5 py-0.5 rounded text-[0.65625rem] font-medium border shrink-0 ${getBadgeStyle(
               numVal
             )}`}
           >
             {numVal}%
           </span>
           {tierLabel && (
-            <span className="text-[11px] font-medium text-[#5c5757] whitespace-nowrap">
+            <span className="text-[0.6875rem] font-medium text-[#5c5757] whitespace-nowrap">
               {tierLabel}
             </span>
           )}
           {rawProbability !== undefined && numVal > 0 && numVal < 100 && (
-            <span className="text-[10px] text-[#8a8484] shrink-0 hidden sm:inline">
+            <span className="text-[0.625rem] text-[#8a8484] shrink-0 hidden sm:inline">
               (raw: {rawProbability}%)
             </span>
           )}
@@ -112,17 +112,17 @@ export function ProspectScoreField({
           onMouseLeave={handleClose}
           className={`absolute ${
             direction === "up" ? "bottom-full mb-1.5" : "top-full mt-1.5"
-          } right-0 z-50 w-max max-w-[min(340px,85vw)] rounded-md bg-[#262626] px-3.5 py-2.5 text-[11px] text-white shadow-xl select-text leading-relaxed animate-in fade-in zoom-in-95 duration-100 ${
+          } right-0 z-50 w-max max-w-[min(340px,85vw)] rounded-md bg-[#262626] px-3.5 py-2.5 text-[0.6875rem] text-white shadow-xl select-text leading-relaxed animate-in fade-in zoom-in-95 duration-100 ${
             direction === "up"
               ? "before:content-[''] before:absolute before:inset-x-0 before:top-full before:h-2 before:bg-transparent"
               : "before:content-[''] before:absolute before:inset-x-0 before:bottom-full before:h-2 before:bg-transparent"
           }`}
           style={{ fontFamily: "var(--font-poppins), sans-serif" }}
         >
-          <div className="font-semibold text-white tracking-wide mb-1 font-mono text-[11.5px]">
+          <div className="font-semibold text-white tracking-wide mb-1 font-mono text-[0.71875rem]">
             P = 100 × (A / 55) × ((F + 45) / 90)
           </div>
-          <div className="text-[10.5px] text-white/90 space-y-0.5 font-normal">
+          <div className="text-[0.65625rem] text-white/90 space-y-0.5 font-normal">
             <div>A (Affinity): lead source + campaign + donor type</div>
             <div>F (Feasibility): details + pipeline status + amount</div>
           </div>

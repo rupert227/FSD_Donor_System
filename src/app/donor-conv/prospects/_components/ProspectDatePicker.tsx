@@ -188,7 +188,7 @@ export function ProspectDatePicker({
         type="button"
         disabled={disabled}
         onClick={handleToggle}
-        className={`w-full h-[30px] px-2.5 flex items-center justify-between text-[11px] font-medium rounded-md border border-[#e3dfdf] bg-white transition cursor-pointer text-left ${
+        className={`w-full h-[30px] px-2.5 flex items-center justify-between text-[0.6875rem] font-medium rounded-md border border-[#e3dfdf] bg-white transition cursor-pointer text-left ${
           disabled
             ? "bg-[#f7f6f6] text-[#757070] cursor-not-allowed border-[#cfcaca]"
             : "text-[#1c1a1a] hover:border-[#8a8484] focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f]"
@@ -232,7 +232,7 @@ export function ProspectDatePicker({
             >
               <ChevronLeft className="w-3.5 h-3.5" />
             </button>
-            <span className="text-[12px] font-semibold text-[#1c1a1a]">
+            <span className="text-[0.75rem] font-semibold text-[#1c1a1a]">
               {MONTH_NAMES[viewMonth]} {viewYear}
             </span>
             <button
@@ -245,8 +245,8 @@ export function ProspectDatePicker({
           </div>
 
           {/* Quick picks (Tomorrow, 1 week, 2 weeks) */}
-          <div className="flex items-center justify-between text-[10px] pt-0.5 pb-1 border-b border-[#f0eeee] px-0.5">
-            <span className="text-[9.5px] uppercase font-semibold text-[#8a8484] tracking-wide">
+          <div className="flex items-center justify-between text-[0.625rem] pt-0.5 pb-1 border-b border-[#f0eeee] px-0.5">
+            <span className="text-[0.59375rem] uppercase font-semibold text-[#8a8484] tracking-wide">
               Quick:
             </span>
             <button
@@ -277,7 +277,7 @@ export function ProspectDatePicker({
             {WEEKDAYS.map((w) => (
               <span
                 key={w}
-                className="text-[10px] font-semibold text-[#757070] h-5 flex items-center justify-center"
+                className="text-[0.625rem] font-semibold text-[#757070] h-5 flex items-center justify-center"
               >
                 {w}
               </span>
@@ -299,7 +299,7 @@ export function ProspectDatePicker({
                     onChange(item.iso);
                     setIsOpen(false);
                   }}
-                  className={`w-[28px] h-[28px] rounded-[4px] text-[11px] flex items-center justify-center transition cursor-pointer ${
+                  className={`w-[28px] h-[28px] rounded-[4px] text-[0.6875rem] flex items-center justify-center transition cursor-pointer ${
                     isSelected
                       ? "bg-[#6b0f0f] text-white font-medium"
                       : isToday

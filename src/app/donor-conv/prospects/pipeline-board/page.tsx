@@ -386,7 +386,6 @@ export default function PipelineBoardPage() {
     return {
       stage,
       cards,
-      total: cards.reduce((sum, l) => sum + l.target_amount, 0),
     };
   });
 
@@ -723,7 +722,7 @@ export default function PipelineBoardPage() {
 
           {/* Right Toolbar: View toggle, Export, New Prospect, and Refresh Button */}
           <div className="flex items-center gap-3">
-            <div className="flex rounded-button border border-border-strong bg-white p-0.5 text-[13px]">
+            <div className="flex rounded-button border border-border-strong bg-white p-0.5 text-[0.8125rem]">
               <Link
                 href="/donor-conv/prospects"
                 className="flex items-center gap-1.5 rounded-[4px] px-3 py-1.5 text-text-secondary hover:bg-surface-soft-hover transition-colors"
@@ -738,7 +737,7 @@ export default function PipelineBoardPage() {
             <button
               type="button"
               onClick={exportCsv}
-              className="flex h-9 items-center gap-2 rounded-button border border-button-stroke bg-white px-3 text-[13px] font-medium text-text-primary hover:bg-surface-soft-hover cursor-pointer"
+              className="flex h-9 items-center gap-2 rounded-button border border-button-stroke bg-white px-3 text-[0.8125rem] font-medium text-text-primary hover:bg-surface-soft-hover cursor-pointer"
             >
               <Download className="h-3.5 w-3.5" />
               Export CSV
@@ -746,7 +745,7 @@ export default function PipelineBoardPage() {
 
             <Link
               href="/donor-conv/prospects/add-prospect"
-              className="flex h-9 items-center gap-2 rounded-button bg-brand-primary px-4 text-[13px] font-semibold text-white hover:opacity-90"
+              className="flex h-9 items-center gap-2 rounded-button bg-brand-primary px-4 text-[0.8125rem] font-semibold text-white hover:opacity-90"
             >
               <Plus className="h-3.5 w-3.5" />
               New prospect
@@ -764,7 +763,7 @@ export default function PipelineBoardPage() {
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search this board"
               aria-label="Search prospect or contact person"
-              className="h-9 w-full bg-transparent text-[13px] text-text-primary placeholder:text-text-muted focus:outline-none"
+              className="h-9 w-full bg-transparent text-[0.8125rem] text-text-primary placeholder:text-text-muted focus:outline-none"
             />
           </div>
 
@@ -782,7 +781,7 @@ export default function PipelineBoardPage() {
               }}
               aria-expanded={filterOpen}
               className={cn(
-                "flex h-9 items-center gap-1.5 rounded-button border px-3 text-[13px] font-medium transition-colors cursor-pointer",
+                "flex h-9 items-center gap-1.5 rounded-button border px-3 text-[0.8125rem] font-medium transition-colors cursor-pointer",
                 appliedFilterCount > 0
                   ? "border-[#5c5757] bg-surface-soft text-text-primary"
                   : "border-border-strong bg-white text-text-primary hover:bg-surface-soft-hover",
@@ -809,7 +808,7 @@ export default function PipelineBoardPage() {
                   )}
                 >
                   <div className="mb-4 flex items-center justify-between border-b border-[#e3dfdf] pb-3">
-                    <h3 className="text-[13px] font-semibold text-[#1c1a1a]">Filters</h3>
+                    <h3 className="text-[0.8125rem] font-semibold text-[#1c1a1a]">Filters</h3>
                     <button
                       type="button"
                       onClick={closeFilterPopup}
@@ -823,7 +822,7 @@ export default function PipelineBoardPage() {
                   <div className="grid grid-cols-2 gap-x-5 gap-y-4">
                     {/* Target Campaign */}
                     <div>
-                      <label className="block text-[11px] font-medium text-[#5c5757] mb-1.5">
+                      <label className="block text-[0.75rem] font-medium text-[#5c5757] mb-1.5">
                         Target Campaign
                       </label>
                       <ProspectSelectMenu
@@ -837,7 +836,7 @@ export default function PipelineBoardPage() {
 
                     {/* Assigned Officer */}
                     <div>
-                      <label className="block text-[11px] font-medium text-[#5c5757] mb-1.5">
+                      <label className="block text-[0.75rem] font-medium text-[#5c5757] mb-1.5">
                         Assigned Officer
                       </label>
                       <ProspectSelectMenu
@@ -851,7 +850,7 @@ export default function PipelineBoardPage() {
 
                     {/* Target Amount */}
                     <div>
-                      <label className="block text-[11px] font-medium text-[#5c5757] mb-1.5">
+                      <label className="block text-[0.75rem] font-medium text-[#5c5757] mb-1.5">
                         Target Amount
                       </label>
                       <ProspectSelectMenu
@@ -865,7 +864,7 @@ export default function PipelineBoardPage() {
 
                     {/* Donor Type */}
                     <div>
-                      <label className="block text-[11px] font-medium text-[#5c5757] mb-1.5">
+                      <label className="block text-[0.75rem] font-medium text-[#5c5757] mb-1.5">
                         Donor Type
                       </label>
                       <ProspectSelectMenu
@@ -887,12 +886,12 @@ export default function PipelineBoardPage() {
                         return (
                           <>
                             <div className="flex items-center justify-between mb-1.5">
-                              <label className="block text-[11px] font-medium text-[#5c5757]">
+                              <label className="block text-[0.75rem] font-medium text-[#5c5757]">
                                 Probability
                               </label>
                               <span
                                 className={cn(
-                                  "text-[10.5px] px-1.5 py-0.5 rounded transition-colors",
+                                  "text-[0.6875rem] px-1.5 py-0.5 rounded transition-colors",
                                   probVal > 0
                                     ? "bg-[#6B0F0F]/10 text-brand-primary font-semibold"
                                     : "text-text-muted font-normal",
@@ -922,7 +921,7 @@ export default function PipelineBoardPage() {
                                   background: `linear-gradient(to right, #6B0F0F 0%, #6B0F0F ${probVal}%, #e3dfdf ${probVal}%, #e3dfdf 100%)`,
                                 }}
                               />
-                              <div className="flex justify-between px-0.5 mt-1 text-[9px] font-medium text-[#8a8484] select-none">
+                              <div className="flex justify-between px-0.5 mt-1 text-[0.625rem] font-medium text-[#8a8484] select-none">
                                 <span>0%</span>
                                 <span>20%</span>
                                 <span>40%</span>
@@ -938,7 +937,7 @@ export default function PipelineBoardPage() {
 
                     {/* Lead Source */}
                     <div>
-                      <label className="block text-[11px] font-medium text-[#5c5757] mb-1.5">
+                      <label className="block text-[0.75rem] font-medium text-[#5c5757] mb-1.5">
                         Lead Source
                       </label>
                       <ProspectSelectMenu
@@ -991,7 +990,7 @@ export default function PipelineBoardPage() {
             </button>
             <div
               role="tooltip"
-              className="pointer-events-none absolute right-0 top-full mt-1.5 hidden group-hover:block whitespace-nowrap rounded bg-[#1c1a1a] px-2 py-1 text-[11px] font-medium text-white shadow-md z-30"
+              className="pointer-events-none absolute right-0 top-full mt-1.5 hidden group-hover:block whitespace-nowrap rounded bg-[#1c1a1a] px-2 py-1 text-[0.75rem] font-medium text-white shadow-md z-30"
             >
               Refresh board
             </div>
@@ -1000,7 +999,7 @@ export default function PipelineBoardPage() {
 
         {/* 5 Equal Kanban Columns Grid */}
         <div className="grid grid-cols-5 items-start gap-3 w-full min-w-0">
-          {columns.map(({ stage, cards, total }) => {
+          {columns.map(({ stage, cards }) => {
             const style = STAGE_STYLES[stage];
             const isDragOver = dragOverStage === stage && isDragging;
 
@@ -1023,19 +1022,16 @@ export default function PipelineBoardPage() {
                   <div className="flex min-w-0 items-center gap-1">
                     <span
                       className={cn(
-                        "inline-flex items-center rounded-[3px] px-1.5 py-0.5 text-[10px] font-medium leading-none whitespace-nowrap",
+                        "inline-flex items-center rounded-[3px] px-1.5 py-0.5 text-[0.6875rem] font-medium leading-none whitespace-nowrap",
                         style.badge,
                       )}
                     >
                       {stageLabel(stage)}
                     </span>
-                    <span className="rounded-full bg-black/5 px-1 py-0.2 text-[9px] font-semibold text-text-secondary leading-none shrink-0">
+                    <span className="rounded-full bg-black/5 px-1 py-0.2 text-[0.625rem] font-semibold text-text-secondary leading-none shrink-0">
                       {cards.length}
                     </span>
                   </div>
-                  <span className="shrink-0 text-[10px] font-semibold text-text-primary whitespace-nowrap pl-1">
-                    {peso.format(total)}
-                  </span>
                 </header>
 
                 {/* Column Scrollable Body */}
@@ -1049,7 +1045,7 @@ export default function PipelineBoardPage() {
                           : "border-border-strong/50 text-text-muted",
                       )}
                     >
-                      <p className="text-[10.5px] font-medium">
+                      <p className="text-[0.6875rem] font-medium">
                         {isDragOver ? "Drop card here" : "No prospects"}
                       </p>
                     </div>
@@ -1077,12 +1073,12 @@ export default function PipelineBoardPage() {
                         )}
                       >
                         <div className="flex items-start justify-between gap-1.5">
-                          <p className="text-[11px] leading-tight font-semibold text-text-primary hover:text-[#6b0f0f] transition-colors line-clamp-1 pointer-events-none">
+                          <p className="text-[0.75rem] leading-tight font-semibold text-text-primary hover:text-[#6b0f0f] transition-colors line-clamp-1 pointer-events-none">
                             {l.prospect_name}
                           </p>
                           <span
                             className={cn(
-                              "shrink-0 rounded-[3px] px-1 py-0.2 text-[9px] font-medium pointer-events-none",
+                              "shrink-0 rounded-[3px] px-1 py-0.2 text-[0.625rem] font-medium pointer-events-none",
                               (Number(l.probability) || 0) >= 70
                                 ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
                                 : (Number(l.probability) || 0) >= 40
@@ -1094,15 +1090,15 @@ export default function PipelineBoardPage() {
                           </span>
                         </div>
 
-                        <p className="mt-0.5 text-[10px] text-text-secondary truncate pointer-events-none">
+                        <p className="mt-0.5 text-[0.6875rem] text-text-secondary truncate pointer-events-none">
                           {l.primary_contact_person}
                         </p>
 
                         <div className="mt-1.5 flex items-center justify-between pointer-events-none">
-                          <span className="text-[11px] font-semibold text-text-primary">
+                          <span className="text-[0.75rem] font-semibold text-text-primary">
                             {peso.format(l.target_amount)}
                           </span>
-                          <span className="text-[9px] text-text-muted capitalize">
+                          <span className="text-[0.625rem] text-text-muted capitalize">
                             {l.donor_type}
                           </span>
                         </div>
@@ -1110,7 +1106,7 @@ export default function PipelineBoardPage() {
                         <div className="mt-1.5 flex items-center justify-between gap-1 border-t border-gray-100 pt-1.5 pointer-events-none">
                           <span
                             className={cn(
-                              "flex items-center gap-1 text-[9.5px]",
+                              "flex items-center gap-1 text-[0.6875rem]",
                               !l.target_followup_date && "text-text-muted",
                               l.target_followup_date && "text-text-secondary",
                               overdue && "font-medium text-brand-danger",
@@ -1129,7 +1125,7 @@ export default function PipelineBoardPage() {
 
                           <span
                             title={l.assigned_officer}
-                            className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-brand-50 text-[8px] font-semibold text-brand-primary"
+                            className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-brand-50 text-[0.625rem] font-semibold text-brand-primary"
                           >
                             {initials(l.assigned_officer)}
                           </span>
@@ -1159,12 +1155,12 @@ export default function PipelineBoardPage() {
             }}
           >
             <div className="flex items-start justify-between gap-1.5">
-              <span className="text-[11px] leading-tight font-semibold text-text-primary line-clamp-1">
+              <span className="text-[0.75rem] leading-tight font-semibold text-text-primary line-clamp-1">
                 {activeLead.prospect_name}
               </span>
               <span
                 className={cn(
-                  "shrink-0 rounded-[3px] px-1 py-0.2 text-[9px] font-medium",
+                  "shrink-0 rounded-[3px] px-1 py-0.2 text-[0.625rem] font-medium",
                   (Number(activeLead.probability) || 0) >= 70
                     ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
                     : (Number(activeLead.probability) || 0) >= 40
@@ -1176,28 +1172,28 @@ export default function PipelineBoardPage() {
               </span>
             </div>
 
-            <p className="mt-0.5 text-[10px] text-text-secondary truncate">
+            <p className="mt-0.5 text-[0.6875rem] text-text-secondary truncate">
               {activeLead.primary_contact_person}
             </p>
 
             <div className="mt-1.5 flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-text-primary">
+              <span className="text-[0.75rem] font-semibold text-text-primary">
                 {peso.format(activeLead.target_amount)}
               </span>
-              <span className="text-[9px] text-text-muted capitalize">
+              <span className="text-[0.625rem] text-text-muted capitalize">
                 {activeLead.donor_type}
               </span>
             </div>
 
             <div className="mt-1.5 flex items-center justify-between gap-1 border-t border-gray-100 pt-1.5">
-              <span className="flex items-center gap-1 text-[9.5px] text-text-secondary">
+              <span className="flex items-center gap-1 text-[0.6875rem] text-text-secondary">
                 <Calendar className="h-2.5 w-2.5 shrink-0" />
                 {activeLead.target_followup_date
                   ? shortDate(activeLead.target_followup_date)
                   : "No date"}
               </span>
 
-              <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-brand-50 text-[8px] font-semibold text-brand-primary">
+              <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-brand-50 text-[0.625rem] font-semibold text-brand-primary">
                 {initials(activeLead.assigned_officer)}
               </span>
             </div>
@@ -1237,7 +1233,7 @@ export default function PipelineBoardPage() {
                   <X className="h-3.5 w-3.5" />
                 </button>
               </div>
-              <p className="text-[11.5px] text-text-secondary leading-snug whitespace-nowrap mt-0.5">
+              <p className="text-[0.75rem] text-text-secondary leading-snug whitespace-nowrap mt-0.5">
                 {toast.message}
               </p>
               {toast.action && (
@@ -1248,7 +1244,7 @@ export default function PipelineBoardPage() {
                       dismissToast();
                       toast.action?.onClick();
                     }}
-                    className="inline-flex items-center justify-center rounded-button bg-brand-primary px-3.5 py-1.5 text-[11px] font-semibold text-white shadow-xs hover:bg-[#520b0b] active:scale-[0.98] transition-all cursor-pointer whitespace-nowrap"
+                    className="inline-flex items-center justify-center rounded-button bg-brand-primary px-3.5 py-1.5 text-[0.75rem] font-semibold text-white shadow-xs hover:bg-[#520b0b] active:scale-[0.98] transition-all cursor-pointer whitespace-nowrap"
                   >
                     {toast.action.label}
                   </button>
@@ -1282,7 +1278,7 @@ export default function PipelineBoardPage() {
                   <h3 className="text-sm font-semibold text-text-primary">
                     Mark as Secured Donor
                   </h3>
-                  <p className="mt-0.5 text-[11px] text-text-secondary leading-normal">
+                  <p className="mt-0.5 text-[0.75rem] text-text-secondary leading-normal">
                     Send notice to Donor Care to process this transaction for <strong>{securingLead.prospect_name}</strong> for <strong>{peso.format(securingLead.target_amount)}</strong>?
                   </p>
                 </div>
@@ -1292,7 +1288,7 @@ export default function PipelineBoardPage() {
                 <button
                   type="button"
                   onClick={closeSecuringModal}
-                  className="rounded-button border border-border-strong bg-white px-3 py-1.5 text-[11px] font-medium text-text-primary hover:bg-surface-soft cursor-pointer"
+                  className="rounded-button border border-border-strong bg-white px-3 py-1.5 text-[0.75rem] font-medium text-text-primary hover:bg-surface-soft cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -1308,7 +1304,7 @@ export default function PipelineBoardPage() {
                     });
                     closeSecuringModal();
                   }}
-                  className="rounded-button bg-[#6b0f0f] px-3.5 py-1.5 text-[11px] font-semibold text-white hover:bg-[#520b0b] shadow-xs cursor-pointer"
+                  className="rounded-button bg-[#6b0f0f] px-3.5 py-1.5 text-[0.75rem] font-semibold text-white hover:bg-[#520b0b] shadow-xs cursor-pointer"
                 >
                   Confirm & Notify
                 </button>
