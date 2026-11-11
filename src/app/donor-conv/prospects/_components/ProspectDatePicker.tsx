@@ -188,7 +188,7 @@ export function ProspectDatePicker({
         type="button"
         disabled={disabled}
         onClick={handleToggle}
-        className={`w-full h-[30px] px-2.5 flex items-center justify-between text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white transition cursor-pointer text-left ${
+        className={`w-full h-[30px] px-2.5 flex items-center justify-between text-[11px] font-medium rounded-md border border-[#e3dfdf] bg-white transition cursor-pointer text-left ${
           disabled
             ? "bg-[#f7f6f6] text-[#757070] cursor-not-allowed border-[#cfcaca]"
             : "text-[#1c1a1a] hover:border-[#8a8484] focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f]"

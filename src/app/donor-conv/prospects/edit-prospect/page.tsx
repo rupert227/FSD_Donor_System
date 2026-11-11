@@ -3,16 +3,20 @@
 import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Check } from "lucide-react";
+import { ArrowLeft, Check, CheckCircle2 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import { cn } from "cn";
 import { getNavbarPreset, moduleName } from "@/app/donor-conv/struct";
 import { useDocumentTitle } from "@/components/Navbar";
-import { SAMPLE_LEADS, type LeadDetail } from "@/lib/mock-data/leads";
+import { SAMPLE_LEADS, type LeadDetail } from "@supabase/seeds/prospects-seed";
 import type { PipelineStatusEnum } from "@/types";
-import { ProspectSelectMenu } from "@/components/prospects-form/ProspectSelectMenu";
-import { ProspectDatePicker } from "@/components/prospects-form/ProspectDatePicker";
-import { ProspectScoreField } from "@/components/prospects-form/ProspectScoreField";
-import { calculateProspectProbability } from "@/lib/prospect-score";
+import {
+  ProspectDatePicker,
+  ProspectScoreField,
+  ProspectSelectMenu,
+  ProspectUpdateSkeleton,
+} from "../_components";
+import { calculateProspectProbability } from "../utils/prospect-score";
 
 const pageName = "Edit Prospect";
 
@@ -118,6 +122,31 @@ function EditProspectForm() {
 
   const [activeTab, setActiveTab] = useState<"details" | "proposals" | "history">("details");
   const [isTrackCallOpen, setIsTrackCallOpen] = useState(false);
+  const [isOutreachModalExiting, setIsOutreachModalExiting] = useState(false);
+
+  const closeOutreachModal = React.useCallback(() => {
+    setIsOutreachModalExiting(true);
+    setTimeout(() => {
+      setIsTrackCallOpen(false);
+      setIsOutreachModalExiting(false);
+    }, 180);
+  }, []);
+
+  const [isSecuredNoticeModalOpen, setIsSecuredNoticeModalOpen] = useState(false);
+  const [isSecuredNoticeExiting, setIsSecuredNoticeExiting] = useState(false);
+  const [floatingToast, setFloatingToast] = useState<{
+    title: string;
+    message: string;
+  } | null>(null);
+  const [isToastExiting, setIsToastExiting] = useState(false);
+
+  const closeSecuredNoticeModal = React.useCallback(() => {
+    setIsSecuredNoticeExiting(true);
+    setTimeout(() => {
+      setIsSecuredNoticeModalOpen(false);
+      setIsSecuredNoticeExiting(false);
+    }, 180);
+  }, []);
   const [modalCallNotes, setModalCallNotes] = useState("");
   const [modalFollowupDate, setModalFollowupDate] = useState(matchedLead.target_followup_date ?? "");
   const [modalStage, setModalStage] = useState<PipelineStatusEnum>(
@@ -203,14 +232,38 @@ function EditProspectForm() {
       pipelineStatus: "Secured Donor",
       probability: "100",
     }));
-    setSaveSuccessMessage("Prospect marked as Secured Donor!");
-    setTimeout(() => setSaveSuccessMessage(null), 3000);
+    setIsSecuredNoticeModalOpen(true);
   };
 
-  const handleSaveForm = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaveSuccessMessage("Prospect profile changes saved successfully!");
-    setTimeout(() => setSaveSuccessMessage(null), 3000);
+  const handleConfirmSecuredNotice = () => {
+    setFormData((prev) => ({
+      ...prev,
+      pipelineStatus: "Secured Donor",
+      probability: "100",
+    }));
+    closeSecuredNoticeModal();
+    setFloatingToast({
+      title: "Notice Sent",
+      message: `Notice sent to Donor Care to process transaction for "${formData.prospectName || "this prospect"}" for ₱${Number(formData.targetAmount || 0).toLocaleString()}.`,
+    });
+    setTimeout(() => {
+      router.push("/donor-conv/prospects");
+    }, 600);
+  };
+
+  const handleSaveForm = (e?: React.FormEvent | React.MouseEvent) => {
+    if (e) e.preventDefault();
+    if (formData.pipelineStatus === "Secured Donor") {
+      setIsSecuredNoticeModalOpen(true);
+      return;
+    }
+    setFloatingToast({
+      title: "Profile Updated",
+      message: `Profile changes for "${formData.prospectName || "this prospect"}" saved successfully!`,
+    });
+    setTimeout(() => {
+      router.push("/donor-conv/prospects");
+    }, 600);
   };
 
   const handleTrackCallSubmit = (e: React.FormEvent) => {
@@ -252,16 +305,27 @@ function EditProspectForm() {
     }));
 
     setModalCallNotes("");
-    setIsTrackCallOpen(false);
+    closeOutreachModal();
     setSaveSuccessMessage("Outreach recorded and added to history!");
     setTimeout(() => setSaveSuccessMessage(null), 3500);
   };
 
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 320);
+    return () => clearTimeout(timer);
+  }, []);
+
   const currentStageIndex = PIPELINE_STAGES.indexOf(formData.pipelineStatus);
+
+  if (isLoading) {
+    return <ProspectUpdateSkeleton />;
+  }
 
   return (
     <div
-      className="w-[75%] max-w-full min-w-0 mx-auto space-y-2.5 pb-8 overflow-hidden"
+      className="w-[75%] max-w-full min-w-0 mx-auto space-y-2.5 pb-8 overflow-hidden animate-in fade-in duration-300"
       style={{ fontFamily: "var(--font-poppins), sans-serif" }}
     >
       <style dangerouslySetInnerHTML={{ __html: `
@@ -453,12 +517,12 @@ function EditProspectForm() {
             <div className="p-5 sm:p-6 space-y-4">
           {/* SECTION 1: PROSPECT BASIC INFORMATION */}
           <div>
-            <h3 className="text-[11px] font-bold text-[#3d0707] mb-1.5">
+            <h3 className="text-[11px] font-semibold text-[#3d0707] mb-1.5">
               Prospect Basic Information
             </h3>
             <div className="grid grid-cols-1 min-[1100px]:grid-cols-3 gap-x-4 gap-y-2.5">
               <div>
-                <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
+                <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
                   Organization / Prospect Name
                 </label>
                 <input
@@ -468,12 +532,12 @@ function EditProspectForm() {
                   onChange={handleChange}
                   placeholder="Enter organization or prospect name"
                   required
-                  className="w-full h-[30px] px-2.5 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition"
+                  className="w-full h-[30px] px-2.5 text-[11px] font-medium rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition"
                 />
               </div>
 
               <div>
-                <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
+                <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
                   Donor Type
                 </label>
                 <ProspectSelectMenu
@@ -487,7 +551,7 @@ function EditProspectForm() {
               </div>
 
               <div>
-                <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
+                <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
                   Lead Source Origin
                 </label>
                 <ProspectSelectMenu
@@ -504,12 +568,12 @@ function EditProspectForm() {
 
           {/* SECTION 2: PRIMARY CONTACT & ADDRESS DETAILS */}
           <div className="pt-3 border-t border-[#e3dfdf]">
-            <h3 className="text-[11px] font-bold text-[#3d0707] mb-1.5">
+            <h3 className="text-[11px] font-semibold text-[#3d0707] mb-1.5">
               Primary Contact & Address Details
             </h3>
             <div className="grid grid-cols-1 min-[1100px]:grid-cols-3 gap-x-4 gap-y-2.5">
               <div>
-                <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
+                <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
                   Primary Contact Person
                 </label>
                 <input
@@ -519,12 +583,12 @@ function EditProspectForm() {
                   onChange={handleChange}
                   placeholder="Enter full contact name"
                   required
-                  className="w-full h-[30px] px-2.5 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition"
+                  className="w-full h-[30px] px-2.5 text-[11px] font-medium rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition"
                 />
               </div>
 
               <div>
-                <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
+                <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
                   Title / Designation
                 </label>
                 <input
@@ -533,12 +597,12 @@ function EditProspectForm() {
                   value={formData.designation}
                   onChange={handleChange}
                   placeholder="Enter designation"
-                  className="w-full h-[30px] px-2.5 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition"
+                  className="w-full h-[30px] px-2.5 text-[11px] font-medium rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition"
                 />
               </div>
 
               <div>
-                <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
+                <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
                   Email Address
                 </label>
                 <input
@@ -547,12 +611,12 @@ function EditProspectForm() {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="name@example.com"
-                  className="w-full h-[30px] px-2.5 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition"
+                  className="w-full h-[30px] px-2.5 text-[11px] font-medium rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition"
                 />
               </div>
 
               <div>
-                <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
+                <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
                   Mobile / Landline Number
                 </label>
                 <input
@@ -562,12 +626,12 @@ function EditProspectForm() {
                   onChange={handleChange}
                   placeholder="Enter phone number"
                   required
-                  className="w-full h-[30px] px-2.5 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition"
+                  className="w-full h-[30px] px-2.5 text-[11px] font-medium rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition"
                 />
               </div>
 
               <div>
-                <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
+                <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
                   Street Address
                 </label>
                 <input
@@ -576,12 +640,12 @@ function EditProspectForm() {
                   value={formData.streetAddress}
                   onChange={handleChange}
                   placeholder="Enter street address"
-                  className="w-full h-[30px] px-2.5 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition"
+                  className="w-full h-[30px] px-2.5 text-[11px] font-medium rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition"
                 />
               </div>
 
               <div>
-                <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
+                <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
                   City & Province
                 </label>
                 <input
@@ -590,7 +654,7 @@ function EditProspectForm() {
                   value={formData.cityProvince}
                   onChange={handleChange}
                   placeholder="Enter city and province"
-                  className="w-full h-[30px] px-2.5 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition"
+                  className="w-full h-[30px] px-2.5 text-[11px] font-medium rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition"
                 />
               </div>
             </div>
@@ -598,12 +662,12 @@ function EditProspectForm() {
 
           {/* SECTION 3: STEWARDSHIP & PROPOSAL TARGET */}
           <div className="pt-3 border-t border-[#e3dfdf]">
-            <h3 className="text-[11px] font-bold text-[#3d0707] mb-1.5">
+            <h3 className="text-[11px] font-semibold text-[#3d0707] mb-1.5">
               Stewardship & Proposal Target
             </h3>
             <div className="grid grid-cols-1 min-[1100px]:grid-cols-3 gap-x-4 gap-y-2.5 mb-2.5">
               <div>
-                <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
+                <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
                   Target Campaign
                 </label>
                 <ProspectSelectMenu
@@ -617,7 +681,7 @@ function EditProspectForm() {
               </div>
 
               <div>
-                <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
+                <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
                   Target Amount (₱)
                 </label>
                 <input
@@ -628,12 +692,12 @@ function EditProspectForm() {
                   placeholder="500,000"
                   required
                   min={0}
-                  className="w-full h-[30px] px-2.5 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition"
+                  className="w-full h-[30px] px-2.5 text-[11px] font-medium rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition"
                 />
               </div>
 
               <div>
-                <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
+                <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
                   Pipeline Status
                 </label>
                 <ProspectSelectMenu
@@ -651,7 +715,7 @@ function EditProspectForm() {
               </div>
 
               <div>
-                <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
+                <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
                   Probability Estimate (%)
                 </label>
                 <ProspectScoreField
@@ -663,7 +727,7 @@ function EditProspectForm() {
               </div>
 
               <div>
-                <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
+                <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
                   Assigned Officer
                 </label>
                 <ProspectSelectMenu
@@ -678,7 +742,7 @@ function EditProspectForm() {
               </div>
 
               <div>
-                <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
+                <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
                   Target Follow-up Date
                 </label>
                 <ProspectDatePicker
@@ -705,6 +769,7 @@ function EditProspectForm() {
           </button>
           <button
             type="submit"
+            onClick={handleSaveForm}
             className="h-[30px] px-4 text-[11px] font-medium text-white bg-[#6b0f0f] hover:bg-[#520b0b] rounded-md transition shadow-xs cursor-pointer"
           >
             Update Profile
@@ -854,11 +919,17 @@ function EditProspectForm() {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-150"
-          onClick={() => setIsTrackCallOpen(false)}
+          className={cn(
+            "fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4",
+            isOutreachModalExiting ? "modal-backdrop-out" : "modal-backdrop-in",
+          )}
+          onClick={closeOutreachModal}
         >
           <div
-            className="w-full max-w-[800px] bg-white rounded-lg shadow-2xl border border-[#e3dfdf] flex flex-col overflow-visible"
+            className={cn(
+              "w-full max-w-[800px] bg-white rounded-lg shadow-2xl border border-[#e3dfdf] flex flex-col overflow-visible",
+              isOutreachModalExiting ? "modal-content-out" : "modal-content-in",
+            )}
             style={{ fontFamily: "var(--font-poppins), sans-serif" }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -874,7 +945,7 @@ function EditProspectForm() {
               </div>
               <button
                 type="button"
-                onClick={() => setIsTrackCallOpen(false)}
+                onClick={closeOutreachModal}
                 className="w-7 h-7 flex items-center justify-center rounded-md text-[#5c5757] hover:text-[#1c1a1a] hover:bg-[#f0eeee] text-base leading-none transition cursor-pointer"
                 aria-label="Close modal"
               >
@@ -927,14 +998,14 @@ function EditProspectForm() {
                     value={modalCallNotes}
                     onChange={(e) => setModalCallNotes(e.target.value)}
                     placeholder="Enter discussion details, next steps, and outreach notes..."
-                    className="w-full h-[80px] px-2.5 py-1.5 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] hover:border-[#8a8484] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition resize-none"
+                    className="w-full h-[80px] px-2.5 py-1.5 text-[11px] font-medium rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] hover:border-[#8a8484] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition resize-none"
                   />
                 </div>
 
                 <div className="flex items-center justify-end gap-2 pt-1">
                   <button
                     type="button"
-                    onClick={() => setIsTrackCallOpen(false)}
+                    onClick={closeOutreachModal}
                     className="h-[28px] px-3.5 text-[10.5px] font-medium text-[#1c1a1a] bg-white border border-[#d1d5db] rounded-md hover:bg-[#f7f6f6] transition cursor-pointer"
                   >
                     Cancel
@@ -953,6 +1024,84 @@ function EditProspectForm() {
           </div>
         </div>
       )}
+
+      {/* CONFIRMATION MODAL: Send notice to Donor Care for Secured Donor */}
+      {isSecuredNoticeModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className={cn(
+            "fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4",
+            isSecuredNoticeExiting ? "modal-backdrop-out" : "modal-backdrop-in",
+          )}
+          onClick={closeSecuredNoticeModal}
+        >
+          <div
+            className={cn(
+              "w-full max-w-sm rounded-xl border border-border-soft bg-white p-5 shadow-2xl space-y-4",
+              isSecuredNoticeExiting ? "modal-content-out" : "modal-content-in",
+            )}
+            style={{ fontFamily: "var(--font-poppins), sans-serif" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-2.5">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#fdf1f1] text-[#6b0f0f] border border-[#f5c2c2]/70">
+                <CheckCircle2 className="h-4 w-4 text-[#6b0f0f]" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-text-primary">
+                  Mark as Secured Donor
+                </h3>
+                <p className="mt-0.5 text-[11px] text-text-secondary leading-normal">
+                  Send notice to Donor Care to process this transaction for <strong>{formData.prospectName || "this prospect"}</strong> for <strong>₱{Number(formData.targetAmount || 0).toLocaleString()}</strong>?
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-1">
+              <button
+                type="button"
+                onClick={closeSecuredNoticeModal}
+                className="rounded-button border border-border-strong bg-white px-3 py-1.5 text-[11px] font-medium text-text-primary hover:bg-surface-soft cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmSecuredNotice}
+                className="rounded-button bg-[#6b0f0f] px-3.5 py-1.5 text-[11px] font-semibold text-white hover:bg-[#520b0b] shadow-xs cursor-pointer"
+              >
+                Confirm & Notify
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* FLOATING VIEWPORT TOAST */}
+      {floatingToast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className={cn(
+            "fixed bottom-5 right-5 z-50 flex items-start gap-3 rounded-xl border border-[#e3dfdf] bg-white p-3.5 shadow-xl transition-all duration-300 max-w-sm",
+            isToastExiting ? "toast-out" : "toast-in"
+          )}
+          style={{ fontFamily: "var(--font-poppins), sans-serif" }}
+        >
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#fdf1f1] text-[#6b0f0f] border border-[#f5c2c2]/70">
+            <CheckCircle2 className="h-4 w-4 text-[#6b0f0f]" />
+          </div>
+          <div className="flex-1 min-w-0 pr-1">
+            <p className="text-xs font-semibold text-[#1c1a1a]">
+              {floatingToast.title}
+            </p>
+            <p className="text-[11px] text-[#5c5757] leading-snug mt-0.5">
+              {floatingToast.message}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -963,16 +1112,7 @@ export default function EditProspectPage() {
 
   return (
     <AppShell navbarPreset={navbarPreset}>
-      <Suspense
-        fallback={
-          <div
-            className="w-[75%] max-w-full min-w-0 mx-auto py-6 text-center text-xs text-[#5c5757]"
-            style={{ fontFamily: "var(--font-poppins), sans-serif" }}
-          >
-            Loading prospect profile...
-          </div>
-        }
-      >
+      <Suspense fallback={<ProspectUpdateSkeleton />}>
         <EditProspectForm />
       </Suspense>
     </AppShell>

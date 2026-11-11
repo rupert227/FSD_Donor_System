@@ -3,8 +3,8 @@
 -- Caritas Manila - Fundraising and Stewardship Division
 -- File: supabase/seeds/prospects-seed.sql
 --
--- Rows 1 to 9 strictly follow Prototype V1 table specifications.
--- Assigned Officers strictly use: 'Officer J. Reyes', 'Officer A. Tan', 'Officer M. Cruz'.
+-- Realistic distribution across pipeline stages, follow-up dates (overdue, due today, upcoming),
+-- campaigns, donor types, and assigned officers.
 -- ==============================================================================
 
 -- Clear existing data if necessary (optional reset)
@@ -30,9 +30,9 @@ INSERT INTO lead_prospects (
   target_followup_date,
   next_step_action_plan
 ) VALUES
-  -- 1. SM Foundation Inc. (V1 Prototype Row 1)
+  -- 1. SM Foundation Inc.
   (
-    'AUG',
+    'OCT',
     'Active',
     'SM Foundation Inc.',
     'corporate',
@@ -45,15 +45,15 @@ INSERT INTO lead_prospects (
     'Pasay City',
     'Youth Servant Leadership',
     1500000.00,
-    'Outreach Started',
-    60,
+    'Proposal Sent',
+    80,
     'Officer J. Reyes',
-    '2026-08-13',
+    '2026-11-14',
     NULL
   ),
-  -- 2. Dr. Antonio L. Co (V1 Prototype Row 2)
+  -- 2. Dr. Antonio L. Co
   (
-    'AUG',
+    'OCT',
     'Active',
     'Dr. Antonio L. Co',
     'individual',
@@ -67,14 +67,14 @@ INSERT INTO lead_prospects (
     'Health and Disaster Relief',
     500000.00,
     'Outreach Started',
-    80,
+    60,
     'Officer A. Tan',
-    '2026-08-13',
+    '2026-11-11',
     NULL
   ),
-  -- 3. San Lorenzo Ruiz Parish (V1 Prototype Row 3)
+  -- 3. San Lorenzo Ruiz Parish
   (
-    'AUG',
+    'NOV',
     'Active',
     'San Lorenzo Ruiz Parish',
     'community',
@@ -87,15 +87,15 @@ INSERT INTO lead_prospects (
     'Quezon City',
     'Institute for Stewardship',
     300000.00,
-    'Outreach Started',
-    60,
+    'Under Research',
+    40,
     'Officer M. Cruz',
-    '2026-08-13',
+    '2026-11-16',
     NULL
   ),
-  -- 4. Metrobank Foundation (V1 Prototype Row 4)
+  -- 4. Metrobank Foundation
   (
-    'AUG',
+    'OCT',
     'Active',
     'Metrobank Foundation',
     'corporate',
@@ -108,15 +108,15 @@ INSERT INTO lead_prospects (
     'Makati City',
     'Youth Servant Leadership',
     2000000.00,
-    'Outreach Started',
-    60,
+    'Secured Donor',
+    100,
     'Officer J. Reyes',
-    '2026-08-13',
+    '2026-11-28',
     NULL
   ),
-  -- 5. Jollibee Group Foundation (V1 Prototype Row 5)
+  -- 5. Jollibee Group Foundation
   (
-    'AUG',
+    'NOV',
     'Active',
     'Jollibee Group Foundation',
     'corporate',
@@ -130,14 +130,14 @@ INSERT INTO lead_prospects (
     'In-Kind Social Enterprise',
     1000000.00,
     'Outreach Started',
-    80,
+    60,
     'Officer A. Tan',
-    '2026-08-13',
+    '2026-11-08',
     NULL
   ),
-  -- 6. Aboitiz Equity Ventures (V1 Prototype Row 6)
+  -- 6. Aboitiz Equity Ventures
   (
-    'AUG',
+    'OCT',
     'Active',
     'Aboitiz Equity Ventures',
     'corporate',
@@ -150,15 +150,15 @@ INSERT INTO lead_prospects (
     'Taguig City',
     'Youth Servant Leadership',
     850000.00,
-    'Outreach Started',
-    60,
+    'Proposal Sent',
+    80,
     'Officer M. Cruz',
-    '2026-08-17',
+    '2026-11-18',
     NULL
   ),
-  -- 7. Santuario de San Antonio (V1 Prototype Row 7)
+  -- 7. Santuario de San Antonio
   (
-    'AUG',
+    'NOV',
     'Active',
     'Santuario de San Antonio',
     'community',
@@ -171,15 +171,15 @@ INSERT INTO lead_prospects (
     'Makati City',
     'At-Risk Restorative Justice',
     450000.00,
-    'Outreach Started',
-    60,
+    'New Lead',
+    20,
     'Officer J. Reyes',
-    '2026-08-17',
+    '2026-11-12',
     NULL
   ),
-  -- 8. Ambassador Carlos Chan (V1 Prototype Row 8)
+  -- 8. Ambassador Carlos Chan
   (
-    'AUG',
+    'OCT',
     'Active',
     'Ambassador Carlos Chan',
     'individual',
@@ -193,14 +193,14 @@ INSERT INTO lead_prospects (
     'In-Kind Social Enterprise',
     600000.00,
     'Outreach Started',
-    80,
+    60,
     'Officer A. Tan',
-    '2026-08-17',
+    '2026-11-15',
     NULL
   ),
-  -- 9. City Government of Makati (V1 Prototype Row 9)
+  -- 9. City Government of Makati
   (
-    'AUG',
+    'OCT',
     'Active',
     'City Government of Makati',
     'community',
@@ -213,15 +213,15 @@ INSERT INTO lead_prospects (
     'Makati City',
     'Health and Disaster Relief',
     1200000.00,
-    'Outreach Started',
-    60,
+    'Under Research',
+    40,
     'Officer M. Cruz',
-    '2026-08-17',
+    '2026-11-06',
     NULL
   ),
   -- 10. Ayala Foundation
   (
-    'SEP',
+    'NOV',
     'Active',
     'Ayala Foundation',
     'corporate',
@@ -237,12 +237,12 @@ INSERT INTO lead_prospects (
     'New Lead',
     40,
     'Officer J. Reyes',
-    '2026-10-28',
+    '2026-11-11',
     NULL
   ),
   -- 11. Metro Pacific Health
   (
-    'SEP',
+    'NOV',
     'Active',
     'Metro Pacific Health',
     'corporate',
@@ -258,7 +258,7 @@ INSERT INTO lead_prospects (
     'Under Research',
     60,
     'Officer A. Tan',
-    '2026-10-29',
+    '2026-11-17',
     NULL
   ),
   -- 12. PHINMA Foundation
@@ -279,7 +279,7 @@ INSERT INTO lead_prospects (
     'Proposal Sent',
     80,
     'Officer J. Reyes',
-    '2026-11-04',
+    '2026-11-09',
     NULL
   ),
   -- 13. San Miguel Foundation
@@ -300,12 +300,12 @@ INSERT INTO lead_prospects (
     'Secured Donor',
     100,
     'Officer M. Cruz',
-    '2026-11-15',
+    '2026-11-25',
     NULL
   ),
   -- 14. BDO Foundation
   (
-    'OCT',
+    'NOV',
     'Active',
     'BDO Foundation',
     'corporate',
@@ -319,14 +319,14 @@ INSERT INTO lead_prospects (
     'Institute for Stewardship',
     1000000.00,
     'New Lead',
-    40,
+    20,
     'Officer A. Tan',
-    '2026-10-31',
+    NULL,
     NULL
   ),
   -- 15. Megaworld Foundation
   (
-    'OCT',
+    'NOV',
     'Active',
     'Megaworld Foundation',
     'corporate',
@@ -340,9 +340,9 @@ INSERT INTO lead_prospects (
     'Youth Servant Leadership',
     600000.00,
     'Under Research',
-    60,
+    40,
     'Officer J. Reyes',
-    '2026-11-02',
+    '2026-11-13',
     NULL
   ),
   -- 16. GT Capital Holdings
@@ -363,7 +363,7 @@ INSERT INTO lead_prospects (
     'Proposal Sent',
     80,
     'Officer M. Cruz',
-    '2026-11-05',
+    '2026-11-19',
     NULL
   ),
   -- 17. JG Summit Holdings
@@ -384,12 +384,12 @@ INSERT INTO lead_prospects (
     'Secured Donor',
     100,
     'Officer A. Tan',
-    '2026-11-20',
+    '2026-11-30',
     NULL
   ),
   -- 18. Tan Yan Kee Foundation
   (
-    'OCT',
+    'NOV',
     'Active',
     'Tan Yan Kee Foundation',
     'corporate',
@@ -402,10 +402,10 @@ INSERT INTO lead_prospects (
     'Makati City',
     'Youth Servant Leadership',
     800000.00,
-    'Under Research',
+    'Outreach Started',
     60,
     'Officer J. Reyes',
-    '2026-11-01',
+    '2026-11-20',
     NULL
   ),
   -- 19. Mercury Drug Foundation
@@ -426,7 +426,7 @@ INSERT INTO lead_prospects (
     'New Lead',
     20,
     'Officer M. Cruz',
-    '2026-11-03',
+    '2026-11-11',
     NULL
   ),
   -- 20. First Philippine Holdings
@@ -447,7 +447,7 @@ INSERT INTO lead_prospects (
     'Proposal Sent',
     80,
     'Officer A. Tan',
-    '2026-11-06',
+    '2026-11-22',
     NULL
   ),
   -- 21. Unilab Foundation
@@ -468,7 +468,7 @@ INSERT INTO lead_prospects (
     'Outreach Started',
     60,
     'Officer J. Reyes',
-    '2026-11-08',
+    '2026-11-24',
     NULL
   ),
   -- 22. Insular Life Foundation
@@ -489,7 +489,7 @@ INSERT INTO lead_prospects (
     'New Lead',
     40,
     'Officer M. Cruz',
-    '2026-11-07',
+    '2026-11-14',
     NULL
   ),
   -- 23. Nestlé Philippines
@@ -510,12 +510,12 @@ INSERT INTO lead_prospects (
     'Proposal Sent',
     80,
     'Officer J. Reyes',
-    '2026-11-09',
+    '2026-11-16',
     NULL
   ),
   -- 24. Security Bank Foundation
   (
-    'NOV',
+    'OCT',
     'Active',
     'Security Bank Foundation',
     'corporate',
@@ -531,7 +531,7 @@ INSERT INTO lead_prospects (
     'Secured Donor',
     100,
     'Officer A. Tan',
-    '2026-11-18',
+    '2026-12-05',
     NULL
   ),
   -- 25. Chinabank Foundation
@@ -550,8 +550,8 @@ INSERT INTO lead_prospects (
     'Health and Disaster Relief',
     850000.00,
     'Under Research',
-    60,
+    40,
     'Officer M. Cruz',
-    '2026-11-10',
+    '2026-11-21',
     NULL
   );

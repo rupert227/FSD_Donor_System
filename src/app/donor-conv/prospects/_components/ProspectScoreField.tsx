@@ -78,7 +78,7 @@ export function ProspectScoreField({
             {numVal}%
           </span>
           {tierLabel && (
-            <span className="text-[11px] font-normal text-[#5c5757] whitespace-nowrap">
+            <span className="text-[11px] font-medium text-[#5c5757] whitespace-nowrap">
               {tierLabel}
             </span>
           )}

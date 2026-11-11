@@ -71,7 +71,7 @@ export function ProspectSelectMenu({
         type="button"
         disabled={disabled}
         onClick={handleToggle}
-        className={`w-full h-[30px] px-2.5 flex items-center justify-between text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white transition cursor-pointer text-left ${
+        className={`w-full h-[30px] px-2.5 flex items-center justify-between text-[11px] font-medium rounded-md border border-[#e3dfdf] bg-white transition cursor-pointer text-left ${
           disabled
             ? "bg-[#f7f6f6] text-[#757070] cursor-not-allowed border-[#cfcaca]"
             : "text-[#1c1a1a] hover:border-[#8a8484] focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f]"
@@ -104,10 +104,10 @@ export function ProspectSelectMenu({
                   onChange(opt.value);
                   setIsOpen(false);
                 }}
-                className={`w-full h-[28px] px-2 rounded-[4px] flex items-center text-[11px] text-left transition-colors cursor-pointer ${
+                className={`w-full h-[28px] px-2 rounded-[4px] flex items-center text-[11px] text-left transition-colors cursor-pointer font-medium ${
                   isSelected
-                    ? "bg-[#fbf1f1] text-[#6b0f0f] font-medium"
-                    : "text-[#1c1a1a] hover:bg-[#f0eeee] font-normal"
+                    ? "bg-[#fbf1f1] text-[#6b0f0f]"
+                    : "text-[#1c1a1a] hover:bg-[#f0eeee]"
                 }`}
               >
                 <span className="truncate">{opt.label}</span>

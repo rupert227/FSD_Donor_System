@@ -15,9 +15,13 @@
   --color-graph-bar-primary: var(--graph-bar-primary);
   --color-graph-bar-secondary: var(--graph-bar-secondary);
   --color-primary-scrollbar: var(--scrollbar-primary);
+  --color-border-warning: var(--border-warning);
+  --color-icon-warning: var(--icon-warning);
   --color-skeleton-primary: var(--skeleton-primary);
   --color-skeleton-secondary: var(--skeleton-secondary);
   --color-surface-amber: var(--surface-amber);
+  --color-surface-warning-strong: var(--surface-warning-strong);
+  --color-text-warning: var(--text-warning);
   --color-surface-soft-hover: var(--surface-soft-hover);
   --color-surface-soft: var(--surface-soft);
   --color-surface-white: var(--surface-white);
@@ -35,6 +39,7 @@
 }
 
 @layer utilities {
+
   .scrollbar-primary {
     scrollbar-color: var(--scrollbar-primary) transparent;
     scrollbar-width: thin;
@@ -47,6 +52,80 @@
 
   .scrollbar-primary::-webkit-scrollbar-track {
     background: transparent;
+  }
+
+  @keyframes modalBackdropFadeIn {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+  @keyframes modalBackdropFadeOut {
+    0% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  @keyframes modalContentFadeIn {
+    0% {
+      opacity: 0;
+      transform: scale(0.96) translateY(8px);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+  @keyframes modalContentFadeOut {
+    0% {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(0.96) translateY(6px);
+    }
+  }
+
+  @keyframes popupFadeIn {
+    0% {
+      opacity: 0;
+      transform: translateY(-6px) scale(0.98);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+  @keyframes popupFadeOut {
+    0% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-6px) scale(0.98);
+    }
+  }
+
+  .modal-backdrop-in {
+    animation: modalBackdropFadeIn 0.2s ease-out forwards;
+  }
+  .modal-backdrop-out {
+    animation: modalBackdropFadeOut 0.18s ease-in forwards;
+    pointer-events: none;
+  }
+  .modal-content-in {
+    animation: modalContentFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .modal-content-out {
+    animation: modalContentFadeOut 0.18s ease-in forwards;
+    pointer-events: none;
+  }
+  .popup-in {
+    animation: popupFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    transform-origin: top left;
+  }
+  .popup-out {
+    animation: popupFadeOut 0.16s ease-in forwards;
+    transform-origin: top left;
+    pointer-events: none;
   }
 }
 
@@ -81,6 +160,35 @@
   .pdf-sheet * {
     print-color-adjust: exact !important;
     -webkit-print-color-adjust: exact !important;
+  }
+
+  /* Proposal letter: print the sheet at its real size, without the zoom
+     scale or the scrolling viewer used on screen. */
+  .letter-viewer {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .letter-frame {
+    width: 8.5in !important;
+    height: auto !important;
+    margin: 0 !important;
+    transition: none !important;
+  }
+
+  .letter-sheet {
+    transform: none !important;
+    transition: none !important;
+    width: 8.5in !important;
+    /* A hair under 11in so rounding never adds an empty second page. */
+    min-height: 10.95in !important;
+    box-shadow: none !important;
+  }
+
+  .letter-sheet,
+  .letter-sheet * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 }
 
@@ -124,15 +232,47 @@
   --panel-radius: 10px;
   --scrollbar-primary: #cacaca;
   --shadow-soft: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --border-warning: #fde68a;
+  --icon-warning: #d97706;
   --skeleton-primary: #d1d5db;
   --skeleton-secondary: #e5e7eb;
   --surface-amber: #fff7ed;
+  --surface-warning-strong: #fef3c7;
+  --text-warning: #78350f;
   --surface-soft-hover: #eceae8;
   --surface-soft: #f3f2f1;
   --surface-white: #ffffff;
   --text-muted: #9ca3af;
   --text-primary: #1c1a1a;
   --text-secondary: #5c5757;
+}
+
+/* Put on a wrapper: every button, link and field inside gets one shared maroon
+   keyboard-focus ring (keyboard users only). Plain CSS, not in a Tailwind
+   layer, because Tailwind drops compound selectors like this one. */
+.focus-scope :is(button, a, select, input):focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 2px;
+}
+
+/* Proposal builder motion: colors ease instead of snapping. Short and calm. */
+.ui-motion :is(button, a, select, input) {
+  transition:
+    background-color 150ms ease-out,
+    border-color 150ms ease-out,
+    color 150ms ease-out,
+    opacity 150ms ease-out;
+}
+
+/* Anyone who asks their system for less motion gets none. */
+@media (prefers-reduced-motion: reduce) {
+  .ui-motion,
+  .ui-motion *,
+  .ui-motion *::before,
+  .ui-motion *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }
 
 html,

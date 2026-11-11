@@ -9,10 +9,13 @@ import { getNavbarPreset, moduleName } from "@/app/donor-conv/struct";
 import { useDocumentTitle } from "@/components/Navbar";
 
 const pageName = "Add Prospect";
-import { ProspectSelectMenu } from "@/components/prospects-form/ProspectSelectMenu";
-import { ProspectDatePicker } from "@/components/prospects-form/ProspectDatePicker";
-import { ProspectScoreField } from "@/components/prospects-form/ProspectScoreField";
-import { calculateProspectProbability } from "@/lib/prospect-score";
+import {
+  ProspectDatePicker,
+  ProspectScoreField,
+  ProspectSelectMenu,
+  ProspectCreateSkeleton,
+} from "../_components";
+import { calculateProspectProbability } from "../utils/prospect-score";
 
 const DONOR_TYPE_OPTIONS = ["corporate", "individual", "community", "international"];
 const LEAD_SOURCE_OPTIONS = ["Research", "Booths", "Direct Call", "Referral", "Walk-in"];
@@ -40,6 +43,12 @@ export default function AddProspectPage() {
   useDocumentTitle(`${moduleName} - ${pageName}`);
   const navbarPreset = getNavbarPreset(0);
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 280);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Enforce zero horizontal page scroll and responsiveness strictly on this page
   useEffect(() => {
@@ -111,6 +120,14 @@ export default function AddProspectPage() {
     router.push("/donor-conv/prospects");
   };
 
+  if (isLoading) {
+    return (
+      <AppShell navbarPreset={navbarPreset}>
+        <ProspectCreateSkeleton />
+      </AppShell>
+    );
+  }
+
   return (
     <AppShell navbarPreset={navbarPreset}>
       <style dangerouslySetInnerHTML={{ __html: `
@@ -121,7 +138,7 @@ export default function AddProspectPage() {
           width: 100% !important;
         }
       `}} />
-      <div className="w-[75%] max-w-full min-w-0 mx-auto space-y-2.5 overflow-hidden" style={{ fontFamily: "var(--font-poppins), sans-serif" }}>
+      <div className="w-[75%] max-w-full min-w-0 mx-auto space-y-2.5 overflow-hidden animate-in fade-in duration-300" style={{ fontFamily: "var(--font-poppins), sans-serif" }}>
         {/* Back Link */}
         <div className="flex items-center text-[11px] text-[#5c5757]">
           <Link
@@ -151,12 +168,12 @@ export default function AddProspectPage() {
           <div className="p-5 sm:p-6 space-y-4 w-full min-w-0">
             {/* SECTION 1: PROSPECT BASIC INFORMATION */}
             <div className="w-full min-w-0">
-              <h3 className="text-[11px] font-bold text-[#3d0707] mb-1.5">
+              <h3 className="text-[11px] font-semibold text-[#3d0707] mb-1.5">
                 Prospect Basic Information
               </h3>
               <div className="grid grid-cols-1 min-[1100px]:grid-cols-3 gap-x-4 gap-y-2.5 w-full min-w-0">
                 <div className="min-w-0">
-                  <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
+                  <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
                     Organization / Prospect Name <span className="text-[#b42318]">*</span>
                   </label>
                   <input
@@ -166,12 +183,12 @@ export default function AddProspectPage() {
                     onChange={handleChange}
                     placeholder="Enter organization or prospect name"
                     required
-                    className="w-full h-[30px] px-2.5 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition min-w-0"
+                    className="w-full h-[30px] px-2.5 text-[11px] font-medium rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition min-w-0"
                   />
                 </div>
 
                 <div className="min-w-0">
-                  <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
+                  <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
                     Donor Type <span className="text-[#b42318]">*</span>
                   </label>
                   <ProspectSelectMenu
@@ -185,7 +202,7 @@ export default function AddProspectPage() {
                 </div>
 
                 <div className="min-w-0">
-                  <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
+                  <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
                     Lead Source Origin <span className="text-[#b42318]">*</span>
                   </label>
                   <ProspectSelectMenu
@@ -202,12 +219,12 @@ export default function AddProspectPage() {
 
             {/* SECTION 2: PRIMARY CONTACT & ADDRESS DETAILS */}
             <div className="pt-3 border-t border-[#e3dfdf] w-full min-w-0">
-              <h3 className="text-[11px] font-bold text-[#3d0707] mb-1.5">
+              <h3 className="text-[11px] font-semibold text-[#3d0707] mb-1.5">
                 Primary Contact & Address Details
               </h3>
               <div className="grid grid-cols-1 min-[1100px]:grid-cols-3 gap-x-4 gap-y-2.5 w-full min-w-0">
                 <div className="min-w-0">
-                  <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
+                  <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
                     Primary Contact Person <span className="text-[#b42318]">*</span>
                   </label>
                   <input
@@ -217,12 +234,12 @@ export default function AddProspectPage() {
                     onChange={handleChange}
                     placeholder="Enter full contact name"
                     required
-                    className="w-full h-[30px] px-2.5 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition min-w-0"
+                    className="w-full h-[30px] px-2.5 text-[11px] font-medium rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition min-w-0"
                   />
                 </div>
 
                 <div className="min-w-0">
-                  <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
+                  <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
                     Title / Designation
                   </label>
                   <input
@@ -231,12 +248,12 @@ export default function AddProspectPage() {
                     value={formData.designation}
                     onChange={handleChange}
                     placeholder="Enter designation"
-                    className="w-full h-[30px] px-2.5 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition min-w-0"
+                    className="w-full h-[30px] px-2.5 text-[11px] font-medium rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition min-w-0"
                   />
                 </div>
 
                 <div className="min-w-0">
-                  <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
+                  <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
                     Email Address
                   </label>
                   <input
@@ -245,12 +262,12 @@ export default function AddProspectPage() {
                     value={formData.email}
                     onChange={handleChange}
                     placeholder="name@example.com"
-                    className="w-full h-[30px] px-2.5 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition min-w-0"
+                    className="w-full h-[30px] px-2.5 text-[11px] font-medium rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition min-w-0"
                   />
                 </div>
 
                 <div className="min-w-0">
-                  <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
+                  <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
                     Mobile / Landline Number <span className="text-[#b42318]">*</span>
                   </label>
                   <input
@@ -260,12 +277,12 @@ export default function AddProspectPage() {
                     onChange={handleChange}
                     placeholder="Enter phone number"
                     required
-                    className="w-full h-[30px] px-2.5 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition min-w-0"
+                    className="w-full h-[30px] px-2.5 text-[11px] font-medium rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition min-w-0"
                   />
                 </div>
 
                 <div className="min-w-0">
-                  <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
+                  <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
                     Street Address
                   </label>
                   <input
@@ -274,12 +291,12 @@ export default function AddProspectPage() {
                     value={formData.streetAddress}
                     onChange={handleChange}
                     placeholder="Enter street address"
-                    className="w-full h-[30px] px-2.5 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition min-w-0"
+                    className="w-full h-[30px] px-2.5 text-[11px] font-medium rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition min-w-0"
                   />
                 </div>
 
                 <div className="min-w-0">
-                  <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
+                  <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
                     City & Province
                   </label>
                   <input
@@ -288,7 +305,7 @@ export default function AddProspectPage() {
                     value={formData.cityProvince}
                     onChange={handleChange}
                     placeholder="Enter city and province"
-                    className="w-full h-[30px] px-2.5 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition min-w-0"
+                    className="w-full h-[30px] px-2.5 text-[11px] font-medium rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition min-w-0"
                   />
                 </div>
               </div>
@@ -296,12 +313,12 @@ export default function AddProspectPage() {
 
             {/* SECTION 3: STEWARDSHIP & PROPOSAL TARGET */}
             <div className="pt-3 border-t border-[#e3dfdf] w-full min-w-0">
-              <h3 className="text-[11px] font-bold text-[#3d0707] mb-1.5">
+              <h3 className="text-[11px] font-semibold text-[#3d0707] mb-1.5">
                 Stewardship & Proposal Target
               </h3>
               <div className="grid grid-cols-1 min-[1100px]:grid-cols-3 gap-x-4 gap-y-2.5 mb-2.5 w-full min-w-0">
                 <div className="min-w-0">
-                  <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
+                  <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
                     Target Campaign <span className="text-[#b42318]">*</span>
                   </label>
                   <ProspectSelectMenu
@@ -315,7 +332,7 @@ export default function AddProspectPage() {
                 </div>
 
                 <div className="min-w-0">
-                  <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
+                  <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
                     Target Amount (₱) <span className="text-[#b42318]">*</span>
                   </label>
                   <input
@@ -326,12 +343,12 @@ export default function AddProspectPage() {
                     placeholder="500,000"
                     required
                     min={0}
-                    className="w-full h-[30px] px-2.5 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition min-w-0"
+                    className="w-full h-[30px] px-2.5 text-[11px] font-medium rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition min-w-0"
                   />
                 </div>
 
                 <div className="min-w-0">
-                  <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
+                  <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
                     Pipeline Status <span className="text-[#b42318]">*</span>
                   </label>
                   <ProspectSelectMenu
@@ -346,7 +363,7 @@ export default function AddProspectPage() {
                 </div>
 
                 <div className="min-w-0">
-                  <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
+                  <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
                     Probability Estimate (%)
                   </label>
                   <ProspectScoreField
@@ -358,7 +375,7 @@ export default function AddProspectPage() {
                 </div>
 
                 <div className="min-w-0">
-                  <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
+                  <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
                     Assigned Officer <span className="text-[#b42318]">*</span>
                   </label>
                   <ProspectSelectMenu
@@ -373,7 +390,7 @@ export default function AddProspectPage() {
                 </div>
 
                 <div className="min-w-0">
-                  <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
+                  <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
                     Target Follow-up Date
                   </label>
                   <ProspectDatePicker
@@ -388,7 +405,7 @@ export default function AddProspectPage() {
               </div>
 
               <div className="w-full min-w-0">
-                <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
+                <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
                   Next Step Action Plan
                 </label>
                 <textarea
@@ -397,7 +414,7 @@ export default function AddProspectPage() {
                   onChange={handleChange}
                   rows={2}
                   placeholder="Enter next action plan steps..."
-                  className="w-full h-[64px] px-2.5 py-1.5 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition resize-none min-w-0"
+                  className="w-full h-[64px] px-2.5 py-1.5 text-[11px] font-medium rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition resize-none min-w-0"
                 />
               </div>
             </div>
