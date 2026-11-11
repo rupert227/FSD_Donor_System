@@ -6,6 +6,8 @@ import Link from "next/link";
 import { cn } from "cn";
 import { useEffect, useRef, useState } from "react";
 
+import { createClient } from "@/lib/supabase/client";
+
 import {
   Bell,
   Check,
@@ -88,8 +90,9 @@ const profileOptions: ListOption[] = [
   {
     label: "Logout",
     icon: LogOut,
-    action: () => {
-      console.log("Logged out");
+    action: async () => {
+      await createClient().auth.signOut();
+      window.location.href = "/login";
     },
   },
 ] as const;
