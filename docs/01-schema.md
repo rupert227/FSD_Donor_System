@@ -194,8 +194,10 @@ Controls platform access, staff sign-in credentials, and role privileges.
   Unique system user identifier.
 - **`email_address`** (`VARCHAR(150)`, `UNIQUE`, `NOT NULL`)  
   Corporate email address used for portal access.
-- **`password_hash`** (`VARCHAR(255)`, `NOT NULL`)  
-  Encrypted credential hash for authentication.
+- **`password_hash`** (`VARCHAR(255)`, `NULLABLE`)  
+  Unused. Supabase Auth keeps the real password. Can be dropped later.
+- **`auth_user_id`** (`UUID`, `UNIQUE`, `NULLABLE`, `FK -> auth.users.id`)  
+  The Supabase Auth user this account belongs to. Sign-in works through Supabase Auth, and this links the person to their role and status.
 - **`user_role`** (`ENUM`, `NOT NULL`)  
   Division role and system permissions.  
   *Permitted values:*

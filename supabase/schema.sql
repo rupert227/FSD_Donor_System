@@ -253,7 +253,10 @@ CREATE TABLE IF NOT EXISTS certificate_of_donation (
 CREATE TABLE IF NOT EXISTS user_accounts (
   id BIGSERIAL PRIMARY KEY,
   email_address VARCHAR(150) UNIQUE NOT NULL,
-  password_hash VARCHAR(255) NOT NULL,
+  -- Supabase Auth keeps the real password. This column is unused and can be dropped later.
+  password_hash VARCHAR(255),
+  -- The Supabase Auth user this account belongs to.
+  auth_user_id UUID UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
   user_role user_role_enum NOT NULL,
   account_status account_status_enum NOT NULL DEFAULT 'Active',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
