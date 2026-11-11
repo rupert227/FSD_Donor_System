@@ -511,7 +511,7 @@ export function ProposalBuilder() {
                     Replace my edits
                   </button>
                 ) : (
-                  <Link href="/donor-conv/proposals" className={toggleClass}>
+                  <Link href="/donor-conv/prospects" className={toggleClass}>
                     Discard and leave
                   </Link>
                 )}
@@ -575,7 +575,7 @@ export function ProposalBuilder() {
           </p>
           <div className="flex justify-end gap-2">
             <Link
-              href="/donor-conv/proposals"
+              href="/donor-conv/prospects"
               onClick={(e) => {
                 // Leaving drops the draft, so ask first if the letter was edited.
                 if (hasEdits) {
