@@ -273,6 +273,7 @@ export function LetterPreview({
               {/* Letterhead */}
               {/* A div, not <header>: the team's print CSS hides every <header>. */}
               <div className="border-brand-primary/50 flex items-center gap-5 border-b pb-5">
+                {/* Full-color logo. The navbar uses caritas_nav.png (white), which would be invisible on this page, so keep this file in public/. */}
                 <Image
                   src="/caritas_logo.png"
                   alt="Caritas Manila logo"
