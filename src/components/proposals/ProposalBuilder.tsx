@@ -18,12 +18,9 @@ import {
   TriangleAlert,
 } from "lucide-react";
 import { cn } from "cn";
-import {
-  sampleTemplates,
-  sampleSignatories,
-  findSampleOfficer,
-} from "@/lib/sample-data";
-import { SAMPLE_LEADS } from "@supabase/seeds/prospects-seed";
+import { sampleTemplates } from "@/lib/sample-data";
+import { createClient } from "@/lib/supabase/client";
+import type { BuilderProspect, Signatory } from "@/types/proposal";
 import {
   buildLetterText,
   findLeftoverPrompts,
@@ -32,25 +29,10 @@ import {
   proposalFileName,
   todayIso,
 } from "@/lib/letter";
-import type { PipelineStatusEnum } from "@/types";
 import { LetterPreview } from "./LetterPreview";
 
 const selectClass =
   "border-dropdown-stroke rounded-dropdown bg-surface-white h-9 w-full cursor-pointer border px-3 text-sm";
-
-// Stages in pipeline order. A proposal can be made once outreach has started,
-// so earlier stages are left out of the Prospect dropdown.
-const STAGE_ORDER: PipelineStatusEnum[] = [
-  "New Lead",
-  "Under Research",
-  "Outreach Started",
-  "Proposal Sent",
-  "Secured Donor",
-];
-const FIRST_PROPOSAL_STAGE = STAGE_ORDER.indexOf("Outreach Started");
-const eligibleProspects = SAMPLE_LEADS.filter(
-  (p) => STAGE_ORDER.indexOf(p.pipeline_status) >= FIRST_PROPOSAL_STAGE,
-);
 
 // Nothing to subscribe to: today's date only needs reading once in the browser.
 const subscribeToNothing = () => () => {};
@@ -126,10 +108,44 @@ function ReadOnlyField({ label, value }: { label: string; value: string }) {
 const toggleClass =
   "border-border-strong hover:bg-surface-soft-hover inline-flex h-8 cursor-pointer items-center rounded-[6px] border px-3 text-[13px] font-medium";
 
-export function ProposalBuilder() {
-  const [prospectId, setProspectId] = useState(eligibleProspects[0].id);
+type ProposalBuilderProps = {
+  // Prospects at "Outreach Started" or later, each with its linked officer.
+  prospects: BuilderProspect[];
+  // Profiles marked is_signatory.
+  signatories: Signatory[];
+  // Prospect to select first (from ?prospectId= or ?prospect=), if any.
+  initialProspectId?: number;
+};
+
+// Without prospects or signatories there is nothing to build a letter from,
+// so say that instead of showing an empty form.
+export function ProposalBuilder(props: ProposalBuilderProps) {
+  if (props.prospects.length === 0 || props.signatories.length === 0) {
+    return (
+      <p className="border-border-soft bg-surface-white mt-5 rounded-lg border px-5 py-4 text-sm">
+        {props.prospects.length === 0
+          ? "No prospects are ready for a proposal yet. A prospect needs to be at Outreach Started or later."
+          : "No signatories are set up yet. Mark at least one officer profile as a signatory."}
+      </p>
+    );
+  }
+  return <ProposalBuilderForm {...props} />;
+}
+
+function ProposalBuilderForm({
+  prospects,
+  signatories,
+  initialProspectId,
+}: ProposalBuilderProps) {
+  const [prospectId, setProspectId] = useState(
+    prospects.find((p) => p.id === initialProspectId)?.id ?? prospects[0].id,
+  );
   const [templateId, setTemplateId] = useState(sampleTemplates[0].id);
-  const [signatoryId, setSignatoryId] = useState(sampleSignatories[0].id);
+  const [signatoryId, setSignatoryId] = useState(signatories[0].id);
+  // Saving state for Generate: whether a save is running, the last error, and the saved id.
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [savedProposalId, setSavedProposalId] = useState<number | null>(null);
   // The date the officer picked. null means "use today's date".
   const [pickedDate, setPickedDate] = useState<string | null>(null);
 
@@ -157,15 +173,14 @@ export function ProposalBuilder() {
   const [promptToSelect, setPromptToSelect] = useState<string | null>(null);
 
   // Look up the full records from the chosen ids.
-  const prospect =
-    eligibleProspects.find((p) => p.id === prospectId) ?? eligibleProspects[0];
+  const prospect = prospects.find((p) => p.id === prospectId) ?? prospects[0];
   const template =
     sampleTemplates.find((t) => t.id === templateId) ?? sampleTemplates[0];
   const signatory =
-    sampleSignatories.find((s) => s.id === signatoryId) ?? sampleSignatories[0];
+    signatories.find((s) => s.id === signatoryId) ?? signatories[0];
 
   // The officer assigned to this prospect (their title and email go in the letter).
-  const officer = findSampleOfficer(prospect.assigned_officer);
+  const officer = prospect.officer;
 
   // Derived from the choices above on every render (not stored in state).
   const generatedText = buildLetterText(
@@ -221,9 +236,35 @@ export function ProposalBuilder() {
       ? "None left"
       : `${leftoverPrompts.length} left to fill`;
 
-  function generate() {
+  // Saves the letter as a new "Generated" proposal. The pipeline status does
+  // not change here: it moves to "Proposal Sent" when the letter is sent.
+  async function generate() {
     setShowWarning(false);
-    console.log("Generate proposal (not wired yet)");
+    setSaveError(null);
+    setSavedProposalId(null);
+    if (!date) {
+      setSaveError("Pick a letter date before generating.");
+      return;
+    }
+    setSaving(true);
+    const { data, error } = await createClient()
+      .from("proposals")
+      .insert({
+        prospect_id: prospect.id,
+        template_id: template.id,
+        letter_date: date,
+        signatory_name: signatory.name,
+        signatory_title: signatory.title,
+        letter_text: letterText,
+      })
+      .select("id")
+      .single();
+    setSaving(false);
+    if (error) {
+      setSaveError(`The proposal was not saved: ${error.message}`);
+      return;
+    }
+    setSavedProposalId(data.id);
   }
 
   // With warnings, show them first and let the officer decide.
@@ -274,7 +315,7 @@ export function ProposalBuilder() {
                 changeChoice(() => setProspectId(value));
               }}
             >
-              {eligibleProspects.map((p) => (
+              {prospects.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.prospect_name}
                 </option>
@@ -385,7 +426,7 @@ export function ProposalBuilder() {
               <dl className="grid min-h-0 grid-cols-2 gap-x-5 gap-y-4 overflow-hidden">
                 <ReadOnlyField
                   label="Title"
-                  value={prospect.title_designation}
+                  value={prospect.title_designation ?? ""}
                 />
                 <ReadOnlyField
                   label="Address"
@@ -428,7 +469,7 @@ export function ProposalBuilder() {
                 changeChoice(() => setSignatoryId(value));
               }}
             >
-              {sampleSignatories.map((s) => (
+              {signatories.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
                 </option>
@@ -573,6 +614,16 @@ export function ProposalBuilder() {
             <br />
             The stage moves to Proposal sent when you send it.
           </p>
+          {saveError && (
+            <p role="alert" className="text-brand-danger text-[13px]">
+              {saveError}
+            </p>
+          )}
+          {savedProposalId !== null && (
+            <p role="status" className="text-[13px] font-medium">
+              Proposal saved (no. {savedProposalId}).
+            </p>
+          )}
           <div className="flex justify-end gap-2">
             <Link
               href="/donor-conv/prospects"
@@ -590,10 +641,11 @@ export function ProposalBuilder() {
             <button
               type="button"
               onClick={handleGenerate}
-              className="bg-brand-primary text-surface-white inline-flex h-8 cursor-pointer items-center gap-2 rounded-[6px] px-3 text-[13px] font-medium hover:opacity-90"
+              disabled={saving}
+              className="bg-brand-primary text-surface-white inline-flex h-8 cursor-pointer items-center gap-2 rounded-[6px] px-3 text-[13px] font-medium hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <FileText className="size-4" aria-hidden="true" />
-              Generate proposal
+              {saving ? "Saving..." : "Generate proposal"}
             </button>
           </div>
         </div>
