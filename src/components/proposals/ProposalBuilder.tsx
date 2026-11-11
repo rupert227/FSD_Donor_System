@@ -23,7 +23,7 @@ import {
   sampleSignatories,
   findSampleOfficer,
 } from "@/lib/sample-data";
-import { SAMPLE_LEADS } from "@/lib/mock-data/leads";
+import { SAMPLE_LEADS } from "@supabase/seeds/prospects-seed";
 import {
   buildLetterText,
   findLeftoverPrompts,
