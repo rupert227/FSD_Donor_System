@@ -56,11 +56,22 @@ export function homePathFor(role: UserRole): string {
   return MODULE_HOME[ROLE_ACCESS[role].home];
 }
 
+// API routes that belong to a module, so another role cannot call them directly.
+// /api/health is not listed: it stays public.
+const MODULE_API_PATH: Partial<Record<ModuleKey, string[]>> = {
+  "donor-conv": ["/api/lead-pipeline-report"],
+};
+
+function isUnder(pathname: string, path: string): boolean {
+  return pathname === path || pathname.startsWith(`${path}/`);
+}
+
 // Which module a URL belongs to. Shared pages (notifications, preferences) belong to none.
 export function moduleForPath(pathname: string): ModuleKey | undefined {
   return ALL_MODULES.find(
     (key) =>
-      pathname === MODULE_PATH[key] || pathname.startsWith(`${MODULE_PATH[key]}/`),
+      isUnder(pathname, MODULE_PATH[key]) ||
+      (MODULE_API_PATH[key] ?? []).some((path) => isUnder(pathname, path)),
   );
 }
 

@@ -1,6 +1,12 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { homePathFor, isPublicPath, isUserRole } from "@/lib/access";
+import {
+  canAccess,
+  homePathFor,
+  isPublicPath,
+  isUserRole,
+  moduleForPath,
+} from "@/lib/access";
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -63,6 +69,13 @@ export async function updateSession(request: NextRequest) {
 
   // Already signed in: no reason to see the login page again.
   if (pathname === "/login") {
+    return redirectTo(homePathFor(role));
+  }
+
+  // A module the role may not open goes back to the role's own home.
+  // Shared pages (notifications, preferences) belong to no module, so they stay open.
+  const requestedModule = moduleForPath(pathname);
+  if (requestedModule && !canAccess(role, requestedModule)) {
     return redirectTo(homePathFor(role));
   }
 
