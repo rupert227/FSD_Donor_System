@@ -110,6 +110,12 @@ test.describe("DTI0-20 proposal backend", () => {
     await expect(saved).toBeVisible({ timeout: 15000 });
     uiProposalId = Number(/no\. (\d+)/.exec(await saved.innerText())![1]);
 
+    // The next step is offered: a link to the Send screen carrying the saved proposal's id.
+    await expect(page.getByRole("link", { name: "Send proposal" })).toHaveAttribute(
+      "href",
+      `/donor-conv/proposals/send-proposal?proposalId=${uiProposalId}`,
+    );
+
     const api = asUser(request, await accessToken(request, CONVERSION));
     const rows = await (await api.get(`proposals?id=eq.${uiProposalId}&select=*`)).json();
     expect(rows).toHaveLength(1);
