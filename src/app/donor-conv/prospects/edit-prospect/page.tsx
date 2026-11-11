@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, useEffect, useState } from "react";
+import React, { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Check, CheckCircle2 } from "lucide-react";
@@ -8,7 +8,8 @@ import { AppShell } from "@/components/AppShell";
 import { cn } from "cn";
 import { getNavbarPreset, moduleName } from "@/app/donor-conv/struct";
 import { useDocumentTitle } from "@/components/Navbar";
-import { SAMPLE_LEADS, type LeadDetail } from "@supabase/seeds/prospects-seed";
+import type { LeadDetail } from "@supabase/seeds/prospects-seed";
+import { createClient } from "@/lib/supabase/client";
 import type { PipelineStatusEnum } from "@/types";
 import {
   ProspectDatePicker,
@@ -51,7 +52,24 @@ interface OutreachEntry {
   notes: string;
 }
 
-function EditProspectForm() {
+// Turns a lead_prospects row into the shape this form was built around.
+function rowToLead(row: Record<string, unknown>): LeadDetail {
+  const score = Number(row.probability_score ?? 20);
+  // The form works in tiers of 20 (20, 40, 60, 80, 100).
+  const tier = String(Math.min(100, Math.max(20, Math.round(score / 20) * 20)));
+  return {
+    ...row,
+    lead_source: row.lead_source_origin,
+    title_designation: row.title_designation ?? "",
+    street_address: row.street_address ?? "",
+    city_province: row.city_province ?? "",
+    probability: tier,
+    action_plan: row.next_step_action_plan ?? "",
+    target_amount: Number(row.target_amount ?? 0),
+  } as unknown as LeadDetail;
+}
+
+function EditProspectFormInner({ matchedLead }: { matchedLead: LeadDetail }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const idParam = searchParams.get("id");
@@ -80,9 +98,6 @@ function EditProspectForm() {
       document.documentElement.style.overflowX = prevHtmlOverflowX;
     };
   }, []);
-
-  const matchedLead: LeadDetail =
-    SAMPLE_LEADS.find((lead) => String(lead.id) === idParam) ?? SAMPLE_LEADS[0];
 
   const [formData, setFormData] = useState<{
     prospectName: string;
@@ -235,7 +250,55 @@ function EditProspectForm() {
     setIsSecuredNoticeModalOpen(true);
   };
 
-  const handleConfirmSecuredNotice = () => {
+  // Writes the form to lead_prospects. Returns true when it saved. The Update
+  // button runs this twice per click (onClick and the form's onSubmit), so a
+  // save already in progress is ignored.
+  const savingRef = useRef(false);
+  async function saveProspect(): Promise<boolean> {
+    if (savingRef.current) return false;
+    savingRef.current = true;
+    const supabase = createClient();
+    // Keep the officer link in step with the name picked in the form.
+    const { data: officer } = await supabase
+      .from("officer_profiles")
+      .select("id")
+      .eq("full_name", formData.assignedOfficer)
+      .maybeSingle();
+    const { error } = await supabase
+      .from("lead_prospects")
+      .update({
+        prospect_name: formData.prospectName,
+        donor_type: formData.donorType,
+        lead_source_origin: formData.leadSource,
+        primary_contact_person: formData.contactPerson,
+        title_designation: formData.designation || null,
+        email_address: formData.email || null,
+        phone_number: formData.phone,
+        street_address: formData.streetAddress || null,
+        city_province: formData.cityProvince || null,
+        target_campaign: formData.targetCampaign,
+        target_amount: Number(formData.targetAmount) || 0,
+        pipeline_status: formData.pipelineStatus,
+        probability_score: Number(formData.probability) || prospectScore.tier,
+        assigned_officer: formData.assignedOfficer,
+        assigned_officer_id: officer?.id ?? null,
+        target_followup_date: formData.followupDate || null,
+        next_step_action_plan: formData.actionPlan || null,
+      })
+      .eq("id", matchedLead.id);
+    savingRef.current = false;
+    if (error) {
+      setFloatingToast({
+        title: "Could not save",
+        message: error.message,
+      });
+      return false;
+    }
+    return true;
+  }
+
+  const handleConfirmSecuredNotice = async () => {
+    if (!(await saveProspect())) return;
     setFormData((prev) => ({
       ...prev,
       pipelineStatus: "Secured Donor",
@@ -251,12 +314,13 @@ function EditProspectForm() {
     }, 600);
   };
 
-  const handleSaveForm = (e?: React.FormEvent | React.MouseEvent) => {
+  const handleSaveForm = async (e?: React.FormEvent | React.MouseEvent) => {
     if (e) e.preventDefault();
     if (formData.pipelineStatus === "Secured Donor") {
       setIsSecuredNoticeModalOpen(true);
       return;
     }
+    if (!(await saveProspect())) return;
     setFloatingToast({
       title: "Profile Updated",
       message: `Profile changes for "${formData.prospectName || "this prospect"}" saved successfully!`,
@@ -1102,6 +1166,56 @@ function EditProspectForm() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// Loads the prospect from the database, then shows the form for it.
+function EditProspectForm() {
+  const idParam = useSearchParams().get("id");
+  const [state, setState] = useState<
+    | { status: "loading" }
+    | { status: "missing" }
+    | { status: "error"; message: string }
+    | { status: "ready"; lead: LeadDetail }
+  >({ status: "loading" });
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      if (!idParam || !/^\d+$/.test(idParam)) {
+        setState({ status: "missing" });
+        return;
+      }
+      const { data, error } = await createClient()
+        .from("lead_prospects")
+        .select("*")
+        .eq("id", idParam)
+        .maybeSingle();
+      if (cancelled) return;
+      if (error) setState({ status: "error", message: error.message });
+      else if (!data) setState({ status: "missing" });
+      else setState({ status: "ready", lead: rowToLead(data) });
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [idParam]);
+
+  if (state.status === "loading") return <ProspectUpdateSkeleton />;
+  if (state.status === "ready")
+    return <EditProspectFormInner matchedLead={state.lead} />;
+  return (
+    <div className="mx-auto w-[75%] space-y-3 py-8 text-sm" role="alert">
+      <p>
+        {state.status === "error"
+          ? `Could not load the prospect: ${state.message}`
+          : "That prospect was not found. Open one from the prospects list."}
+      </p>
+      <Link href="/donor-conv/prospects" className="text-[#6b0f0f] underline">
+        Back to prospects
+      </Link>
     </div>
   );
 }
