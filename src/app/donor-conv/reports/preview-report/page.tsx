@@ -89,7 +89,7 @@ export default function PreviewReportPage() {
                 <div className="mb-8 flex items-center gap-4">
                   <div className="relative min-h-16 min-w-16 overflow-hidden">
                     <Image
-                      src="/caritas_logo.png"
+                      src="/caritas_icon.png"
                       alt="Caritas Manila Logo"
                       sizes="128px"
                       fill

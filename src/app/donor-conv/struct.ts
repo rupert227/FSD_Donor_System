@@ -23,3 +23,5 @@ export function getNavbarPreset(selectedTabIndex: number = 0): NavbarPreset {
     ],
   };
 }
+
+export const navbarPreset = getNavbarPreset(0);
