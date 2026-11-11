@@ -144,6 +144,12 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN null;
 END $$;
 
+-- Proposal Letter Status
+DO $$ BEGIN
+  CREATE TYPE proposal_status_enum AS ENUM ('Generated', 'Sent');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+
 -- ==============================================================================
 -- 2. HELPER FUNCTIONS
 -- ==============================================================================
@@ -254,6 +260,42 @@ CREATE TABLE IF NOT EXISTS user_accounts (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- 3.6 proposals (Generated proposal letters, final text and dispatch details)
+CREATE TABLE IF NOT EXISTS proposals (
+  id BIGSERIAL PRIMARY KEY,
+  prospect_id BIGINT NOT NULL REFERENCES lead_prospects(id) ON DELETE RESTRICT,
+  template_id VARCHAR(50) NOT NULL,
+  letter_date DATE NOT NULL,
+  signatory_name VARCHAR(100) NOT NULL,
+  signatory_title VARCHAR(100),
+  letter_text TEXT NOT NULL,
+  status proposal_status_enum NOT NULL DEFAULT 'Generated',
+  delivery_preference delivery_preference_enum,
+  dispatched_at TIMESTAMPTZ,
+  created_by BIGINT REFERENCES user_accounts(id) ON DELETE SET NULL,
+  file_path TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 3.7 officer_profiles (Staff details used in letters; separate from sign-in credentials)
+CREATE TABLE IF NOT EXISTS officer_profiles (
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT UNIQUE NOT NULL REFERENCES user_accounts(id) ON DELETE CASCADE,
+  full_name VARCHAR(100) NOT NULL,
+  job_title VARCHAR(100),
+  phone_number VARCHAR(50),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Link prospects to the assigned officer's profile. Added with ALTER because
+-- lead_prospects is defined before officer_profiles. The older free-text
+-- assigned_officer column stays until every page reads this link.
+ALTER TABLE lead_prospects
+  ADD COLUMN IF NOT EXISTS assigned_officer_id BIGINT
+  REFERENCES officer_profiles(id) ON DELETE SET NULL;
+
 -- ==============================================================================
 -- 4. PERFORMANCE INDEXES
 -- ==============================================================================
@@ -269,6 +311,8 @@ CREATE INDEX IF NOT EXISTS idx_transactions_official_receipt_no ON transactions(
 CREATE INDEX IF NOT EXISTS idx_cod_transaction_id ON certificate_of_donation(transaction_id);
 CREATE INDEX IF NOT EXISTS idx_cod_donor_id ON certificate_of_donation(donor_id);
 CREATE INDEX IF NOT EXISTS idx_user_accounts_email ON user_accounts(email_address);
+CREATE INDEX IF NOT EXISTS idx_proposals_prospect_id ON proposals(prospect_id);
+CREATE INDEX IF NOT EXISTS idx_lead_prospects_assigned_officer_id ON lead_prospects(assigned_officer_id);
 
 -- ==============================================================================
 -- 5. UPDATED_AT TRIGGERS
@@ -299,6 +343,16 @@ CREATE TRIGGER trigger_update_user_accounts
   BEFORE UPDATE ON user_accounts
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS trigger_update_proposals ON proposals;
+CREATE TRIGGER trigger_update_proposals
+  BEFORE UPDATE ON proposals
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS trigger_update_officer_profiles ON officer_profiles;
+CREATE TRIGGER trigger_update_officer_profiles
+  BEFORE UPDATE ON officer_profiles
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 -- ==============================================================================
 -- 6. ROW LEVEL SECURITY (RLS) POLICIES
 -- ==============================================================================
@@ -308,6 +362,8 @@ ALTER TABLE donor_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE certificate_of_donation ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_accounts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE proposals ENABLE ROW LEVEL SECURITY;
+ALTER TABLE officer_profiles ENABLE ROW LEVEL SECURITY;
 
 -- Allow authenticated service operations / staff by default:
 CREATE POLICY "Allow authenticated users full access to lead_prospects"
@@ -324,3 +380,9 @@ CREATE POLICY "Allow authenticated users full access to certificate_of_donation"
 
 CREATE POLICY "Allow authenticated users full access to user_accounts"
   ON user_accounts FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+CREATE POLICY "Allow authenticated users full access to proposals"
+  ON proposals FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+CREATE POLICY "Allow authenticated users full access to officer_profiles"
+  ON officer_profiles FOR ALL TO authenticated USING (true) WITH CHECK (true);

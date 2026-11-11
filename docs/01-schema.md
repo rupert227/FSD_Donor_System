@@ -48,7 +48,9 @@ Records prospective donors and monitors pipeline conversion steps prior to commi
 - **`probability_score`** (`INTEGER`, `DEFAULT 20`)  
   Likelihood score of successful conversion.
 - **`assigned_officer`** (`VARCHAR(100)`, `NOT NULL`)  
-  Staff member assigned to lead outreach.
+  Staff member assigned to lead outreach. Kept as free text until every page uses `assigned_officer_id`.
+- **`assigned_officer_id`** (`INTEGER`, `FK`, `NULLABLE`)  
+  Foreign key reference to the assigned officer's profile in `officer_profiles`.
 - **`target_followup_date`** (`DATE`, `NULLABLE`)  
   Next scheduled touchpoint date.
 - **`next_step_action_plan`** (`TEXT`, `NULLABLE`)  
@@ -205,3 +207,51 @@ Controls platform access, staff sign-in credentials, and role privileges.
 - **`account_status`** (`ENUM`, `NOT NULL`)  
   Current status of user account.  
   *Permitted values: `Active`, `Suspended`*
+
+## 6. `proposals`
+
+Stores generated proposal letters as saved text, and records their dispatch to the prospect.
+
+- **`id`** (`INTEGER`, `PK`, `AUTO_INCREMENT`, `UNIQUE`)  
+  Unique proposal record identifier.
+- **`prospect_id`** (`INTEGER`, `FK`, `NOT NULL`)  
+  Foreign key reference to the prospect the letter is addressed to.
+- **`template_id`** (`VARCHAR(50)`, `NOT NULL`)  
+  Template the letter was started from (reference only).
+- **`letter_date`** (`DATE`, `NOT NULL`)  
+  Date printed on the letter.
+- **`signatory_name`** (`VARCHAR(100)`, `NOT NULL`)  
+  Name of the signatory, copied as text when the letter is generated.
+- **`signatory_title`** (`VARCHAR(100)`, `NULLABLE`)  
+  Title of the signatory, copied as text when the letter is generated.
+- **`letter_text`** (`TEXT`, `NOT NULL`)  
+  Final letter text, including any manual edits by the officer.
+- **`status`** (`ENUM`, `NOT NULL`)  
+  Stage of the proposal letter. A `Sent` proposal is not edited again.  
+  *Permitted values: `Generated`, `Sent`*
+- **`delivery_preference`** (`ENUM`, `NULLABLE`)  
+  Method used to dispatch the letter. Empty until the letter is sent.  
+  *Permitted values: `Email PDF (Softcopy)`, `Postal Mail`, `Hand Delivered`*
+- **`dispatched_at`** (`TIMESTAMPTZ`, `NULLABLE`)  
+  Date and time the letter was dispatched. Empty until the letter is sent.
+- **`created_by`** (`INTEGER`, `FK`, `NULLABLE`)  
+  Foreign key reference to the user account that generated the letter. Empty until sign-in is available.
+- **`file_path`** (`TEXT`, `NULLABLE`)  
+  Reserved for a stored PDF file. Not used yet.
+
+Sending a proposal sets `status` to `Sent` and updates `lead_prospects.pipeline_status` to `Proposal Sent`, in the same transaction.
+
+## 7. `officer_profiles`
+
+Stores staff details used in letters, kept separate from the sign-in credentials in `user_accounts`. The officer's email is read from `user_accounts.email_address`.
+
+- **`id`** (`INTEGER`, `PK`, `AUTO_INCREMENT`, `UNIQUE`)  
+  Unique officer profile identifier.
+- **`user_id`** (`INTEGER`, `FK`, `UNIQUE`, `NOT NULL`)  
+  Foreign key reference to the user account. One profile per account.
+- **`full_name`** (`VARCHAR(100)`, `NOT NULL`)  
+  Officer name as printed in letters.
+- **`job_title`** (`VARCHAR(100)`, `NULLABLE`)  
+  Officer job title as printed in letters.
+- **`phone_number`** (`VARCHAR(50)`, `NULLABLE`)  
+  Officer contact number as printed in letters.

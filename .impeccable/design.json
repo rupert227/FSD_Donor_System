@@ -1,0 +1,258 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-10T14:00:00.000Z",
+  "title": "Design System: FSD Donor System",
+  "extensions": {
+    "colorMeta": {
+      "caritas-maroon": {
+        "role": "primary",
+        "displayName": "Caritas Maroon",
+        "canonical": "#6b0f0f",
+        "tonalRamp": [
+          "#2b0606",
+          "#470a0a",
+          "#6b0f0f",
+          "#8f2a27",
+          "#b3524e",
+          "#d28e8a",
+          "#eac4c1",
+          "#fce8e6"
+        ]
+      },
+      "alert-red": {
+        "role": "functional",
+        "displayName": "Alert Red",
+        "canonical": "#fa4454",
+        "tonalRamp": [
+          "#5c0a14",
+          "#8a1422",
+          "#b8222f",
+          "#e23342",
+          "#fa4454",
+          "#fb7a86",
+          "#fcb1b8",
+          "#fee4e6"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#1c1a1a",
+        "tonalRamp": [
+          "#1c1a1a",
+          "#423e3e",
+          "#5c5757",
+          "#8a8484",
+          "#b5b0b0",
+          "#d1d5db",
+          "#e3dfdf",
+          "#f3f2f1"
+        ]
+      },
+      "canvas": {
+        "role": "neutral",
+        "displayName": "Canvas",
+        "canonical": "#f7f6f6",
+        "tonalRamp": [
+          "#5c5757",
+          "#8a8484",
+          "#b5b0b0",
+          "#d1d5db",
+          "#e3dfdf",
+          "#eceae8",
+          "#f3f2f1",
+          "#f7f6f6"
+        ]
+      },
+      "warning-amber": {
+        "role": "functional",
+        "displayName": "Warning Amber",
+        "canonical": "#d97706",
+        "tonalRamp": [
+          "#78350f",
+          "#92400e",
+          "#b45309",
+          "#d97706",
+          "#f59e0b",
+          "#fde68a",
+          "#fef3c7",
+          "#fff7ed"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "page-title": {
+        "displayName": "Page Title",
+        "purpose": "One per page, beside the object icon."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Field values, paragraphs and table text."
+      },
+      "body-strong": {
+        "displayName": "Body Strong",
+        "purpose": "Section headings inside cards."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Field labels, button text and tab text."
+      },
+      "caption": {
+        "displayName": "Caption",
+        "purpose": "Helper text, breadcrumbs and badges."
+      }
+    },
+    "shadows": [
+      {
+        "name": "soft",
+        "value": "0 1px 2px rgba(15, 23, 42, 0.04)",
+        "purpose": "The default whisper under cards and the search field."
+      },
+      {
+        "name": "small",
+        "value": "0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06)",
+        "purpose": "Most common card shadow in the app (Tailwind shadow-sm)."
+      },
+      {
+        "name": "large",
+        "value": "0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05)",
+        "purpose": "Dropdown menus (Tailwind shadow-lg)."
+      },
+      {
+        "name": "sheet",
+        "value": "0 2px 6px rgba(28, 26, 26, 0.08), 0 8px 24px rgba(28, 26, 26, 0.12)",
+        "purpose": "The letter page in the preview viewer."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "min-width",
+        "value": "1000px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      }
+    ],
+    "motion": [
+      {
+        "name": "control-ease",
+        "value": "150ms ease-out",
+        "purpose": "Background, border and text color on buttons, links, tabs and fields."
+      },
+      {
+        "name": "reveal",
+        "value": "200ms ease-out",
+        "purpose": "Show all block, notices fading in, zoom easing. Off under reduced motion and in print."
+      }
+    ],
+    "focus": {
+      "value": "2px solid #6b0f0f, offset 2px",
+      "purpose": "Keyboard focus on every control (focus-scope)."
+    }
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The single maroon action in a view, such as Generate proposal.",
+      "html": "<button class='ds-btn-primary'>Generate proposal</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; height: 36px; padding: 0 16px; background: var(--brand-primary, #6b0f0f); color: #fff; border: 0; border-radius: 5px; font: 600 13px/20px var(--font-ibm-plex-sans), sans-serif; cursor: pointer; } .ds-btn-primary:hover { opacity: 0.9; } .ds-btn-primary:focus-visible { outline: 2px solid var(--brand-primary, #6b0f0f); outline-offset: 2px; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Every other action: Cancel, Download PDF, zoom Fit.",
+      "html": "<button class='ds-btn-secondary'>Cancel</button>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; height: 36px; padding: 0 12px; background: #fff; color: var(--text-primary, #1c1a1a); border: 1px solid var(--border-strong, #d1d5db); border-radius: 5px; font: 500 13px/20px var(--font-ibm-plex-sans), sans-serif; cursor: pointer; } .ds-btn-secondary:hover { background: var(--surface-soft-hover, #eceae8); } .ds-btn-secondary:focus-visible { outline: 2px solid var(--brand-primary, #6b0f0f); outline-offset: 2px; }"
+    },
+    {
+      "name": "Select Field",
+      "kind": "input",
+      "refersTo": "field-select",
+      "description": "An editable dropdown with its label above and helper text below.",
+      "html": "<div class='ds-field'><label class='ds-field-label' for='ds-sel'>Template <span class='ds-field-star'>*</span></label><select id='ds-sel' class='ds-select'><option>Corporate funding request</option></select><p class='ds-field-help'>Pick the wording for this letter.</p></div>",
+      "css": ".ds-field { display: flex; flex-direction: column; gap: 8px; width: 280px; font-family: var(--font-ibm-plex-sans), sans-serif; } .ds-field-label { font-size: 13px; line-height: 18px; font-weight: 500; color: var(--text-primary, #1c1a1a); } .ds-field-star { color: var(--brand-danger, #fa4454); } .ds-select { height: 36px; padding: 0 12px; background: #fff; color: var(--text-primary, #1c1a1a); border: 1px solid var(--dropdown-stroke, #8a8484); border-radius: 6px; font-size: 14px; cursor: pointer; } .ds-select:focus-visible { outline: 2px solid var(--brand-primary, #6b0f0f); outline-offset: 2px; } .ds-field-help { margin: 0; font-size: 12px; line-height: 16px; color: var(--text-secondary, #5c5757); }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "White bordered container with a divided footer for actions.",
+      "html": "<div class='ds-card'><div class='ds-card-body'><p class='ds-card-title'>From the prospect record</p><p class='ds-card-text'>Ayala Foundation</p></div><div class='ds-card-footer'><button class='ds-card-btn'>Cancel</button></div></div>",
+      "css": ".ds-card { width: 320px; background: #fff; border: 1px solid var(--border-soft, #e3dfdf); border-radius: 8px; overflow: hidden; font-family: var(--font-ibm-plex-sans), sans-serif; } .ds-card-body { padding: 20px; } .ds-card-title { margin: 0 0 4px; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--text-primary, #1c1a1a); } .ds-card-text { margin: 0; font-size: 14px; line-height: 20px; color: var(--text-primary, #1c1a1a); } .ds-card-footer { display: flex; justify-content: flex-end; padding: 16px 20px; border-top: 1px solid var(--border-soft, #e3dfdf); } .ds-card-btn { height: 32px; padding: 0 12px; background: #fff; border: 1px solid var(--border-strong, #d1d5db); border-radius: 6px; font: 500 13px/20px var(--font-ibm-plex-sans), sans-serif; cursor: pointer; }"
+    },
+    {
+      "name": "Navigation Tabs",
+      "kind": "nav",
+      "refersTo": "nav-tab-active",
+      "description": "Text tabs with a 2px maroon underline on the active one.",
+      "html": "<nav class='ds-tabs'><a class='ds-tab' href='#'>Prospects</a><a class='ds-tab ds-tab-active' href='#'>Proposals</a><a class='ds-tab' href='#'>Reports</a></nav>",
+      "css": ".ds-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border-strong, #d1d5db); font-family: var(--font-ibm-plex-sans), sans-serif; } .ds-tab { display: inline-flex; align-items: center; height: 44px; padding: 0 12px; margin-bottom: -1px; border-bottom: 2px solid transparent; font-size: 14px; font-weight: 500; color: var(--text-primary, #1c1a1a); text-decoration: none; } .ds-tab:hover { background: var(--surface-soft-hover, #eceae8); } .ds-tab-active { color: var(--brand-primary, #6b0f0f); border-bottom-color: var(--brand-primary, #6b0f0f); } .ds-tab:focus-visible { outline: 2px solid var(--brand-primary, #6b0f0f); outline-offset: -2px; }"
+    },
+    {
+      "name": "Status Badge",
+      "kind": "chip",
+      "refersTo": "badge-neutral",
+      "description": "Small neutral pill with a dot, such as Draft preview.",
+      "html": "<span class='ds-badge'><span class='ds-badge-dot'></span>Draft preview</span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px; background: var(--surface-soft, #f3f2f1); color: var(--text-secondary, #5c5757); border: 1px solid var(--border-soft, #e3dfdf); border-radius: 4px; font: 500 12px/16px var(--font-ibm-plex-sans), sans-serif; } .ds-badge-dot { width: 6px; height: 6px; border-radius: 9999px; background: var(--text-secondary, #5c5757); }"
+    },
+    {
+      "name": "Readiness Checklist",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Rows of status icon, label and value; only a row needing action gets color.",
+      "html": "<div class='ds-check'><p class='ds-check-title'>Before you generate</p><div class='ds-check-row'><span class='ds-check-icon'>&#10003;</span><span class='ds-check-label'>Length</span><span>1 page</span></div><div class='ds-check-row'><span class='ds-check-icon ds-check-warn'>&#9888;</span><span class='ds-check-label'>Prompts</span><strong>1 left to fill</strong></div></div>",
+      "css": ".ds-check { width: 320px; padding: 10px 12px; background: #fff; border: 1px solid var(--border-soft, #e3dfdf); border-radius: 6px; font-family: var(--font-ibm-plex-sans), sans-serif; } .ds-check-title { margin: 0 0 4px; font-size: 12px; font-weight: 600; color: var(--text-secondary, #5c5757); } .ds-check-row { display: flex; gap: 8px; padding: 6px 0; border-top: 1px solid var(--border-soft, #e3dfdf); font-size: 13px; } .ds-check-label { width: 80px; color: var(--text-secondary, #5c5757); } .ds-check-icon { color: var(--text-secondary, #5c5757); } .ds-check-warn { color: #d97706; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Steward's Desk",
+    "overview": "A calm, orderly working desk for people who handle other people's generosity. The officer sits in front of records; letters are produced on letterhead; the Caritas maroon appears sparingly so that when it appears, it means \"this is the action\" or \"this is where you are\". The voice is calm, formal and precise: quiet surfaces, clear hierarchy, plain language, no playfulness. The interface is the workshop, and the letter is the product.\n\nDensity is moderate and consistent. Pages are white cards on a warm-grey canvas, fields are 36px tall, buttons are quiet, and every screen has one obvious primary action. Depth comes from thin borders first and shadow only when something floats.",
+    "keyCharacteristics": [
+      "Warm-grey canvas, white bordered cards, one maroon action per view.",
+      "IBM Plex Sans throughout, small and steady type (12 to 14px in the app).",
+      "Borders before shadows; shadows only for floating things and the letter sheet.",
+      "The letter sheet is a separate artifact with its own size and type, not app UI.",
+      "Desktop-first: a 1000px minimum width, no mobile layout."
+    ],
+    "rules": [
+      {
+        "name": "The One Maroon Rule",
+        "body": "Maroon marks the single primary action per view, the active tab and links. It is never used as a background for large areas and never as decoration.",
+        "section": "colors"
+      },
+      {
+        "name": "The Editable Looks Editable Rule",
+        "body": "Only editable fields get the darker Control Stroke border. Saved data is shown as label over value with no box.",
+        "section": "colors"
+      },
+      {
+        "name": "The Letter Has Its Own Type Rule",
+        "body": "The letter sheet is set at 11pt body with a 1.5 line height, a 28px bold maroon \"CARITAS MANILA\" and a 9pt footer. These sizes belong to the printed document and never feed back into the app scale.",
+        "section": "typography"
+      },
+      {
+        "name": "The Borders Before Shadows Rule",
+        "body": "To separate a surface, add a Line Soft border first. Use a shadow only when the element visibly floats above others.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do keep one maroon primary action per view and use the Secondary style for everything else.",
+      "Do use the shared tokens (`brand-primary`, `border-border-soft`, `surface-soft-hover`, `text-text-secondary`) and the existing 36px control height before inventing new values.",
+      "Do mark non-document chrome with `no-print` so only the letter prints.",
+      "Do keep the letterhead out of a `<header>` element; the team's print CSS hides every `<header>`.",
+      "Do run Prettier (with the Tailwind plugin) on files you change."
+    ],
+    "donts": [
+      "Don't use maroon for large backgrounds or decoration.",
+      "Don't add shadows to flat cards; add a border instead.",
+      "Don't resize the letter's type to fit the app scale, or the app's type to fit the letter.",
+      "Don't show editable and read-only values in the same style."
+    ]
+  }
+}

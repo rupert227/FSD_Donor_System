@@ -88,6 +88,8 @@ export type UserRoleEnum =
 
 export type AccountStatusEnum = 'Active' | 'Suspended'
 
+export type ProposalStatusEnum = 'Generated' | 'Sent'
+
 // 1. lead_prospects
 export interface LeadProspect {
   id: number
@@ -107,6 +109,7 @@ export interface LeadProspect {
   pipeline_status: PipelineStatusEnum
   probability_score: number
   assigned_officer: string
+  assigned_officer_id: number | null
   target_followup_date: string | null
   next_step_action_plan: string | null
   created_at: string
@@ -177,6 +180,35 @@ export interface UserAccount {
   password_hash: string
   user_role: UserRoleEnum
   account_status: AccountStatusEnum
+  created_at: string
+  updated_at: string
+}
+
+// 6. proposals
+export interface Proposal {
+  id: number
+  prospect_id: number
+  template_id: string
+  letter_date: string
+  signatory_name: string
+  signatory_title: string | null
+  letter_text: string
+  status: ProposalStatusEnum
+  delivery_preference: DeliveryPreferenceEnum | null
+  dispatched_at: string | null
+  created_by: number | null
+  file_path: string | null
+  created_at: string
+  updated_at: string
+}
+
+// 7. officer_profiles
+export interface OfficerProfile {
+  id: number
+  user_id: number
+  full_name: string
+  job_title: string | null
+  phone_number: string | null
   created_at: string
   updated_at: string
 }

@@ -1,31 +1,21 @@
-"use client";
-
+import { FileText } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { getNavbarPreset, moduleName } from "@/app/donor-conv/struct";
-import { useDocumentTitle } from "@/components/Navbar";
-
-const pageName = "Proposals";
+import { ProposalBuilder } from "@/components/proposals/ProposalBuilder";
+import { navbarPreset } from "@/app/donor-conv/struct";
 
 export default function ProposalsPage() {
-  useDocumentTitle(`${moduleName} - ${pageName}`);
-  const navbarPreset = getNavbarPreset(1);
-
   return (
-    <AppShell navbarPreset={navbarPreset}>
-      {/* DELETE FROM HERE */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="text-xl font-semibold text-gray-900">{pageName}</h2>
-        <p className="mt-2 text-sm text-gray-600">
-          WIP - Content belongs here.
-          <br />
-          Replace entire &lt;div&gt; inside &lt;AppShell&gt; with content.
-          <br />
-          Page padding is implemented in AppShell.tsx.
-          <br />
-          Do not specify page padding here.
-        </p>
+    // Copy the shared preset and highlight the "Proposals" tab (index 1).
+    <AppShell navbarPreset={{ ...navbarPreset, selectedTabIndex: 1 }}>
+      {/* Page header (not printed): the page title. */}
+      <div className="no-print flex items-center gap-3">
+        <div className="bg-surface-soft flex size-10 shrink-0 items-center justify-center rounded-lg">
+          <FileText className="size-5" aria-hidden="true" />
+        </div>
+        <h1 className="text-[22px] leading-7 font-semibold">New proposal</h1>
       </div>
-      {/* DELETE TO HERE */}
+
+      <ProposalBuilder />
     </AppShell>
   );
 }
