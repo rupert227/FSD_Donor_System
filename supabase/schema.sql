@@ -284,10 +284,13 @@ CREATE TABLE IF NOT EXISTS proposals (
 -- 3.7 officer_profiles (Staff details used in letters; separate from sign-in credentials)
 CREATE TABLE IF NOT EXISTS officer_profiles (
   id BIGSERIAL PRIMARY KEY,
-  user_id BIGINT UNIQUE NOT NULL REFERENCES user_accounts(id) ON DELETE CASCADE,
+  -- NULL for a person with no sign-in account (for example a signatory).
+  user_id BIGINT UNIQUE REFERENCES user_accounts(id) ON DELETE CASCADE,
   full_name VARCHAR(100) NOT NULL,
   job_title VARCHAR(100),
   phone_number VARCHAR(50),
+  -- true = appears in the letter Signatory dropdown.
+  is_signatory BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -384,8 +387,81 @@ CREATE POLICY "Allow authenticated users full access to certificate_of_donation"
 CREATE POLICY "Allow authenticated users full access to user_accounts"
   ON user_accounts FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
-CREATE POLICY "Allow authenticated users full access to proposals"
-  ON proposals FOR ALL TO authenticated USING (true) WITH CHECK (true);
+-- proposals: only the Conversion module's roles. The role comes from the token (set at sign-in).
+CREATE OR REPLACE FUNCTION public.jwt_user_role()
+RETURNS TEXT LANGUAGE sql STABLE SET search_path = public
+AS $$ SELECT auth.jwt() -> 'app_metadata' ->> 'user_role' $$;
+
+-- created_by is set by the database from the signed-in user, so the browser cannot fake it.
+CREATE OR REPLACE FUNCTION public.set_proposal_created_by()
+RETURNS TRIGGER LANGUAGE plpgsql SET search_path = public
+AS $$
+BEGIN
+  IF auth.uid() IS NOT NULL THEN
+    NEW.created_by := (SELECT id FROM user_accounts WHERE auth_user_id = auth.uid());
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trigger_set_proposal_created_by ON proposals;
+CREATE TRIGGER trigger_set_proposal_created_by
+  BEFORE INSERT ON proposals
+  FOR EACH ROW EXECUTE FUNCTION public.set_proposal_created_by();
+
+CREATE POLICY "Conversion roles can read proposals"
+  ON proposals FOR SELECT TO authenticated
+  USING (public.jwt_user_role() IN ('Conversion Officer', 'Division Head', 'System Administrator'));
+
+-- A new proposal always starts as Generated; it becomes Sent only through send_proposal().
+CREATE POLICY "Conversion roles can create proposals"
+  ON proposals FOR INSERT TO authenticated
+  WITH CHECK (
+    public.jwt_user_role() IN ('Conversion Officer', 'Division Head', 'System Administrator')
+    AND status = 'Generated'
+    AND dispatched_at IS NULL
+  );
+
+CREATE POLICY "Conversion roles can update proposals"
+  ON proposals FOR UPDATE TO authenticated
+  USING (public.jwt_user_role() IN ('Conversion Officer', 'Division Head', 'System Administrator'))
+  WITH CHECK (public.jwt_user_role() IN ('Conversion Officer', 'Division Head', 'System Administrator'));
+-- No DELETE policy on purpose: saved letters are records and cannot be deleted from the app.
+
+-- Send: mark the proposal Sent and move the prospect to Proposal Sent in ONE transaction.
+-- Runs as the caller, so the policies above decide who may use it.
+CREATE OR REPLACE FUNCTION public.send_proposal(
+  p_proposal_id BIGINT,
+  p_delivery delivery_preference_enum
+)
+RETURNS proposals
+LANGUAGE plpgsql
+SET search_path = public
+AS $$
+DECLARE
+  sent proposals;
+BEGIN
+  UPDATE proposals
+  SET status = 'Sent', delivery_preference = p_delivery, dispatched_at = NOW()
+  WHERE id = p_proposal_id AND status = 'Generated'
+  RETURNING * INTO sent;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Proposal % was not found, was already sent, or you are not allowed to send it', p_proposal_id;
+  END IF;
+
+  -- Only move forward: a prospect already at Proposal Sent or Secured Donor stays where it is.
+  UPDATE lead_prospects
+  SET pipeline_status = 'Proposal Sent'
+  WHERE id = sent.prospect_id
+    AND pipeline_status IN ('New Lead', 'Under Research', 'Outreach Started');
+
+  RETURN sent;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.send_proposal(BIGINT, delivery_preference_enum) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.send_proposal(BIGINT, delivery_preference_enum) TO authenticated;
 
 CREATE POLICY "Allow authenticated users full access to officer_profiles"
   ON officer_profiles FOR ALL TO authenticated USING (true) WITH CHECK (true);
