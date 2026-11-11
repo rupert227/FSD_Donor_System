@@ -90,7 +90,7 @@ export function DropdownList({
                 <div
                   key={option.key}
                   onClick={() => {
-                    onChange?.(option);
+                    if (!isSelected) onChange?.(option);
                     setIsOpen(false);
                   }}
                   className={cn(
@@ -114,17 +114,20 @@ export function DropdownList({
   );
 }
 
-export function LoadingScreen({ label = "Loading", className }: LoadingScreenProps) {
+export function LoadingScreen({
+  label = "Loading",
+  className,
+}: LoadingScreenProps) {
   return (
     <div
+      role="status"
+      aria-live="polite"
       className={cn(
         "flex flex-1 flex-col items-center justify-center gap-3 overflow-hidden",
         className,
       )}
-      role="status"
-      aria-live="polite"
     >
-      <Loader2 className="text-brand-primary h-8 w-8 animate-spin" />
+      <Loader2 className="text-brand-primary h-8 w-8 shrink-0 animate-spin" />
       <p className="text-text-primary text-[1.5rem] font-medium">{label}</p>
       <p className="sr-only">{label}</p>
     </div>

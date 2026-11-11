@@ -25,6 +25,7 @@
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
   --font-sans: var(--font-ibm-plex-sans), sans-serif;
+  --opacity-button-disabled: var(--button-disabled);
   --radius-button: var(--button-radius);
   --radius-dropdown: var(--dropdown-radius);
   --radius-panel: var(--panel-radius);
@@ -50,9 +51,10 @@
 }
 
 @media print {
-  body {
-    background: white !important;
-    margin: 0 !important;
+  html, body {
+    overflow: visible !important;
+    min-width: 0 !important;
+    width: 100% !important;
   }
 
   header {
@@ -111,6 +113,7 @@
   --brand-100: #fdf2f0;
   --brand-danger: #fa4454;
   --brand-primary: #6b0f0f;
+  --button-disabled: 75%;
   --button-radius: 5px;
   --button-stroke: #8a8484;
   --content-background: #f7f6f6;

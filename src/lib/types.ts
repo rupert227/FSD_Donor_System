@@ -15,49 +15,49 @@ export namespace Primitives {
 
 export namespace Leads {
   export interface Report {
-    timestamp: string | none;
-    fiscalYear: string | none;
-    donorType: string | none;
-    pipelineStage: string | none;
-    weightedForecast: number | none;
-    leadConversionRate: number | none;
-    totalPipelineValue: number | none;
-    averageProbability: number | none;
-    fiscalYearOptions: Primitives.DropdownOption[] | none;
-    donorTypeOptions: Primitives.DropdownOption[] | none;
-    pipelineStageOptions: Primitives.DropdownOption[] | none;
-    leadOrigins: Primitives.ChartOption[] | none;
-    pipelineStages: Primitives.ChartOption[] | none;
-    quarterNewLeads: Primitives.ChartOption[] | none;
-    quarterlySummary:
+    timestamp?: string | none;
+    fiscalYear?: string | none;
+    donorType?: string | none;
+    pipelineStage?: string | none;
+    weightedForecast?: number | none;
+    leadConversionRate?: number | none;
+    totalPipelineValue?: number | none;
+    averageProbability?: number | none;
+    fiscalYearOptions?: Primitives.DropdownOption[] | none;
+    donorTypeOptions?: Primitives.DropdownOption[] | none;
+    pipelineStageOptions?: Primitives.DropdownOption[] | none;
+    leadOrigins?: Primitives.ChartOption[] | none;
+    pipelineStages?: Primitives.ChartOption[] | none;
+    quarterNewLeads?: Primitives.ChartOption[] | none;
+    quarterlySummary?:
       | {
-          pipelineValue: {
-            totalEstimatedValue: (number | none)[] | none;
-            probabilityAdjustedValue: (number | none)[] | none;
-            securedValue: (number | none)[] | none;
-            unsecuredBalance: (number | none)[] | none;
+          pipelineValue?: {
+            totalEstimatedValue?: (number | none)[] | none;
+            probabilityAdjustedValue?: (number | none)[] | none;
+            securedValue?: (number | none)[] | none;
+            unsecuredBalance?: (number | none)[] | none;
           };
-          conversion: {
-            leadConversionRate: (number | none)[] | none;
-            valueRealizationRate: (number | none)[] | none;
+          conversion?: {
+            leadConversionRate?: (number | none)[] | none;
+            valueRealizationRate?: (number | none)[] | none;
           };
-          leadsOrigin: {
-            referral: (number | none)[] | none;
-            research: (number | none)[] | none;
-            booths: (number | none)[] | none;
-            directCall: (number | none)[] | none;
-            walkIn: (number | none)[] | none;
+          leadsOrigin?: {
+            referral?: (number | none)[] | none;
+            research?: (number | none)[] | none;
+            booths?: (number | none)[] | none;
+            directCall?: (number | none)[] | none;
+            walkIn?: (number | none)[] | none;
           };
-          totalNewLeads: (number | none)[] | none;
+          totalNewLeads?: (number | none)[] | none;
         }
       | null
       | undefined;
   }
 
   export interface ReportFilters {
-    fiscalYear?: string;
-    donorType?: string;
-    pipelineStage?: string;
+    fiscalYear?: string | none;
+    donorType?: string | none;
+    pipelineStage?: string | none;
   }
 
   export const emptyReport: Report = {

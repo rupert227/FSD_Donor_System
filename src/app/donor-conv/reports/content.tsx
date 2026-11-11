@@ -1,14 +1,15 @@
 "use client";
 
+import ReportsSkeleton from "@/app/donor-conv/reports/skeleton";
+
 import { AppShell } from "@/components/AppShell";
-import { BarChart3, Check, Eye, RotateCcw } from "lucide-react";
+import { BarChart3, Check, Eye, Loader, RotateCcw } from "lucide-react";
 import { DropdownList, type DropdownOption } from "@/components/prefabs";
 import { Leads } from "@/lib/types";
-import { ReportsSkeleton } from "@/app/donor-conv/reports/skeleton";
-import { useEffect, useState } from "react";
 import { cn } from "cn";
 import { getNavbarPreset, moduleName } from "@/app/donor-conv/struct";
 import { useDocumentTitle } from "@/components/Navbar";
+import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import {
@@ -34,20 +35,25 @@ export default function ReportsPageContent() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
 
-  const [donorType, setDonorType] = useState<DropdownOption | null>(null);
-  const [fiscalYear, setFiscalYear] = useState<DropdownOption | null>(null);
-  const [pipelineStage, setPipelineStage] = useState<DropdownOption | null>(
-    null,
-  );
+  const appliedFilters = useRef<Leads.ReportFilters>({});
+  const selectedFilters = useRef<Leads.ReportFilters>({});
 
-  const [dataIsReady, setDataIsReady] = useState(false);
-  const [reportContent, setReportContent] = useState<Leads.Report | null>(null);
+  const [donorType, setDonorType] = useState<DropdownOption>();
+  const [fiscalYear, setFiscalYear] = useState<DropdownOption>();
+  const [pipelineStage, setPipelineStage] = useState<DropdownOption>();
+
+  const [applyIsEnabled, setApplyIsEnabled] = useState(true);
+  const [canGeneratePDF, setCanGeneratePDF] = useState(true);
+  const [pageIsReady, setPageIsReady] = useState(false);
+  const [reportIsReady, setReportIsReady] = useState(false);
+
+  const [reportContent, setReportContent] = useState<Leads.Report>();
 
   useEffect(() => {
     const controller = new AbortController();
 
     const fetchReport = async () => {
-      setDataIsReady(false);
+      setReportIsReady(false);
 
       try {
         const response = await fetch(
@@ -61,7 +67,11 @@ export default function ReportsPageContent() {
         if ((err as Error).name === "AbortError") return;
         setReportContent(Leads.emptyReport);
       } finally {
-        if (!controller.signal.aborted) setDataIsReady(true);
+        if (!controller.signal.aborted) {
+          setApplyIsEnabled(false);
+          setPageIsReady(true);
+          setReportIsReady(true);
+        }
       }
     };
 
@@ -70,57 +80,11 @@ export default function ReportsPageContent() {
     return () => controller.abort();
   }, [searchParams.toString()]);
 
-  const report = reportContent ?? Leads.emptyReport;
-
   useEffect(() => {
-    window.sessionStorage.setItem(
-      reportContentStorageKey,
-      JSON.stringify(report),
-    );
+    setCanGeneratePDF(true);
+  }, [searchParams.toString()]);
 
-    setDonorType(
-      report.donorTypeOptions?.find(
-        (option) => option.key === report.donorType,
-      ) ?? null,
-    );
-
-    setFiscalYear(
-      report.fiscalYearOptions?.find(
-        (option) => option.key === report.fiscalYear,
-      ) ?? null,
-    );
-
-    setPipelineStage(
-      report.pipelineStageOptions?.find(
-        (option) => option.key === report.pipelineStage,
-      ) ?? null,
-    );
-  }, [report]);
-
-  const applyFiltersAction = async () => {
-    const params = new URLSearchParams(searchParams);
-
-    if (donorType?.key) params.set("donorType", donorType.key);
-    else params.delete("donorType");
-
-    if (fiscalYear?.key) params.set("fiscalYear", fiscalYear.key);
-    else params.delete("fiscalYear");
-
-    if (pipelineStage?.key) params.set("pipelineStage", pipelineStage.key);
-    else params.delete("pipelineStage");
-
-    router.replace(`${pathname}?${params.toString()}`);
-  };
-
-  const previewPDFAction = () => {
-    router.push("/donor-conv/reports/preview-report");
-  };
-
-  const resetFiltersAction = () => {
-    setDonorType(null);
-    setFiscalYear(null);
-    setPipelineStage(null);
-  };
+  const report = reportContent ?? Leads.emptyReport;
 
   const summaryRows = generateSummaryRows(report);
 
@@ -131,7 +95,94 @@ export default function ReportsPageContent() {
   const quarterNewLeadsMax =
     report.quarterNewLeads?.reduce((m, s) => Math.max(m, s.value ?? 0), 0) ?? 0;
 
-  if (!dataIsReady) {
+  useEffect(() => {
+    window.sessionStorage.setItem(
+      reportContentStorageKey,
+      JSON.stringify(report),
+    );
+
+    const donorTypeFilter =
+      report.donorTypeOptions?.find(
+        (option) => option.key === report.donorType,
+      ) ?? undefined;
+
+    const fiscalYearFilter =
+      report.fiscalYearOptions?.find(
+        (option) => option.key === report.fiscalYear,
+      ) ?? undefined;
+
+    const pipelineStageFilter =
+      report.pipelineStageOptions?.find(
+        (option) => option.key === report.pipelineStage,
+      ) ?? undefined;
+
+    setDonorType(donorTypeFilter);
+    setFiscalYear(fiscalYearFilter);
+    setPipelineStage(pipelineStageFilter);
+
+    appliedFilters.current.donorType = report.donorType;
+    appliedFilters.current.fiscalYear = report.fiscalYear;
+    appliedFilters.current.pipelineStage = report.pipelineStage;
+
+    selectedFilters.current.donorType = report.donorType;
+    selectedFilters.current.fiscalYear = report.fiscalYear;
+    selectedFilters.current.pipelineStage = report.pipelineStage;
+  }, [report]);
+
+  const hasFilterChanges = () => {
+    return (
+      appliedFilters.current.donorType != selectedFilters.current.donorType ||
+      appliedFilters.current.fiscalYear != selectedFilters.current.fiscalYear ||
+      appliedFilters.current.pipelineStage !=
+        selectedFilters.current.pipelineStage
+    );
+  };
+
+  const applyFiltersAction = async () => {
+    setReportIsReady(false);
+
+    const params = new URLSearchParams(searchParams);
+
+    const donorTypePK = "donorType";
+    const fiscalYearPK = "fiscalYear";
+    const pipelineStagePK = "pipelineStage";
+
+    if (fiscalYear?.key) params.set(fiscalYearPK, fiscalYear.key);
+    else params.delete(fiscalYearPK);
+
+    if (donorType?.key) params.set(donorTypePK, donorType.key);
+    else params.delete(donorTypePK);
+
+    if (pipelineStage?.key) params.set(pipelineStagePK, pipelineStage.key);
+    else params.delete(pipelineStagePK);
+
+    router.replace(`${pathname}?${params.toString()}`);
+  };
+
+  const generatePDFAction = () => {
+    setCanGeneratePDF(false);
+    router.push("/donor-conv/reports/preview-report");
+  };
+
+  const resetFiltersAction = () => {
+    setDonorType(undefined);
+    setFiscalYear(undefined);
+    setPipelineStage(undefined);
+
+    selectedFilters.current.donorType = undefined;
+    selectedFilters.current.fiscalYear = undefined;
+    selectedFilters.current.pipelineStage = undefined;
+
+    setApplyIsEnabled(
+      appliedFilters.current.donorType != selectedFilters.current.donorType ||
+        appliedFilters.current.fiscalYear !=
+          selectedFilters.current.fiscalYear ||
+        appliedFilters.current.pipelineStage !=
+          selectedFilters.current.pipelineStage,
+    );
+  };
+
+  if (!pageIsReady) {
     return (
       <AppShell navbarPreset={navbarPreset}>
         <ReportsSkeleton />
@@ -154,17 +205,28 @@ export default function ReportsPageContent() {
               </div>
             </div>
             <div className="flex items-start">
-              <button
-                type="button"
-                onClick={previewPDFAction}
-                className="border-border-soft bg-surface-soft text-text-primary hover:bg-surface-soft-hover bg-surface-white rounded-button inline-flex cursor-pointer items-center gap-2 border px-3 py-2 text-[0.75rem] font-medium"
-              >
-                <Eye className="h-5 w-5" />
-                Preview PDF Summary
-              </button>
+              <div className="flex items-center gap-3">
+                {!canGeneratePDF && (
+                  <div className="flex items-center justify-center gap-1 overflow-hidden">
+                    <Loader className="text-brand-primary h-4 w-4 shrink-0 animate-spin" />
+                    <p className="text-text-secondary text-[0.9rem]">
+                      Generating PDF
+                    </p>
+                  </div>
+                )}
+                <button
+                  type="button"
+                  disabled={!canGeneratePDF || !reportIsReady}
+                  onClick={generatePDFAction}
+                  className="border-border-soft text-text-primary enabled:hover:bg-surface-soft-hover bg-surface-white rounded-button disabled:opacity-button-disabled flex h-9 cursor-pointer items-center gap-1 border px-3 py-2 text-[0.75rem] font-medium disabled:cursor-not-allowed"
+                >
+                  <Eye className="h-5 w-5" />
+                  Generate PDF
+                </button>
+              </div>
             </div>
           </div>
-          <div className="flex items-end gap-3">
+          <div className="flex items-center items-end gap-3">
             <div>
               <label className="text-text-secondary text-[0.75rem] font-medium">
                 Fiscal Year
@@ -173,7 +235,11 @@ export default function ReportsPageContent() {
                 label={"Select fiscal year"}
                 selectedKey={fiscalYear?.key}
                 options={report.fiscalYearOptions}
-                onChange={setFiscalYear}
+                onChange={(option) => {
+                  selectedFilters.current.fiscalYear = option.key;
+                  setFiscalYear(option);
+                  setApplyIsEnabled(hasFilterChanges());
+                }}
               />
             </div>
             <div>
@@ -184,7 +250,11 @@ export default function ReportsPageContent() {
                 label={"Select donor type"}
                 selectedKey={donorType?.key}
                 options={report.donorTypeOptions}
-                onChange={setDonorType}
+                onChange={(option) => {
+                  selectedFilters.current.donorType = option.key;
+                  setDonorType(option);
+                  setApplyIsEnabled(hasFilterChanges());
+                }}
               />
             </div>
             <div>
@@ -195,25 +265,41 @@ export default function ReportsPageContent() {
                 label={"Select pipeline stage"}
                 selectedKey={pipelineStage?.key}
                 options={report.pipelineStageOptions}
-                onChange={setPipelineStage}
+                onChange={(option) => {
+                  selectedFilters.current.pipelineStage = option.key;
+                  setPipelineStage(option);
+                  setApplyIsEnabled(hasFilterChanges());
+                }}
               />
             </div>
-            <button
-              type="button"
-              onClick={applyFiltersAction}
-              className="border-border-soft text-text-primary hover:bg-surface-soft-hover bg-surface-white rounded-button flex h-9 cursor-pointer items-center gap-1 border px-3 py-2 text-[0.75rem]"
-            >
-              <Check className="text-text-secondary h-4 w-4 shrink-0" />
-              Apply
-            </button>
-            <button
-              type="button"
-              onClick={resetFiltersAction}
-              className="border-border-soft text-text-primary hover:bg-surface-soft-hover rounded-button flex h-9 cursor-pointer items-center gap-1 border px-3 py-2 text-[0.75rem]"
-            >
-              <RotateCcw className="text-text-secondary h-4 w-4 shrink-0" />
-              Reset Filters
-            </button>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                disabled={!applyIsEnabled || !reportIsReady}
+                onClick={applyFiltersAction}
+                className="border-border-soft text-text-primary enabled:hover:bg-surface-soft-hover bg-surface-white rounded-button disabled:opacity-button-disabled flex h-9 cursor-pointer items-center gap-1 border px-3 py-2 text-[0.75rem] disabled:cursor-not-allowed"
+              >
+                <Check className="text-text-secondary h-4 w-4 shrink-0" />
+                Apply
+              </button>
+              <button
+                type="button"
+                onClick={resetFiltersAction}
+                className="border-border-soft text-text-primary hover:bg-surface-soft-hover rounded-button flex h-9 cursor-pointer items-center gap-1 border px-3 py-2 text-[0.75rem]"
+              >
+                <RotateCcw className="text-text-secondary h-4 w-4 shrink-0" />
+                Reset Filters
+              </button>
+
+              {!reportIsReady && (
+                <div className="flex items-center justify-center gap-1 overflow-hidden">
+                  <Loader className="text-brand-primary h-4 w-4 shrink-0 animate-spin" />
+                  <p className="text-text-secondary text-[0.9rem]">
+                    Applying Filters
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
           <div className="grid grid-cols-4 gap-4 text-wrap">
             <div className="border-border-soft bg-surface-white rounded-panel border p-4 shadow-sm">
@@ -438,7 +524,7 @@ export default function ReportsPageContent() {
                         </td>
                         {Array.from({ length: columnCount }).map(
                           (_, colIndex) => {
-                            const value = row.values?.[colIndex] ?? null;
+                            const value = row.values?.[colIndex] ?? undefined;
                             return (
                               <td
                                 key={`${row.label}-${colIndex}`}

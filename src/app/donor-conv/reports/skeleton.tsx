@@ -1,4 +1,4 @@
-export function ReportsSkeleton() {
+export default function ReportsSkeleton() {
   return (
     <div className="animate-pulse space-y-5">
       <div className="flex items-center justify-between gap-4">
