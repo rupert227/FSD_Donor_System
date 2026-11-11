@@ -30,6 +30,7 @@ Sign-in also makes the existing Row Level Security (RLS) policies (`TO authentic
 - `user_accounts.auth_user_id UUID UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE`.
 - `user_accounts.password_hash` becomes nullable (Supabase holds the password). The column stays unused and is dropped later.
 - `supabase/seeds/accounts-seed.sql`: for each email, look up the Supabase user and insert the matching `user_accounts` row with role and status. Then copy every account's role into that Supabase user's `app_metadata.user_role`, so the proxy can read the role from the signed-in token without a database call. `user_accounts.user_role` stays the source of truth. Safe to re-run. Contains emails and roles only, never passwords.
+- While on the live project, the `proposals` and `officer_profiles` tables are also created from `supabase/changes/2026-11-11-proposals-officers.sql`. They were in `schema.sql` but never run live (a count request returned 404). This is the database part of the DTI0-20 follow-ups, done early. The app code that uses them is still a later piece of work.
 - The change SQL for the live project lives in `supabase/changes/` (not `supabase/migrations/`, which would make the Supabase GitHub preview try to build a database from a partial migration).
 - Existing RLS policies stay. They let any signed-in user read every `user_accounts` row, which is acceptable now and flagged for tightening later.
 - The same SQL is run once in the Supabase SQL editor (the live project does not have it yet).
