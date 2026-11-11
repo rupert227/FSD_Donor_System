@@ -12,7 +12,7 @@ The Fundraising and Stewardship Division (FSD) Donor System for Caritas Manila �
 - **Styling**: Tailwind CSS
 - **Database**: Supabase / PostgreSQL
 - **Icons**: Lucide React
-- **Fonts**: IBM Plex Sans (system base), Poppins (form typography)
+- **Fonts**: IBM Plex Sans (system base)
 
 ---
 
@@ -24,12 +24,11 @@ FSD_Donor_System/
 │   ├── 00-overview.md                     # System conventions and architecture guidelines
 │   └── 01-schema.md                       # Database schema and entity models
 │
-├── public/                                # Static web assets
-│   └── brand/                             # Caritas Manila brand vectors and logos
+├── public/                                # Static web assets and brand icons
 │
 ├── src/                                   # Application source code
 │   ├── app/                               # Next.js App Router
-│   │   ├── layout.tsx                     # Root shell & typography provider
+│   │   ├── layout.tsx                     # Root shell, metadata & typography provider
 │   │   ├── globals.css                    # Tailwind CSS tokens and global base styles
 │   │   ├── page.tsx                       # Root route redirect
 │   │   │
@@ -39,7 +38,9 @@ FSD_Donor_System/
 │   │   │
 │   │   ├── donor-conv/                    # Donor Conversion Division (Module 1)
 │   │   │   ├── prospects/                 # Lead directory and intake
-│   │   │   │   ├── page.tsx               # Prospects directory list
+│   │   │   │   ├── _components/           # Prospect-specific form controls & dropdowns
+│   │   │   │   ├── utils/                 # Feasibility & probability scoring helpers
+│   │   │   │   ├── page.tsx               # Prospects directory list with 6-facet filter
 │   │   │   │   ├── add-prospect/          # Lead intake registration form
 │   │   │   │   ├── edit-prospect/         # Record view, inline editor & call tracking
 │   │   │   │   └── pipeline-board/        # Visual conversion pipeline board
@@ -97,8 +98,7 @@ FSD_Donor_System/
 │   │   └── prefabs.tsx                    # Shared card and layout container primitives
 │   │
 │   ├── lib/                               # Data adapters and utilities
-│   │   ├── db/                            # Database connection pool and query helpers
-│   │   ├── mock-data/                     # Development fixtures and test records
+│   │   ├── database/                      # Database client instances and helpers
 │   │   ├── supabase/                      # Supabase browser and server client instances
 │   │   ├── types.ts                       # Module configuration types
 │   │   └── utils.ts                       # Class name merger helper (`cn`)
@@ -107,8 +107,11 @@ FSD_Donor_System/
 │       ├── database.ts                    # Supabase database table definitions
 │       └── index.ts                       # Application domain interfaces and DTOs
 │
-├── supabase/                              # Database migrations
-│   └── schema.sql                         # PostgreSQL schema and enum definitions
+├── supabase/                              # Database migrations & seed data
+│   ├── schema.sql                         # PostgreSQL schema and enum definitions
+│   └── seeds/                             # Canonical seed records replacing legacy mocks
+│       ├── prospects-seed.sql             # SQL seed statements
+│       └── prospects-seed.ts              # Typed seed fixtures and helpers
 │
 ├── .env.example                           # Environment variables template
 ├── .env.local                             # Local environment secrets (gitignored)
