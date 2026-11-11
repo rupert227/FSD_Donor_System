@@ -23,9 +23,15 @@ export type ProposalTemplate = { id: string; name: string; paragraphs: string[] 
 export type Signatory = { id: string; name: string; title: string };
 
 // What a letter needs about the officer. The email and role are not in
-// officer_profiles; they come from the linked user account.
+// officer_profiles; they come from the linked user account, so they are null
+// for a person with no account.
 export type OfficerContact = Pick<
   OfficerProfile,
   "id" | "full_name" | "job_title" | "phone_number"
-> &
-  Pick<UserAccount, "email_address" | "user_role">;
+> & {
+  email_address: UserAccount["email_address"] | null;
+  user_role: UserAccount["user_role"] | null;
+};
+
+// A prospect plus the officer linked through lead_prospects.assigned_officer_id.
+export type BuilderProspect = Prospect & { officer: OfficerContact | null };
