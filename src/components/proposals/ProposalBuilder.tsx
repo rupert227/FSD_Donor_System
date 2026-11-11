@@ -20,6 +20,7 @@ import {
 import { cn } from "cn";
 import { sampleTemplates } from "@/lib/sample-data";
 import { createClient } from "@/lib/supabase/client";
+import { PROSPECT_SELECT, toBuilderProspect } from "@/lib/proposals-data";
 import type { BuilderProspect, Signatory } from "@/types/proposal";
 import {
   buildLetterText,
@@ -133,10 +134,13 @@ export function ProposalBuilder(props: ProposalBuilderProps) {
 }
 
 function ProposalBuilderForm({
-  prospects,
+  prospects: initialProspects,
   signatories,
   initialProspectId,
 }: ProposalBuilderProps) {
+  // The prospect list from the server. The selected prospect is re-read when the
+  // officer comes back to this tab, so a fix made through "Edit on record" shows up.
+  const [prospects, setProspects] = useState(initialProspects);
   const [prospectId, setProspectId] = useState(
     prospects.find((p) => p.id === initialProspectId)?.id ?? prospects[0].id,
   );
@@ -171,6 +175,32 @@ function ProposalBuilderForm({
   const [showAllRecord, setShowAllRecord] = useState(false);
   // A prompt the officer clicked in the checklist; the text box selects it.
   const [promptToSelect, setPromptToSelect] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function refreshSelectedProspect() {
+      if (document.visibilityState !== "visible") return;
+      const { data } = await createClient()
+        .from("lead_prospects")
+        .select(PROSPECT_SELECT)
+        .eq("id", prospectId)
+        .maybeSingle();
+      if (!data) return;
+      const fresh = toBuilderProspect(data);
+      setProspects((list) =>
+        list.map((p) =>
+          p.id === fresh.id && JSON.stringify(p) !== JSON.stringify(fresh)
+            ? fresh
+            : p,
+        ),
+      );
+    }
+    window.addEventListener("focus", refreshSelectedProspect);
+    document.addEventListener("visibilitychange", refreshSelectedProspect);
+    return () => {
+      window.removeEventListener("focus", refreshSelectedProspect);
+      document.removeEventListener("visibilitychange", refreshSelectedProspect);
+    };
+  }, [prospectId]);
 
   // Look up the full records from the chosen ids.
   const prospect = prospects.find((p) => p.id === prospectId) ?? prospects[0];
@@ -383,7 +413,8 @@ function ProposalBuilderForm({
                 From the prospect record
               </h2>
               {/* Opens the team's edit page in a new tab so the builder keeps its state.
-                  TODO: refresh the prospect here once the database is available. */}
+                  When the officer returns, the prospect is re-read (see the effect above).
+                  A letter the officer already edited keeps its text; "Reset to template" rebuilds it. */}
               <Link
                 href={`/donor-conv/prospects/edit-prospect?id=${prospect.id}`}
                 target="_blank"

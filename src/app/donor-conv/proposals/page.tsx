@@ -5,19 +5,11 @@ import { ProposalBuilder } from "@/components/proposals/ProposalBuilder";
 import { navbarPreset } from "@/app/donor-conv/struct";
 import { createClient } from "@/lib/supabase/server";
 import type { BuilderProspect, Signatory } from "@/types/proposal";
-import type { UserAccount } from "@/types";
-
-// A proposal can be made once outreach has started, so earlier stages are left out.
-const PROPOSAL_STAGES = ["Outreach Started", "Proposal Sent", "Secured Donor"];
-
-// The shape PostgREST returns for the officer joined onto a prospect.
-type OfficerRow = {
-  id: number;
-  full_name: string;
-  job_title: string | null;
-  phone_number: string | null;
-  user_accounts: { email_address: string; user_role: string } | null;
-} | null;
+import {
+  PROPOSAL_STAGES,
+  PROSPECT_SELECT,
+  toBuilderProspect,
+} from "@/lib/proposals-data";
 
 type SearchParams = Promise<{ prospectId?: string; prospect?: string }>;
 
@@ -35,13 +27,7 @@ async function ProposalBuilderLoader({
   const [prospectsResult, signatoriesResult] = await Promise.all([
     supabase
       .from("lead_prospects")
-      .select(
-        `id, prospect_name, primary_contact_person, title_designation,
-         street_address, city_province, target_campaign, target_amount,
-         assigned_officer,
-         officer_profiles ( id, full_name, job_title, phone_number,
-           user_accounts ( email_address, user_role ) )`,
-      )
+      .select(PROSPECT_SELECT)
       .in("pipeline_status", PROPOSAL_STAGES)
       .order("prospect_name"),
     supabase
@@ -54,21 +40,7 @@ async function ProposalBuilderLoader({
   const loadError = prospectsResult.error ?? signatoriesResult.error;
 
   const prospects: BuilderProspect[] = (prospectsResult.data ?? []).map(
-    ({ officer_profiles, ...row }) => {
-      const o = officer_profiles as unknown as OfficerRow;
-      return {
-        ...(row as Omit<BuilderProspect, "officer">),
-        officer: o && {
-          id: o.id,
-          full_name: o.full_name,
-          job_title: o.job_title,
-          phone_number: o.phone_number,
-          email_address: o.user_accounts?.email_address ?? null,
-          user_role:
-            (o.user_accounts?.user_role as UserAccount["user_role"]) ?? null,
-        },
-      };
-    },
+    toBuilderProspect,
   );
 
   const signatories: Signatory[] = (signatoriesResult.data ?? []).map((s) => ({
