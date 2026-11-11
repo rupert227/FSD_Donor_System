@@ -177,7 +177,10 @@ export interface CertificateOfDonation {
 export interface UserAccount {
   id: number
   email_address: string
-  password_hash: string
+  // Unused: Supabase Auth keeps the real password.
+  password_hash: string | null
+  // The Supabase Auth user this account belongs to.
+  auth_user_id: string | null
   user_role: UserRoleEnum
   account_status: AccountStatusEnum
   created_at: string
