@@ -15,7 +15,7 @@ export function AppShell({ navbarPreset, children }: AppShellProps) {
         <Navbar navbarPreset={navbarPreset} />
       </div>
 
-      <main className="flex flex-1 flex-col p-[calc(var(--content-padding))] pt-[calc(var(--content-padding)+var(--navbar-height))]">
+      <main className="m-auto flex w-[90%] max-w-[90%] flex-1 flex-col pt-[calc(var(--content-padding)+var(--navbar-height))] pb-[var(--content-padding)]">
         {children}
       </main>
     </div>

@@ -4,7 +4,7 @@ import React from "react";
 
 export function ProspectsTableSkeleton() {
   return (
-    <div className="w-[90%] max-w-full min-w-0 mx-auto space-y-4 animate-in fade-in duration-300">
+    <div className="max-w-full min-w-0 mx-auto space-y-4 animate-in fade-in duration-300">
       {/* Title row skeleton */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
