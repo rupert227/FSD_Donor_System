@@ -210,4 +210,62 @@ test.describe("DTI0-20 proposal backend", () => {
     const restored = await (await api.get(`lead_prospects?id=eq.${prospect.id}&select=pipeline_status`)).json();
     expect(restored[0].pipeline_status).toBe(prospect.pipeline_status);
   });
+
+  // The prospect row as it was, so the tests below can put it back exactly.
+  async function originalRow(request: APIRequestContext) {
+    const api = asUser(request, await accessToken(request, CONVERSION));
+    const rows = await (await api.get(`lead_prospects?id=eq.${prospect.id}&select=*`)).json();
+    const { id, created_at, updated_at, ...editable } = rows[0];
+    void id; void created_at; void updated_at;
+    return { api, editable };
+  }
+
+  test("Edit on record: the edit page loads the real prospect and Update Profile saves it", async ({ page, request }) => {
+    const { api, editable } = await originalRow(request);
+    const newTitle = `E2E title ${Date.now()}`;
+    try {
+      await signInUi(page, CONVERSION);
+      await page.goto(`/donor-conv/prospects/edit-prospect?id=${prospect.id}`);
+      const title = page.locator('input[name="designation"]');
+      await expect(title).toHaveValue(editable.title_designation ?? "", { timeout: 15000 });
+      await expect(page.locator('input[name="prospectName"]')).toHaveValue(prospect.prospect_name);
+
+      await title.fill(newTitle);
+      await page.getByRole("button", { name: "Update Profile" }).click();
+      await expect(page).toHaveURL(/\/donor-conv\/prospects$/, { timeout: 15000 });
+
+      const saved = await (await api.get(`lead_prospects?id=eq.${prospect.id}&select=title_designation`)).json();
+      expect(saved[0].title_designation).toBe(newTitle);
+    } finally {
+      await api.patch(`lead_prospects?id=eq.${prospect.id}`, editable);
+    }
+    const back = await (await api.get(`lead_prospects?id=eq.${prospect.id}&select=title_designation`)).json();
+    expect(back[0].title_designation).toBe(editable.title_designation);
+  });
+
+  test("Edit on record: an unknown prospect id shows a message, not another prospect", async ({ page }) => {
+    await signInUi(page, CONVERSION);
+    await page.goto("/donor-conv/prospects/edit-prospect?id=999999");
+    await expect(page.getByText(/prospect was not found/i)).toBeVisible({ timeout: 15000 });
+  });
+
+  test("the builder shows a fix made on the record when the officer returns to it", async ({ page, request }) => {
+    const { api, editable } = await originalRow(request);
+    const newTitle = `E2E refreshed ${Date.now()}`;
+    try {
+      await signInUi(page, CONVERSION);
+      await page.goto(`/donor-conv/proposals?prospectId=${prospect.id}`);
+      await expect(page.locator("#prospect")).toHaveValue(String(prospect.id), { timeout: 15000 });
+
+      // Fix the record somewhere else (like the edit page in another tab), then come back.
+      await api.patch(`lead_prospects?id=eq.${prospect.id}`, { title_designation: newTitle });
+      // Retry the event: the page may not have attached its listener yet right after loading.
+      await expect(async () => {
+        await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+        await expect(page.getByText(newTitle).first()).toBeAttached({ timeout: 1500 });
+      }).toPass({ timeout: 20000 });
+    } finally {
+      await api.patch(`lead_prospects?id=eq.${prospect.id}`, editable);
+    }
+  });
 });
