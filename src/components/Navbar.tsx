@@ -187,15 +187,19 @@ export function Navbar({
 
       const { data: account } = await supabase
         .from("user_accounts")
-        .select("email_address, user_role")
+        .select("email_address, user_role, officer_profiles(full_name)")
         .eq("auth_user_id", userData.user.id)
         .maybeSingle();
 
       if (!account || cancelled || !isUserRole(account.user_role)) return;
 
       const email: string = account.email_address;
-      // The part before the @ stands in for a name until officer_profiles has real names.
-      const name = email.split("@")[0];
+      // officer_profiles is one-to-one with user_accounts, but guard against an array just in case.
+      const profile = Array.isArray(account.officer_profiles)
+        ? account.officer_profiles[0]
+        : account.officer_profiles;
+      // Accounts with no officer_profiles row fall back to the part before the @.
+      const name: string = profile?.full_name?.trim() || email.split("@")[0];
       setRole(account.user_role);
       setUserProfile({
         displayName: name,
@@ -322,7 +326,7 @@ export function Navbar({
                   {displayName}
                 </p>
                 <p className="text-text-secondary max-w-40 truncate text-[0.7rem] whitespace-nowrap">
-                  {description}
+                  {userProfile.email ?? description}
                 </p>
               </div>
               <ChevronDown
@@ -355,8 +359,13 @@ export function Navbar({
                 })}
                 <div className="border-border-strong flex flex-col items-start border-t px-3 py-2">
                   <p className="text-text-primary text-[0.8rem] leading-[1.3] font-medium break-words">
-                    {userProfile.email ?? displayName}
+                    {displayName}
                   </p>
+                  {userProfile.email && (
+                    <p className="text-text-secondary text-[0.75rem] break-all">
+                      {userProfile.email}
+                    </p>
+                  )}
                   <p className="text-text-secondary text-[0.75rem] text-wrap">
                     {description}
                   </p>
