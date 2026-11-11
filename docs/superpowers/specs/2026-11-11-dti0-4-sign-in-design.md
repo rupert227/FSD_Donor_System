@@ -84,11 +84,13 @@ No test runner exists, so none is added for this story. After each step: `tsc`, 
 
 ## Out of scope
 
-Sign-up page, admin screen for creating accounts, dropping `password_hash`, tightening RLS policies, Row Level Security by role, and the DTI0-20 follow-ups (reading prospects from Supabase, saving on Generate, Send).
+Sign-up page, admin screen for creating accounts, dropping `password_hash`, tightening RLS policies, Row Level Security by role (the data-level follow-up described under Known limits), and the DTI0-20 follow-ups (reading prospects from Supabase, saving on Generate, Send).
 
 ## Known limits
 
 - The Suspended check happens at sign-in only. If an account is suspended while someone is signed in, they keep access until their session ends. Enforcing it on every request is a later story.
+- **Module access is route-level, not data-level.** The proxy and navbar keep each role in its own modules, but the database policies still let any signed-in user read every table. A signed-in person could query Supabase directly with their own token and bypass the screens. **Follow-up for the team (needs RLS policies per role, and agreement on who may read what):** protect the data itself by role. Until then module gating is a guard rail for honest users, not a security wall.
+- **API routes belong to modules.** `/api/lead-pipeline-report` is mapped to Donor Conversion in `access.ts` (`MODULE_API_PATH`), so other roles cannot call it directly. New API routes for a module must be added to that map. `/api/health` stays public.
 - The role in the token is a copy of `user_accounts.user_role`. After changing a role, re-run the seed's sync statement, and the person must sign in again to get the new role.
 
 ## Open items
