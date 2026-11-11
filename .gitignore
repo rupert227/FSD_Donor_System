@@ -56,3 +56,7 @@ docker-compose.yml
 .codex/
 .gemini/
 docs/handoffs/
+
+# Playwright
+/test-results/
+/playwright-report/
