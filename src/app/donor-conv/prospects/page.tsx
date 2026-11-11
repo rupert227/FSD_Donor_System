@@ -10,43 +10,107 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  Building2,
   ChevronLeft,
   ChevronRight,
   Download,
-  Filter,
   Kanban,
   List,
   Plus,
+  RotateCcw,
   Search,
   X,
 } from "lucide-react";
 import { cn } from "cn";
 
 import { AppShell } from "@/components/AppShell";
-import { moduleName, navbarPreset } from "@/app/donor-conv/struct";
+import { getNavbarPreset, moduleName } from "@/app/donor-conv/struct";
 
-import { SAMPLE_LEADS, type LeadDetail } from "@/lib/mock-data/leads";
+import { SAMPLE_LEADS, type LeadDetail } from "@supabase/seeds/prospects-seed";
 import type { PipelineStatusEnum } from "@/types";
+import { ProspectSelectMenu, ProspectsTableSkeleton } from "./_components";
 
 import { useDocumentTitle } from "@/components/Navbar";
 
-const pageName = "Prospects"
-
+const pageName = "Prospects";
 const PAGE_SIZE = 10;
-
-// Swap for the signed-in officer once auth exists.
 const CURRENT_OFFICER = "Officer J. Reyes";
 
-// "All open prospects" leaves out Secured Donor, same as the board design.
-const OPEN_STAGES: PipelineStatusEnum[] = [
+export const ALL_PIPELINE_STAGES: PipelineStatusEnum[] = [
   "New Lead",
   "Under Research",
   "Outreach Started",
   "Proposal Sent",
+  "Secured Donor",
 ];
 
-type QuickView = "all" | "due-today" | "overdue" | "mine" | "proposal-sent";
+const STATUS_FILTER_OPTIONS = [
+  { label: "All pipeline statuses", value: "all" },
+  { label: "New Lead", value: "New Lead" },
+  { label: "Under Research", value: "Under Research" },
+  { label: "Outreach Started", value: "Outreach Started" },
+  { label: "Proposal Sent", value: "Proposal Sent" },
+  { label: "Secured Donor", value: "Secured Donor" },
+];
+
+const CAMPAIGN_FILTER_OPTIONS = [
+  { label: "All campaigns", value: "all" },
+  { label: "Youth Servant Leadership", value: "Youth Servant Leadership" },
+  { label: "Health and Disaster Relief", value: "Health and Disaster Relief" },
+  { label: "In-Kind Social Enterprise", value: "In-Kind Social Enterprise" },
+  { label: "At-Risk Restorative Justice", value: "At-Risk Restorative Justice" },
+  { label: "Institute for Stewardship", value: "Institute for Stewardship" },
+];
+
+// Aligned with the project's feasibility amount tiers (src/app/donor-conv/prospects/utils/prospect-score.ts)
+const AMOUNT_FILTER_OPTIONS = [
+  { label: "All target amounts", value: "all" },
+  { label: "₱0 – ₱50,000", value: "0-50k" },
+  { label: "₱50,000 – ₱250,000", value: "50000-250000" },
+  { label: "₱250,000 – ₱1,000,000", value: "250000-1000000" },
+  { label: "Above ₱1,000,000", value: "over1m" },
+];
+
+const DONOR_TYPE_FILTER_OPTIONS = [
+  { label: "All types", value: "all" },
+  { label: "Corporate", value: "corporate" },
+  { label: "Individual", value: "individual" },
+  { label: "Community", value: "community" },
+  { label: "International", value: "international" },
+];
+
+const LEAD_SOURCE_FILTER_OPTIONS = [
+  { label: "All lead sources", value: "all" },
+  { label: "Direct Call", value: "Direct Call" },
+  { label: "Referral", value: "Referral" },
+  { label: "Research", value: "Research" },
+  { label: "Booths", value: "Booths" },
+  { label: "Walk-in", value: "Walk-in" },
+];
+
+const OFFICER_FILTER_OPTIONS = [
+  { label: "All assigned officers", value: "all" },
+  { label: "Officer J. Reyes", value: "Officer J. Reyes" },
+  { label: "Officer A. Tan", value: "Officer A. Tan" },
+  { label: "Officer M. Cruz", value: "Officer M. Cruz" },
+];
+
+export interface ProspectFilters {
+  status: string;
+  campaign: string;
+  amountRange: string;
+  donorType: string;
+  leadSource: string;
+  assignedOfficer: string;
+}
+
+const DEFAULT_FILTERS: ProspectFilters = {
+  status: "all",
+  campaign: "all",
+  amountRange: "all",
+  donorType: "all",
+  leadSource: "all",
+  assignedOfficer: "all",
+};
 
 const peso = new Intl.NumberFormat("en-PH", {
   style: "currency",
@@ -55,34 +119,28 @@ const peso = new Intl.NumberFormat("en-PH", {
   maximumFractionDigits: 0,
 });
 
-// "Outreach Started" -> "Outreach started" (sentence case, as in the design)
 function stageLabel(s: PipelineStatusEnum) {
   return s.charAt(0) + s.slice(1).toLowerCase();
 }
 
-const STAGE_STYLES: Record<PipelineStatusEnum, { badge: string; dot: string }> =
-  {
-    "New Lead": {
-      badge: "bg-gray-100 text-gray-700 border-gray-200",
-      dot: "bg-gray-500",
-    },
-    "Under Research": {
-      badge: "bg-gray-100 text-gray-700 border-gray-200",
-      dot: "bg-gray-500",
-    },
-    "Outreach Started": {
-      badge: "bg-blue-50 text-blue-800 border-blue-200",
-      dot: "bg-blue-600",
-    },
-    "Proposal Sent": {
-      badge: "bg-amber-50 text-amber-800 border-amber-200",
-      dot: "bg-amber-500",
-    },
-    "Secured Donor": {
-      badge: "bg-green-50 text-green-800 border-green-200",
-      dot: "bg-green-600",
-    },
-  };
+// Low-saturation, soft muted badges without dots
+const STAGE_STYLES: Record<PipelineStatusEnum, { badge: string }> = {
+  "New Lead": {
+    badge: "bg-slate-100 text-slate-600 border border-slate-200",
+  },
+  "Under Research": {
+    badge: "bg-stone-100 text-stone-600 border border-stone-200",
+  },
+  "Outreach Started": {
+    badge: "bg-sky-50/70 text-[#2c5270] border border-[#cbdce9]",
+  },
+  "Proposal Sent": {
+    badge: "bg-amber-50/60 text-[#7a5e2c] border border-[#e8ddcb]",
+  },
+  "Secured Donor": {
+    badge: "bg-emerald-50/60 text-[#2d5f42] border border-[#d0e3d6]",
+  },
+};
 
 function toISO(d: Date) {
   const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -90,8 +148,6 @@ function toISO(d: Date) {
   return `${d.getFullYear()}-${m}-${day}`;
 }
 
-// Today's date as YYYY-MM-DD. The server snapshot is "" so the server HTML and
-// the first client render match (no hydration warning), then the real date fills in.
 const noopSubscribe = () => () => {};
 function useToday() {
   return useSyncExternalStore(
@@ -111,7 +167,6 @@ function formatDate(value: string | null) {
   });
 }
 
-// Soonest first. Prospects with no follow-up date go to the bottom.
 function byFollowUpDate(a: LeadDetail, b: LeadDetail) {
   if (!a.target_followup_date && !b.target_followup_date) return 0;
   if (!a.target_followup_date) return 1;
@@ -119,7 +174,6 @@ function byFollowUpDate(a: LeadDetail, b: LeadDetail) {
   return a.target_followup_date.localeCompare(b.target_followup_date);
 }
 
-// 1 2 3 ... 15 style page list
 function pageItems(current: number, total: number): (number | "...")[] {
   if (total <= 5) return Array.from({ length: total }, (_, i) => i + 1);
   const items: (number | "...")[] = [1];
@@ -141,146 +195,256 @@ function csvCell(v: string | number | null) {
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
+function matchesFilters(
+  l: LeadDetail,
+  f: ProspectFilters,
+  today: string,
+  search: string,
+  quickOfficer: string | null,
+  quickDate: "today" | "overdue" | null,
+  quickStage: PipelineStatusEnum | null = null,
+) {
+  const q = search.trim().toLowerCase();
+  if (
+    q &&
+    !l.prospect_name.toLowerCase().includes(q) &&
+    !l.primary_contact_person.toLowerCase().includes(q)
+  ) {
+    return false;
+  }
+
+  // Quick officer shortcut
+  if (quickOfficer && l.assigned_officer !== quickOfficer) {
+    return false;
+  }
+
+  // Quick date shortcut
+  if (quickDate === "today") {
+    if (!today || l.target_followup_date !== today) return false;
+  } else if (quickDate === "overdue") {
+    if (!today || !l.target_followup_date || l.target_followup_date >= today) {
+      return false;
+    }
+  }
+
+  // Quick stage shortcut
+  if (quickStage && l.pipeline_status !== quickStage) {
+    return false;
+  }
+
+  // Pipeline status filter
+  if (f.status !== "all" && l.pipeline_status !== f.status) {
+    return false;
+  }
+
+  // Assigned officer filter
+  if (f.assignedOfficer !== "all" && l.assigned_officer !== f.assignedOfficer) {
+    return false;
+  }
+
+  // Campaign
+  if (f.campaign !== "all" && l.target_campaign !== f.campaign) {
+    return false;
+  }
+
+  // Donor type
+  if (f.donorType !== "all" && l.donor_type !== f.donorType) {
+    return false;
+  }
+
+  // Lead source
+  if (f.leadSource !== "all" && l.lead_source !== f.leadSource) {
+    return false;
+  }
+
+  // Target Amount based on project feasibility tiers (0-50k, 50k-250k, 250k-1m, >1m)
+  if (f.amountRange !== "all") {
+    const amt = l.target_amount;
+    if (f.amountRange === "0-50k" && amt > 50000) return false;
+    if (
+      f.amountRange === "50000-250000" &&
+      (amt <= 50000 || amt > 250000)
+    ) {
+      return false;
+    }
+    if (
+      f.amountRange === "250000-1000000" &&
+      (amt <= 250000 || amt > 1000000)
+    ) {
+      return false;
+    }
+    if (f.amountRange === "over1m" && amt <= 1000000) return false;
+  }
+
+  return true;
+}
+
 export default function ProspectsPage() {
   useDocumentTitle(`${moduleName} - ${pageName}`);
-  navbarPreset.selectedTabIndex = 0;
+  const navbarPreset = getNavbarPreset(0);
 
   const router = useRouter();
   const today = useToday();
 
-  const [quickView, setQuickView] = useState<QuickView>("all");
   const [search, setSearch] = useState("");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const [stages, setStages] = useState<PipelineStatusEnum[]>([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  // Committed applied filters (controls table data)
+  const [applied, setApplied] = useState<ProspectFilters>(DEFAULT_FILTERS);
+  // Draft filters (holds selections in popup until "Apply" is clicked)
+  const [draft, setDraft] = useState<ProspectFilters>(DEFAULT_FILTERS);
+
+  const [quickOfficer, setQuickOfficer] = useState<string | null>(null);
+  const [quickDate, setQuickDate] = useState<"today" | "overdue" | null>(null);
+  const [quickStage, setQuickStage] = useState<PipelineStatusEnum | null>(null);
   const [page, setPage] = useState(1);
-  const [selected, setSelected] = useState<number[]>([]);
 
+  // Popup filter open state
   const [filterOpen, setFilterOpen] = useState(false);
-  const filterRef = useRef<HTMLDivElement>(null);
+  const [isFilterExiting, setIsFilterExiting] = useState(false);
+  const filterContainerRef = useRef<HTMLDivElement>(null);
 
+  // Prevent background scrolling when filter popup is open
   useEffect(() => {
-    function onDown(e: MouseEvent) {
-      if (filterRef.current && !filterRef.current.contains(e.target as Node)) {
+    if (filterOpen) {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = prevOverflow;
+      };
+    }
+  }, [filterOpen]);
+
+  // Close popup on Escape key and discard unapplied draft changes
+  useEffect(() => {
+    if (!filterOpen) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setDraft(applied);
         setFilterOpen(false);
       }
     }
-    document.addEventListener("mousedown", onDown);
-    return () => document.removeEventListener("mousedown", onDown);
-  }, []);
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [filterOpen, applied]);
 
-  // Open prospects, sorted once. Replace SAMPLE_LEADS with the Supabase fetch later.
-  const openRows = useMemo(
-    () =>
-      SAMPLE_LEADS.filter((l) => OPEN_STAGES.includes(l.pipeline_status)).sort(
-        byFollowUpDate,
-      ),
+  const allRows = useMemo(
+    () => SAMPLE_LEADS.slice().sort(byFollowUpDate),
     [],
   );
 
-  const isDueToday = (l: LeadDetail) =>
-    !!today && l.target_followup_date === today;
-  const isOverdue = (l: LeadDetail) =>
-    !!today && !!l.target_followup_date && l.target_followup_date < today;
-
-  const chipCounts = useMemo(
-    () => ({
-      all: openRows.length,
-      "due-today": openRows.filter(isDueToday).length,
-      overdue: openRows.filter(isOverdue).length,
-      mine: openRows.filter((l) => l.assigned_officer === CURRENT_OFFICER)
-        .length,
-      "proposal-sent": openRows.filter(
-        (l) => l.pipeline_status === "Proposal Sent",
-      ).length,
-    }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [openRows, today],
+  const filtered = useMemo(
+    () =>
+      allRows.filter((l) =>
+        matchesFilters(
+          l,
+          applied,
+          today,
+          search,
+          quickOfficer,
+          quickDate,
+          quickStage,
+        ),
+      ),
+    [allRows, applied, today, search, quickOfficer, quickDate, quickStage],
   );
-
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return openRows.filter((l) => {
-      if (quickView === "due-today" && !isDueToday(l)) return false;
-      if (quickView === "overdue" && !isOverdue(l)) return false;
-      if (quickView === "mine" && l.assigned_officer !== CURRENT_OFFICER)
-        return false;
-      if (
-        quickView === "proposal-sent" &&
-        l.pipeline_status !== "Proposal Sent"
-      )
-        return false;
-
-      if (
-        q &&
-        !l.prospect_name.toLowerCase().includes(q) &&
-        !l.primary_contact_person.toLowerCase().includes(q)
-      ) {
-        return false;
-      }
-      if (stages.length > 0 && !stages.includes(l.pipeline_status))
-        return false;
-
-      if (dateFrom || dateTo) {
-        if (!l.target_followup_date) return false; // no date can't be in a range
-        if (dateFrom && l.target_followup_date < dateFrom) return false;
-        if (dateTo && l.target_followup_date > dateTo) return false;
-      }
-      return true;
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [openRows, quickView, search, stages, dateFrom, dateTo, today]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
   const start = (currentPage - 1) * PAGE_SIZE;
   const pageRows = filtered.slice(start, start + PAGE_SIZE);
 
-  const filterCount =
-    (dateFrom || dateTo ? 1 : 0) + (stages.length > 0 ? 1 : 0);
-  const dateRangeInvalid = Boolean(dateFrom && dateTo && dateFrom > dateTo);
-  const allOnPageSelected =
-    pageRows.length > 0 && pageRows.every((r) => selected.includes(r.id));
+  function openPopup() {
+    setDraft(applied); // sync draft with current applied state
+    setIsFilterExiting(false);
+    setFilterOpen(true);
+  }
 
-  function resetPage() {
+  function closePopup() {
+    setIsFilterExiting(true);
+    setTimeout(() => {
+      setDraft(applied); // discard unapplied changes
+      setFilterOpen(false);
+      setIsFilterExiting(false);
+    }, 160);
+  }
+
+  function applyDraft() {
+    setApplied(draft);
     setPage(1);
+    setIsFilterExiting(true);
+    setTimeout(() => {
+      setFilterOpen(false);
+      setIsFilterExiting(false);
+    }, 160);
   }
 
-  function toggleStage(s: PipelineStatusEnum) {
-    setStages((prev) =>
-      prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s],
-    );
-    resetPage();
+  // Count of committed popup facet filters
+  const appliedFilterCount = useMemo(() => {
+    let count = 0;
+    if (applied.status !== "all") count++;
+    if (applied.campaign !== "all") count++;
+    if (applied.amountRange !== "all") count++;
+    if (applied.assignedOfficer !== "all") count++;
+    if (applied.donorType !== "all") count++;
+    if (applied.leadSource !== "all") count++;
+    return count;
+  }, [applied]);
+
+  const hasActiveFilters =
+    appliedFilterCount > 0 ||
+    Boolean(quickOfficer) ||
+    Boolean(quickDate) ||
+    Boolean(quickStage) ||
+    Boolean(search.trim());
+
+  function resetAllFilters() {
+    setIsRefreshing(true);
+    setTimeout(() => {
+      setApplied(DEFAULT_FILTERS);
+      setDraft(DEFAULT_FILTERS);
+      setQuickOfficer(null);
+      setQuickDate(null);
+      setQuickStage(null);
+      setSearch("");
+      setPage(1);
+      setIsRefreshing(false);
+    }, 450);
   }
 
-  function clearFilters() {
-    setDateFrom("");
-    setDateTo("");
-    setStages([]);
-    resetPage();
-  }
+  const chipCounts = useMemo(
+    () => ({
+      all: allRows.length,
+      "due-today": allRows.filter((l) =>
+        matchesFilters(l, DEFAULT_FILTERS, today, "", null, "today", null),
+      ).length,
+      overdue: allRows.filter((l) =>
+        matchesFilters(l, DEFAULT_FILTERS, today, "", null, "overdue", null),
+      ).length,
+      mine: allRows.filter((l) =>
+        matchesFilters(l, DEFAULT_FILTERS, today, "", CURRENT_OFFICER, null, null),
+      ).length,
+      "proposal-sent": allRows.filter((l) =>
+        matchesFilters(
+          l,
+          DEFAULT_FILTERS,
+          today,
+          "",
+          null,
+          null,
+          "Proposal Sent",
+        ),
+      ).length,
+    }),
+    [allRows, today],
+  );
 
-  function toggleRow(id: number) {
-    setSelected((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-    );
-  }
+  const isAllView = !quickDate && !quickOfficer && !quickStage;
+  const isDueTodayView = quickDate === "today";
+  const isOverdueView = quickDate === "overdue";
+  const isMineView = quickOfficer === CURRENT_OFFICER;
+  const isProposalSentView = quickStage === "Proposal Sent";
 
-  function togglePage() {
-    const ids = pageRows.map((r) => r.id);
-    setSelected((prev) =>
-      allOnPageSelected
-        ? prev.filter((id) => !ids.includes(id))
-        : [...new Set([...prev, ...ids])],
-    );
-  }
-
-  // Exports the selected rows if any are ticked, otherwise everything that matches the filters.
   function exportCsv() {
-    const rows =
-      selected.length > 0
-        ? filtered.filter((r) => selected.includes(r.id))
-        : filtered;
     const header = [
       "Prospect",
       "Primary contact",
@@ -288,10 +452,9 @@ export default function ProspectsPage() {
       "Phone",
       "Follow-up date",
       "Target amount",
-      "Pipeline stage",
-      "Owner",
+      "Pipeline status",
     ];
-    const lines = rows.map((r) =>
+    const lines = filtered.map((r) =>
       [
         r.prospect_name,
         r.primary_contact_person,
@@ -300,7 +463,6 @@ export default function ProspectsPage() {
         r.target_followup_date,
         r.target_amount,
         r.pipeline_status,
-        r.assigned_officer,
       ]
         .map(csvCell)
         .join(","),
@@ -316,27 +478,22 @@ export default function ProspectsPage() {
     URL.revokeObjectURL(url);
   }
 
-  const chips: { id: QuickView; label: string }[] = [
-    { id: "all", label: "All open" },
-    { id: "due-today", label: "Due today" },
-    { id: "overdue", label: "Overdue" },
-    { id: "mine", label: "My prospects" },
-    { id: "proposal-sent", label: "Proposal sent" },
-  ];
+  const hasDraftChanges =
+    JSON.stringify(draft) !== JSON.stringify(DEFAULT_FILTERS);
 
   return (
     <AppShell navbarPreset={navbarPreset}>
-      <div className="space-y-4">
-        {/* Title row */}
+      {isRefreshing ? (
+        <ProspectsTableSkeleton />
+      ) : (
+        <div className="w-[90%] max-w-full min-w-0 mx-auto space-y-4 animate-in fade-in duration-300">
+        {/* Title row without icon beside All Prospects */}
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-[8px] bg-gray-100 text-gray-500">
-              <Building2 className="h-5 w-5" />
-            </div>
             <div>
               <p className="text-xs text-text-secondary">Prospects</p>
               <h1 className="text-2xl leading-tight font-semibold text-text-primary">
-                All open prospects
+                All prospects
               </h1>
             </div>
             <p className="ml-2 self-end pb-1 text-xs text-text-secondary">
@@ -379,42 +536,155 @@ export default function ProspectsPage() {
 
         {/* Quick views */}
         <div className="flex flex-wrap gap-2">
-          {chips.map((c) => {
-            const active = quickView === c.id;
-            return (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => {
-                  setQuickView(c.id);
-                  resetPage();
-                }}
-                className={cn(
-                  "flex items-center gap-2 rounded-full border px-4 py-1.5 text-[13px] font-medium",
-                  active
-                    ? "border-brand-primary bg-brand-primary text-white"
-                    : "border-border-strong bg-white text-text-primary hover:bg-surface-soft-hover",
-                )}
-              >
-                {c.label}
-                <span
-                  className={cn(
-                    "rounded-full px-1.5 text-[11px] font-semibold",
-                    active
-                      ? "bg-white/20 text-white"
-                      : "bg-surface-soft text-text-secondary",
-                  )}
-                >
-                  {chipCounts[c.id]}
-                </span>
-              </button>
-            );
-          })}
+          <button
+            type="button"
+            onClick={() => {
+              setQuickDate(null);
+              setQuickOfficer(null);
+              setQuickStage(null);
+              setPage(1);
+            }}
+            className={cn(
+              "flex h-9 items-center gap-2 rounded-full border px-4 text-[13px] font-medium transition-colors cursor-pointer",
+              isAllView
+                ? "bg-text-primary text-white border-text-primary"
+                : "border-border-strong bg-white text-text-primary hover:bg-surface-soft-hover",
+            )}
+          >
+            All
+            <span
+              className={cn(
+                "rounded-full px-1.5 text-[11px] font-semibold",
+                isAllView
+                  ? "bg-white/20 text-white"
+                  : "bg-surface-soft text-text-secondary",
+              )}
+            >
+              {chipCounts.all}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setQuickDate((prev) => (prev === "today" ? null : "today"));
+              setQuickOfficer(null);
+              setQuickStage(null);
+              setPage(1);
+            }}
+            className={cn(
+              "flex h-9 items-center gap-2 rounded-full border px-4 text-[13px] font-medium transition-colors cursor-pointer",
+              isDueTodayView
+                ? "bg-text-primary text-white border-text-primary"
+                : "border-border-strong bg-white text-text-primary hover:bg-surface-soft-hover",
+            )}
+          >
+            Due today
+            <span
+              className={cn(
+                "rounded-full px-1.5 text-[11px] font-semibold",
+                isDueTodayView
+                  ? "bg-white/20 text-white"
+                  : "bg-surface-soft text-text-secondary",
+              )}
+            >
+              {chipCounts["due-today"]}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setQuickDate((prev) => (prev === "overdue" ? null : "overdue"));
+              setQuickOfficer(null);
+              setQuickStage(null);
+              setPage(1);
+            }}
+            className={cn(
+              "flex h-9 items-center gap-2 rounded-full border px-4 text-[13px] font-medium transition-colors cursor-pointer",
+              isOverdueView
+                ? "bg-text-primary text-white border-text-primary"
+                : "border-border-strong bg-white text-text-primary hover:bg-surface-soft-hover",
+            )}
+          >
+            Overdue
+            <span
+              className={cn(
+                "rounded-full px-1.5 text-[11px] font-semibold",
+                isOverdueView
+                  ? "bg-white/20 text-white"
+                  : "bg-surface-soft text-text-secondary",
+              )}
+            >
+              {chipCounts.overdue}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setQuickOfficer((prev) =>
+                prev === CURRENT_OFFICER ? null : CURRENT_OFFICER,
+              );
+              setQuickDate(null);
+              setQuickStage(null);
+              setPage(1);
+            }}
+            className={cn(
+              "flex h-9 items-center gap-2 rounded-full border px-4 text-[13px] font-medium transition-colors cursor-pointer",
+              isMineView
+                ? "bg-text-primary text-white border-text-primary"
+                : "border-border-strong bg-white text-text-primary hover:bg-surface-soft-hover",
+            )}
+          >
+            My prospects
+            <span
+              className={cn(
+                "rounded-full px-1.5 text-[11px] font-semibold",
+                isMineView
+                  ? "bg-white/20 text-white"
+                  : "bg-surface-soft text-text-secondary",
+              )}
+            >
+              {chipCounts.mine}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setQuickStage((prev) =>
+                prev === "Proposal Sent" ? null : "Proposal Sent",
+              );
+              setQuickDate(null);
+              setQuickOfficer(null);
+              setPage(1);
+            }}
+            className={cn(
+              "flex h-9 items-center gap-2 rounded-full border px-4 text-[13px] font-medium transition-colors cursor-pointer",
+              isProposalSentView
+                ? "bg-text-primary text-white border-text-primary"
+                : "border-border-strong bg-white text-text-primary hover:bg-surface-soft-hover",
+            )}
+          >
+            Proposal sent
+            <span
+              className={cn(
+                "rounded-full px-1.5 text-[11px] font-semibold",
+                isProposalSentView
+                  ? "bg-white/20 text-white"
+                  : "bg-surface-soft text-text-secondary",
+              )}
+            >
+              {chipCounts["proposal-sent"]}
+            </span>
+          </button>
         </div>
 
         {/* Table card */}
         <div className="rounded-[10px] border border-border-soft bg-white shadow-soft">
-          <div className="flex items-center gap-3 p-3">
+          <div className="flex flex-wrap items-center gap-3 p-3">
+            {/* Search Box */}
             <div className="flex w-64 items-center rounded-button border border-border-strong bg-white">
               <Search className="mx-2 h-4 w-4 text-text-muted" />
               <input
@@ -422,238 +692,322 @@ export default function ProspectsPage() {
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
-                  resetPage();
+                  setPage(1);
                 }}
-                placeholder="Search this list"
+                placeholder="Search prospect or contact..."
                 aria-label="Search prospect or contact person"
                 className="h-9 w-full bg-transparent text-[13px] text-text-primary placeholder:text-text-muted focus:outline-none"
               />
             </div>
 
-            <div ref={filterRef} className="relative">
+            {/* Filter Trigger without corny icon, subdued active color */}
+            <div ref={filterContainerRef} className="relative">
               <button
                 type="button"
-                onClick={() => setFilterOpen((o) => !o)}
+                onClick={() => {
+                  if (filterOpen) {
+                    closePopup();
+                  } else {
+                    openPopup();
+                  }
+                }}
                 aria-expanded={filterOpen}
                 className={cn(
-                  "flex h-9 items-center gap-2 rounded-button border px-3 text-[13px] font-medium",
-                  filterCount > 0
-                    ? "border-brand-primary bg-brand-100 text-brand-primary"
+                  "flex h-9 items-center gap-1.5 rounded-button border px-3 text-[13px] font-medium transition-colors cursor-pointer",
+                  appliedFilterCount > 0
+                    ? "border-[#5c5757] bg-surface-soft text-text-primary"
                     : "border-border-strong bg-white text-text-primary hover:bg-surface-soft-hover",
                 )}
               >
-                <Filter className="h-3.5 w-3.5" />
-                Filters{filterCount > 0 ? ` (${filterCount})` : ""}
+                Filters{appliedFilterCount > 0 ? ` (${appliedFilterCount})` : ""}
               </button>
 
+              {/* Popup Filter Panel */}
               {filterOpen && (
-                <div className="absolute left-0 z-20 mt-2 w-80 rounded-[10px] border border-border-soft bg-white p-4 shadow-lg">
-                  <div className="mb-4 flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-text-primary">
-                      Filters
-                    </h3>
-                    <button
-                      type="button"
-                      onClick={() => setFilterOpen(false)}
-                      aria-label="Close filters"
-                      className="text-text-muted hover:text-text-primary"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-
-                  <fieldset className="mb-4">
-                    <legend className="mb-2 text-[11px] font-semibold tracking-wider text-text-muted uppercase">
-                      Follow-up date range
-                    </legend>
-                    <div className="grid grid-cols-2 gap-3">
-                      <label className="text-xs text-text-secondary">
-                        From
-                        <input
-                          type="date"
-                          value={dateFrom}
-                          max={dateTo || undefined}
-                          onChange={(e) => {
-                            setDateFrom(e.target.value);
-                            resetPage();
-                          }}
-                          className="mt-1 h-9 w-full rounded-button border border-border-strong px-2 text-xs text-text-primary focus:outline-none"
-                        />
-                      </label>
-                      <label className="text-xs text-text-secondary">
-                        To
-                        <input
-                          type="date"
-                          value={dateTo}
-                          min={dateFrom || undefined}
-                          onChange={(e) => {
-                            setDateTo(e.target.value);
-                            resetPage();
-                          }}
-                          className="mt-1 h-9 w-full rounded-button border border-border-strong px-2 text-xs text-text-primary focus:outline-none"
-                        />
-                      </label>
-                    </div>
-                    {dateRangeInvalid && (
-                      <p className="mt-2 text-xs text-brand-danger">
-                        The start date must be on or before the end date.
-                      </p>
+                <>
+                  {/* Backdrop: blocks outside scroll and outside clicks */}
+                  <div
+                    className={cn(
+                      "fixed inset-0 z-30 bg-black/10",
+                      isFilterExiting ? "modal-backdrop-out" : "modal-backdrop-in",
                     )}
-                    <p className="mt-2 text-xs text-text-muted">
-                      Prospects without a follow-up date are hidden while a date
-                      range is set.
-                    </p>
-                  </fieldset>
-
-                  <fieldset className="mb-4">
-                    <legend className="mb-2 text-[11px] font-semibold tracking-wider text-text-muted uppercase">
-                      Pipeline stage
-                    </legend>
-                    <div className="space-y-2">
-                      {OPEN_STAGES.map((s) => (
-                        <label
-                          key={s}
-                          className="flex items-center gap-2 text-[13px] text-text-primary"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={stages.includes(s)}
-                            onChange={() => toggleStage(s)}
-                            className="h-3.5 w-3.5 accent-[#6b0f0f]"
-                          />
-                          {stageLabel(s)}
-                        </label>
-                      ))}
+                    onClick={closePopup}
+                    aria-hidden="true"
+                  />
+                  <div
+                    className={cn(
+                      "absolute left-0 top-full z-40 mt-1.5 w-[580px] max-w-[calc(100vw-32px)] rounded-xl border border-[#e3dfdf] bg-white p-5 shadow-2xl",
+                      isFilterExiting ? "popup-out" : "popup-in",
+                    )}
+                  >
+                    {/* Popup Header */}
+                    <div className="mb-4 flex items-center justify-between border-b border-[#e3dfdf] pb-3">
+                      <h3 className="text-[13px] font-semibold text-[#1c1a1a]">
+                        Filters
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={closePopup}
+                        aria-label="Close filters"
+                        className="rounded-full p-1 text-[#757070] hover:bg-[#f7f6f6] hover:text-[#1c1a1a] transition-colors cursor-pointer"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
                     </div>
-                  </fieldset>
 
-                  <div className="flex items-center justify-between border-t border-border-soft pt-3">
-                    <button
-                      type="button"
-                      onClick={clearFilters}
-                      disabled={filterCount === 0}
-                      className="text-xs font-medium text-text-secondary hover:text-text-primary disabled:opacity-40"
-                    >
-                      Clear all
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setFilterOpen(false)}
-                      className="rounded-button bg-brand-primary px-4 py-1.5 text-xs font-semibold text-white hover:opacity-90"
-                    >
-                      Show {filtered.length} result
-                      {filtered.length === 1 ? "" : "s"}
-                    </button>
+                    {/* Filter Fields in clean 2-column rectangular grid with ample spacing */}
+                    <div className="grid grid-cols-2 gap-x-5 gap-y-4">
+                      {/* 1. Pipeline Status */}
+                      <div>
+                        <label className="block text-[11px] font-medium text-[#5c5757] mb-1.5">
+                          Pipeline Status
+                        </label>
+                        <ProspectSelectMenu
+                          value={draft.status}
+                          onChange={(val) =>
+                            setDraft((prev) => ({ ...prev, status: val }))
+                          }
+                          options={STATUS_FILTER_OPTIONS}
+                        />
+                      </div>
+
+                      {/* 2. Target Campaign */}
+                      <div>
+                        <label className="block text-[11px] font-medium text-[#5c5757] mb-1.5">
+                          Target Campaign
+                        </label>
+                        <ProspectSelectMenu
+                          value={draft.campaign}
+                          onChange={(val) =>
+                            setDraft((prev) => ({ ...prev, campaign: val }))
+                          }
+                          options={CAMPAIGN_FILTER_OPTIONS}
+                        />
+                      </div>
+
+                      {/* 3. Target Amount */}
+                      <div>
+                        <label className="block text-[11px] font-medium text-[#5c5757] mb-1.5">
+                          Target Amount
+                        </label>
+                        <ProspectSelectMenu
+                          value={draft.amountRange}
+                          onChange={(val) =>
+                            setDraft((prev) => ({ ...prev, amountRange: val }))
+                          }
+                          options={AMOUNT_FILTER_OPTIONS}
+                        />
+                      </div>
+
+                      {/* 4. Assigned Officer */}
+                      <div>
+                        <label className="block text-[11px] font-medium text-[#5c5757] mb-1.5">
+                          Assigned Officer
+                        </label>
+                        <ProspectSelectMenu
+                          value={draft.assignedOfficer}
+                          onChange={(val) =>
+                            setDraft((prev) => ({ ...prev, assignedOfficer: val }))
+                          }
+                          options={OFFICER_FILTER_OPTIONS}
+                        />
+                      </div>
+
+                      {/* 5. Donor Type */}
+                      <div>
+                        <label className="block text-[11px] font-medium text-[#5c5757] mb-1.5">
+                          Donor Type
+                        </label>
+                        <ProspectSelectMenu
+                          value={draft.donorType}
+                          onChange={(val) =>
+                            setDraft((prev) => ({ ...prev, donorType: val }))
+                          }
+                          options={DONOR_TYPE_FILTER_OPTIONS}
+                        />
+                      </div>
+
+                      {/* 6. Lead Source */}
+                      <div>
+                        <label className="block text-[11px] font-medium text-[#5c5757] mb-1.5">
+                          Lead Source
+                        </label>
+                        <ProspectSelectMenu
+                          value={draft.leadSource}
+                          onChange={(val) =>
+                            setDraft((prev) => ({ ...prev, leadSource: val }))
+                          }
+                          options={LEAD_SOURCE_FILTER_OPTIONS}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Popup Footer with subdued dark neutral Apply button */}
+                    <div className="mt-5 flex items-center justify-between border-t border-[#e3dfdf] pt-3">
+                      <button
+                        type="button"
+                        onClick={() => setDraft(DEFAULT_FILTERS)}
+                        disabled={!hasDraftChanges}
+                        className="text-xs font-medium text-text-secondary hover:text-text-primary disabled:opacity-40 hover:underline cursor-pointer"
+                      >
+                        Reset all
+                      </button>
+                      <button
+                        type="button"
+                        onClick={applyDraft}
+                        className="rounded-md bg-[#221f1f] hover:bg-[#110f0f] px-4 py-1.5 text-xs font-semibold text-white transition-colors cursor-pointer"
+                      >
+                        Apply
+                      </button>
+                    </div>
                   </div>
-                </div>
+                </>
               )}
+            </div>
+
+            {/* Far-right Refresh / Reset filters icon button with tooltip */}
+            <div className="ml-auto relative group">
+              <button
+                type="button"
+                onClick={resetAllFilters}
+                aria-label="Reset filters"
+                className="flex h-9 w-9 items-center justify-center rounded-button border border-border-strong bg-white text-text-secondary hover:bg-surface-soft hover:text-text-primary transition-colors cursor-pointer"
+              >
+                <RotateCcw className={cn("h-4 w-4", isRefreshing && "animate-spin text-brand-primary")} />
+              </button>
+              <div
+                role="tooltip"
+                className="pointer-events-none absolute right-0 top-full mt-1.5 hidden group-hover:block whitespace-nowrap rounded bg-[#1c1a1a] px-2 py-1 text-[11px] font-medium text-white shadow-md z-30"
+              >
+                Reset filters
+              </div>
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-[13px]">
+          {/* Table container with min-height of 10 rows automatically so filter popup is never cut */}
+          <div className="overflow-x-auto min-h-[440px]">
+            {/* Centered table columns with 12px font size */}
+            <table className="w-full text-center text-[12px]">
               <thead className="bg-surface-soft text-text-secondary">
                 <tr className="border-y border-border-soft">
-                  <th className="w-10 px-4 py-3">
-                    <input
-                      type="checkbox"
-                      checked={allOnPageSelected}
-                      onChange={togglePage}
-                      aria-label="Select all on this page"
-                      className="h-3.5 w-3.5 accent-[#6b0f0f]"
-                    />
+                  <th className="px-3 py-2.5 font-medium text-center text-[12px]">
+                    Prospect
                   </th>
-                  <th className="px-3 py-3 font-medium">Prospect</th>
-                  <th className="px-3 py-3 font-medium">Primary contact</th>
-                  <th className="px-3 py-3 font-medium">Phone</th>
-                  <th className="px-3 py-3 font-medium">Follow-up date</th>
-                  <th className="px-3 py-3 font-medium">Target amount</th>
-                  <th className="px-3 py-3 font-medium">Pipeline stage</th>
-                  <th className="px-3 py-3 font-medium">Owner</th>
+                  <th className="px-3 py-2.5 font-medium text-center text-[12px]">
+                    Primary contact
+                  </th>
+                  <th className="px-3 py-2.5 font-medium text-center text-[12px]">
+                    Phone Number
+                  </th>
+                  <th className="px-3 py-2.5 font-medium text-center text-[12px]">
+                    Follow-up date
+                  </th>
+                  <th className="px-3 py-2.5 font-medium text-center text-[12px]">
+                    Target amount
+                  </th>
+                  <th className="px-3 py-2.5 font-medium text-center text-[12px]">
+                    Pipeline status
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {pageRows.length === 0 && (
+                {pageRows.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={8}
-                      className="px-4 py-12 text-center text-text-secondary"
+                      colSpan={6}
+                      className="px-4 py-24 text-center text-text-secondary text-[12px]"
                     >
-                      No prospects match your search or filters.
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <p className="font-medium text-text-primary">
+                          No prospects match your current search or filters.
+                        </p>
+                        {hasActiveFilters && (
+                          <button
+                            type="button"
+                            onClick={resetAllFilters}
+                            className="mt-1 rounded-button border border-border-strong bg-white px-3 py-1.5 text-xs font-medium text-text-primary hover:bg-surface-soft cursor-pointer"
+                          >
+                            Reset all filters
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
-                )}
-                {pageRows.map((r) => {
-                  const style = STAGE_STYLES[r.pipeline_status];
-                  const href = `/donor-conv/prospects/edit-prospect?id=${r.id}`;
-                  return (
-                    <tr
-                      key={r.id}
-                      tabIndex={0}
-                      role="link"
-                      onClick={() => router.push(href)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") router.push(href);
-                      }}
-                      className="cursor-pointer border-b border-border-soft text-text-primary hover:bg-surface-soft focus:bg-surface-soft focus:outline-none"
-                    >
-                      <td
-                        className="px-4 py-3"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selected.includes(r.id)}
-                          onChange={() => toggleRow(r.id)}
-                          aria-label={`Select ${r.prospect_name}`}
-                          className="h-3.5 w-3.5 accent-[#6b0f0f]"
-                        />
-                      </td>
-                      <td className="px-3 py-3 font-semibold">
-                        {r.prospect_name}
-                      </td>
-                      <td className="px-3 py-3">{r.primary_contact_person}</td>
-                      <td className="px-3 py-3 whitespace-nowrap">
-                        {r.phone_number}
-                      </td>
-                      {/* Always rendered so the column never disappears */}
-                      <td
-                        className={cn(
-                          "px-3 py-3 whitespace-nowrap",
-                          !r.target_followup_date && "text-text-muted",
-                          isOverdue(r) && "font-medium text-brand-danger",
-                          isDueToday(r) && "font-medium text-amber-700",
-                        )}
-                      >
-                        {isDueToday(r)
-                          ? "Due today"
-                          : formatDate(r.target_followup_date)}
-                      </td>
-                      <td className="px-3 py-3 whitespace-nowrap">
-                        {peso.format(r.target_amount)}
-                      </td>
-                      <td className="px-3 py-3">
-                        <span
-                          className={cn(
-                            "inline-flex items-center gap-1.5 rounded-[4px] border px-2 py-0.5 text-[11px] font-medium whitespace-nowrap",
-                            style.badge,
-                          )}
+                ) : (
+                  <>
+                    {pageRows.map((r) => {
+                      const style = STAGE_STYLES[r.pipeline_status];
+                      const href = `/donor-conv/prospects/edit-prospect?id=${r.id}`;
+                      return (
+                        <tr
+                          key={r.id}
+                          tabIndex={0}
+                          role="link"
+                          onClick={() => router.push(href)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") router.push(href);
+                          }}
+                          className="cursor-pointer border-b border-border-soft text-text-primary hover:bg-surface-soft focus:bg-surface-soft focus:outline-none h-[39px]"
                         >
-                          <span
+                          <td className="px-3 py-2.5 font-semibold text-center text-[12px]">
+                            {r.prospect_name}
+                          </td>
+                          <td className="px-3 py-2.5 text-center text-[12px]">
+                            {r.primary_contact_person}
+                          </td>
+                          <td className="px-3 py-2.5 whitespace-nowrap text-center text-[12px]">
+                            {r.phone_number}
+                          </td>
+                          <td
                             className={cn(
-                              "h-1.5 w-1.5 rounded-full",
-                              style.dot,
+                              "px-3 py-2.5 whitespace-nowrap text-center text-[12px]",
+                              !r.target_followup_date && "text-text-muted",
+                              r.target_followup_date &&
+                                today &&
+                                r.target_followup_date < today &&
+                                "font-medium text-[#a33838]",
+                              r.target_followup_date &&
+                                today &&
+                                r.target_followup_date === today &&
+                                "font-medium text-amber-700",
                             )}
-                          />
-                          {stageLabel(r.pipeline_status)}
-                        </span>
-                      </td>
-                      <td className="px-3 py-3 whitespace-nowrap">
-                        {r.assigned_officer}
-                      </td>
-                    </tr>
-                  );
-                })}
+                          >
+                            {r.target_followup_date === today
+                              ? "Due today"
+                              : formatDate(r.target_followup_date)}
+                          </td>
+                          <td className="px-3 py-2.5 whitespace-nowrap text-center text-[12px]">
+                            {peso.format(r.target_amount)}
+                          </td>
+                          {/* Low-saturation badge without dot, centered */}
+                          <td className="px-3 py-2.5 text-center">
+                            <span
+                              className={cn(
+                                "inline-flex items-center justify-center rounded-[4px] px-2.5 py-0.5 text-[11px] font-medium whitespace-nowrap",
+                                style.badge,
+                              )}
+                            >
+                              {stageLabel(r.pipeline_status)}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {/* Filler empty rows so table automatically maintains 10 rows height even with 1 or 2 records */}
+                    {Array.from({
+                      length: Math.max(0, PAGE_SIZE - pageRows.length),
+                    }).map((_, i) => (
+                      <tr
+                        key={`filler-${i}`}
+                        className="border-b border-border-soft/40 h-[39px] pointer-events-none select-none"
+                      >
+                        <td colSpan={6} className="px-3 py-2.5">
+                          &nbsp;
+                        </td>
+                      </tr>
+                    ))}
+                  </>
+                )}
               </tbody>
             </table>
           </div>
@@ -663,7 +1017,6 @@ export default function ProspectsPage() {
               {filtered.length === 0
                 ? "Showing 0 prospects"
                 : `Showing ${start + 1}–${start + pageRows.length} of ${filtered.length} prospects`}
-              {selected.length > 0 && ` · ${selected.length} selected`}
             </span>
 
             <div className="flex items-center gap-1">
@@ -711,6 +1064,7 @@ export default function ProspectsPage() {
           </div>
         </div>
       </div>
+      )}
     </AppShell>
   );
 }

@@ -1,14 +1,14 @@
 "use client";
 
 import { AppShell } from "@/components/AppShell";
-import { moduleName, navbarPreset } from "@/app/donor-care/struct";
+import { getNavbarPreset, moduleName } from "@/app/donor-care/struct";
 import { useDocumentTitle } from "@/components/Navbar";
 
 const pageName = "Transactions";
 
 export default function TransactionsPage() {
   useDocumentTitle(`${moduleName} - ${pageName}`);
-  navbarPreset.selectedTabIndex = 0;
+  const navbarPreset = getNavbarPreset(0);
 
   return (
     <AppShell navbarPreset={navbarPreset}>

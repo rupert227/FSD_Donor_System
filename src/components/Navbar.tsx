@@ -42,7 +42,7 @@ interface ListOption {
 }
 
 interface NavbarProps {
-  navbarPreset: NavbarPreset;
+  navbarPreset?: NavbarPreset;
 }
 
 interface UserProfile {
@@ -105,7 +105,11 @@ export function useDocumentTitle(title: string) {
 }
 
 export function Navbar({
-  navbarPreset: { selectedModuleIndex, selectedTabIndex, tabs = [] },
+  navbarPreset: {
+    selectedModuleIndex = undefined,
+    selectedTabIndex = 0,
+    tabs = [],
+  } = {},
 }: NavbarProps) {
   const moduleRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -123,7 +127,7 @@ export function Navbar({
   });
 
   const selectedModule =
-    selectedModuleIndex != null
+    selectedModuleIndex != undefined
       ? moduleOptions[selectedModuleIndex]
       : moduleOptionsPlaceholder;
 
@@ -156,7 +160,7 @@ export function Navbar({
     document.addEventListener("mousedown", handlePointerDown);
 
     return () => document.removeEventListener("mousedown", handlePointerDown);
-  }, []);
+  }, [isModuleOpen]);
 
   useEffect(() => {
     if (!isProfileOpen) return;
@@ -180,23 +184,25 @@ export function Navbar({
           onClick={() => {
             window.location.href = "/dashboard";
           }}
-          className="flex cursor-pointer items-center gap-2"
+          className="flex cursor-pointer items-center gap-2.5"
         >
-          <div className="relative min-h-9 min-w-9 overflow-hidden">
+          {/* Maroon square with rounded corners and white Caritas Manila logo on top */}
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[6px] bg-[#6B0F0F] p-1 shadow-sm">
             <Image
-              src="/caritas_logo.png"
+              src="/caritas_nav.png"
               alt="Caritas Manila Logo"
-              sizes="36px"
-              fill
-              className="shrink-0 object-cover"
+              width={24}
+              height={24}
+              className="h-6 w-6 object-contain"
               priority
+              unoptimized
             />
           </div>
-          <div className="leading-tight">
-            <p className="text-text-primary font-bold whitespace-nowrap">
+          <div className="flex flex-col justify-center leading-tight">
+            <p className="text-[85%] xl:text-[87.5%] font-semibold text-text-primary whitespace-nowrap leading-[1.25]">
               Caritas Manila
             </p>
-            <p className="text-text-secondary text-[0.75rem] whitespace-nowrap">
+            <p className="text-[72%] xl:text-[75%] font-normal text-text-secondary whitespace-nowrap leading-[1.25]">
               FSD Donor System
             </p>
           </div>
@@ -216,7 +222,7 @@ export function Navbar({
                 searchBarAction(event.currentTarget.value);
               }
             }}
-            className="text-text-primary placeholder:text-text-muted mx-2 w-full truncate border-none bg-transparent text-[0.9rem] focus:outline-none"
+            className="text-text-primary placeholder:text-text-muted mx-2 w-full truncate border-none bg-transparent text-[82%] xl:text-[85%] focus:outline-none"
           />
         </div>
         <div className="ml-auto flex items-center gap-3">
@@ -225,9 +231,9 @@ export function Navbar({
             type="button"
             className="hover:bg-surface-soft-hover text-text-primary relative flex h-9 w-9 cursor-pointer items-center justify-center self-center rounded-[6px]"
           >
-            <Bell className="h-4 w-4 text-text-secondary" />
+            <Bell className="text-text-secondary h-4 w-4" />
             {notificationCount > 0 && (
-              <p className="bg-brand-danger absolute top-0 right-0 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[0.6rem] font-semibold text-surface-white">
+              <p className="bg-brand-danger text-surface-white absolute top-0 right-0 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[0.6rem] font-semibold">
                 {notificationCount <= 99 ? notificationCount : "99+"}
               </p>
             )}
@@ -277,9 +283,7 @@ export function Navbar({
                       )}
                     >
                       <Icon className="h-4 w-4 shrink-0" />
-                      <p className="truncate text-[0.85rem]">
-                        {option.label}
-                      </p>
+                      <p className="truncate text-[0.85rem]">{option.label}</p>
                     </div>
                   );
                 })}
@@ -299,7 +303,7 @@ export function Navbar({
           </div>
         </div>
       </div>
-      <div className="border-border-strong flex border-b px-4 py-1">
+      <div className="border-border-strong flex items-center border-b px-4 py-1.5">
         <div
           ref={moduleRef}
           className="border-border-strong relative flex items-center border-r pr-4"
@@ -307,19 +311,19 @@ export function Navbar({
           <button
             type="button"
             onClick={() => setIsModuleOpen((open) => !open)}
-            className="hover:bg-surface-soft-hover text-text-primary flex max-w-60 cursor-pointer items-center gap-3 rounded-[6px] bg-transparent px-2 py-1 font-semibold"
+            className="hover:bg-surface-soft-hover text-text-primary flex max-w-60 cursor-pointer items-center gap-2 rounded-[6px] bg-transparent px-2 py-1 font-semibold text-[80%] xl:text-[84%] 2xl:text-[87.5%]"
           >
             <SelectedModuleIcon className="text-brand-primary h-4 w-4 shrink-0" />
             <p className="truncate">{selectedModule.label}</p>
             <ChevronDown
               className={cn(
-                "text-text-secondary h-4 w-4 shrink-0",
+                "text-text-secondary h-3.5 w-3.5 shrink-0",
                 isModuleOpen && "rotate-180",
               )}
             />
           </button>
           {isModuleOpen && (
-            <div className="scrollbar-primary bg-surface-white border-border-soft absolute top-[calc(100%+1px)] left-0 z-20 max-h-100 max-w-75 overflow-auto rounded-[6px] border shadow-lg">
+            <div className="scrollbar-primary bg-surface-white border-border-soft absolute top-[calc(100%+1px)] left-0 z-20 max-h-100 max-w-75 overflow-auto rounded-[6px] border shadow-lg text-[80%] xl:text-[84%] 2xl:text-[87.5%]">
               <div className="w-max">
                 {moduleOptions.map((option) => {
                   const Icon = option.icon ?? Dot;
@@ -333,16 +337,14 @@ export function Navbar({
                     >
                       <div
                         className={cn(
-                          "text-text-primary flex items-center gap-3 px-3 py-3",
+                          "text-text-primary flex items-center gap-2.5 px-3 py-2.5",
                           isSelected
                             ? "bg-brand-100 text-brand-primary"
                             : "hover:bg-surface-soft-hover",
                         )}
                       >
                         <Icon className="h-4 w-4 shrink-0" />
-                        <p className="whitespace-nowrap">
-                          {option.label}
-                        </p>
+                        <p className="whitespace-nowrap font-medium">{option.label}</p>
                         {isSelected && (
                           <Check className="text-brand-primary ml-auto h-4 w-4 shrink-0" />
                         )}
@@ -364,17 +366,15 @@ export function Navbar({
                   key={tab.label}
                   href={tab.href}
                   className={cn(
-                    "relative flex max-w-[18.75rem] cursor-pointer rounded-[6px] px-3 py-1 font-medium",
+                    "relative flex max-w-[18.75rem] cursor-pointer rounded-[6px] px-3 py-1 font-medium text-[80%] xl:text-[84%] 2xl:text-[87.5%]",
                     isActiveTab
-                      ? "text-brand-primary"
-                      : "hover:bg-surface-soft-hover",
+                      ? "text-brand-primary font-semibold"
+                      : "text-text-primary hover:bg-surface-soft-hover",
                   )}
                 >
-                  <p className="text-text-primary truncate">
-                    {tab.label}
-                  </p>
+                  <p className="truncate">{tab.label}</p>
                   {isActiveTab && (
-                    <p className="bg-brand-primary absolute right-0 -bottom-[0.25rem] left-0 h-[2px]" />
+                    <p className="bg-brand-primary absolute right-0 -bottom-[0.38rem] left-0 h-[2px]" />
                   )}
                 </Link>
               );

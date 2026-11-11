@@ -6,11 +6,17 @@ import { AppShell } from "@/components/AppShell";
 import { ChevronLeft, Download } from "lucide-react";
 import { Leads } from "@/lib/types";
 import { cn } from "cn";
-import { formatReportDate } from "@/lib/utils";
-import { moduleName, navbarPreset } from "@/app/donor-conv/struct";
+import { getNavbarPreset, moduleName } from "@/app/donor-conv/struct";
 import { useDocumentTitle } from "@/components/Navbar";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+
+import {
+  formatCurrency,
+  formatNumber,
+  formatPercent,
+  formatReportDate,
+} from "@/lib/utils";
 
 import {
   generateSummaryRows,
@@ -22,7 +28,7 @@ const previewStorageKey = "donor-conv-lead-pipeline-report-content";
 
 export default function PreviewReportPage() {
   useDocumentTitle(`${moduleName} - ${pageName}`);
-  navbarPreset.selectedTabIndex = 2;
+  const navbarPreset = getNavbarPreset(2);
 
   const router = useRouter();
 
@@ -40,18 +46,17 @@ export default function PreviewReportPage() {
 
   const donorTypeLabel =
     report.donorTypeOptions?.find((option) => option.key == report.donorType)
-      ?.label ?? "Unknown";
+      ?.label ?? "—";
 
   const fiscalYearLabel =
     report.fiscalYearOptions?.find((option) => option.key == report.fiscalYear)
-      ?.label ?? "Unknown";
+      ?.label ?? "—";
 
   const pipelineStageLabel =
     report.pipelineStageOptions?.find(
       (option) => option.key == report.pipelineStage,
-    )?.label ?? "Unknown";
+    )?.label ?? "—";
 
-  const quarterHeaders = ["Q1", "Q2", "Q3", "Q4"];
   const summaryRows = generateSummaryRows(report);
 
   return (
@@ -67,7 +72,6 @@ export default function PreviewReportPage() {
               <ChevronLeft className="h-5 w-5" />
               Back to Reports
             </button>
-
             <button
               type="button"
               onClick={() => window.print()}
@@ -78,14 +82,14 @@ export default function PreviewReportPage() {
             </button>
           </div>
         </div>
-        <div className="pdf-sheet bg-surface-white mx-auto max-w-[60rem] p-10 shadow-lg">
-          <div className="mb-8">
-            <div className="flex items-start justify-between">
+        <div className="mx-auto max-w-275 break-all">
+          <div className="pdf-sheet bg-surface-white mx-auto p-10 shadow-lg">
+            <div className="mb-12 flex items-start justify-between">
               <div className="flex-col">
-                <div className="mb-10 flex cursor-pointer items-center gap-4">
+                <div className="mb-8 flex items-center gap-4">
                   <div className="relative min-h-16 min-w-16 overflow-hidden">
                     <Image
-                      src="/caritas_logo.png"
+                      src="/caritas_icon.png"
                       alt="Caritas Manila Logo"
                       sizes="128px"
                       fill
@@ -94,102 +98,191 @@ export default function PreviewReportPage() {
                     />
                   </div>
                   <div className="leading-tight">
-                    <p className="text-[24pt] font-bold whitespace-nowrap">
-                      Caritas Manila
-                    </p>
-                    <p className="text-text-secondary text-[18pt] whitespace-nowrap">
+                    <p className="text-[24pt] font-bold">Caritas Manila</p>
+                    <p className="text-text-secondary text-[18pt]">
                       FSD Donor System
                     </p>
                   </div>
                 </div>
-                <p className="text-text-secondary text-[16pt] font-semibold tracking-[0.2em] uppercase">
-                  Donor Conversion
-                </p>
-                <h1 className="mb-4 text-[26pt] font-bold text-slate-900">
-                  Lead Pipeline Report
-                </h1>
-                <p className="text-text-muted mb-2 text-[12pt]">Prepared by</p>
-                <p className="text-text-primary text-[16pt] font-semibold">
-                  User Profile
-                </p>{" "}
-                <p className="text-text-secondary text-[12pt]">
-                  User role and description
-                </p>
+                <div className="flex w-full max-w-180 items-center">
+                  <div className="text-text-muted min-w-0 flex-1 pr-5 break-normal">
+                    <p className="text-text-secondary text-[16pt] font-semibold tracking-[0.2em] uppercase">
+                      Donor Conversion
+                    </p>
+                    <h1 className="text-text-primary text-[26pt] font-bold">
+                      Lead Pipeline Report
+                    </h1>
+                  </div>
+                  <div className="text-text-muted max-w-[40%] flex-shrink-0 border-l pl-5 break-all">
+                    <p className="text-text-muted mb-1 text-[10pt]">
+                      Prepared by
+                    </p>
+                    <p className="text-text-primary text-[14pt] font-semibold">
+                      User Profile
+                    </p>
+                    <p className="text-text-secondary text-[12pt]">
+                      User role and description
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div className="text-slate-secondary text-right text-[12pt]">
-                <p>{formatReportDate(report.timestamp)}</p>
-                <p className="mt-[10pt]">Fiscal Year: {fiscalYearLabel}</p>
-                <p>Donor Type: {donorTypeLabel}</p>
-                <p>Stage: {pipelineStageLabel}</p>
+              <div className="text-text-primary max-w-75 text-[12pt]">
+                <p className="mb-[10pt] text-right">
+                  {formatReportDate(report.timestamp)}
+                </p>
+                <div className="flex justify-between gap-3">
+                  <p className="font-medium underline">Fiscal Year</p>
+                  <p className="text-right">{fiscalYearLabel}</p>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <p className="font-medium underline">Donor Type</p>
+                  <p className="text-right">{donorTypeLabel}</p>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <p className="font-medium underline">Pipeline Stage</p>
+                  <p className="text-right">{pipelineStageLabel}</p>
+                </div>
               </div>
             </div>
-          </div>
-          <div className="border-border-soft bg-surface-white rounded-[4px] border shadow-sm">
-            <div className="border-border-soft border-b px-4 py-3">
-              <p className="text-text-primary text-[14pt] font-semibold">
-                Quarterly Summary
-              </p>
+            <div className="grid grid-cols-4 gap-4 text-center">
+              <div>
+                <p className="text-text-secondary text-[10pt] font-medium underline">
+                  Weighted forecast
+                </p>
+                <p className="text-text-primary mt-1 text-[15pt] font-semibold">
+                  {formatCurrency(report.weightedForecast)}
+                </p>
+                <p className="text-text-secondary text-[9pt]">
+                  Probability-adjusted pipeline
+                </p>
+              </div>
+              <div>
+                <p className="text-text-secondary text-[10pt] font-medium underline">
+                  Lead conversion rate
+                </p>
+                <p className="text-text-primary mt-1 text-[15pt] font-semibold">
+                  {formatPercent(report.leadConversionRate)}
+                </p>
+                <p className="text-text-secondary text-[9pt]">
+                  Secured leads + all leads
+                </p>
+              </div>
+              <div>
+                <p className="text-text-secondary text-[10pt] font-medium underline">
+                  Total pipeline value
+                </p>
+                <p className="text-text-primary mt-1 text-[15pt] font-semibold">
+                  {formatCurrency(report.totalPipelineValue)}
+                </p>
+                <p className="text-text-secondary text-[9pt]">
+                  {report.quarterlySummary?.totalNewLeads
+                    ? report.quarterlySummary.totalNewLeads
+                        .slice(0, -1)
+                        .reduce((accum, curr) => (accum ?? 0) + (curr ?? 0), 0)
+                    : formatNumber(undefined)}{" "}
+                  leads, all stages
+                </p>
+              </div>
+              <div>
+                <p className="text-text-secondary text-[10pt] font-medium underline">
+                  Average probability
+                </p>
+                <p className="text-text-primary mt-1 text-[15pt] font-semibold">
+                  {formatPercent(report.averageProbability)}
+                </p>
+                <p className="text-text-secondary text-[9pt]">
+                  Weighted forecast + pipeline value
+                </p>
+              </div>
             </div>
-            <table className="w-full text-left text-[12pt]">
-              <thead>
-                <tr className="bg-surface-soft text-text-secondary">
-                  <th className="px-3 py-3 font-medium">Metric</th>
-                  {quarterHeaders.map((header) => (
-                    <th
-                      key={header}
-                      className="px-3 py-3 text-center font-medium"
-                    >
-                      {header}
-                    </th>
-                  ))}
-                  <th className="px-3 py-3 text-center font-medium">
-                    {"Year"}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {summaryRows.map((row, rowIndex) => {
-                  const isSection = row.type === "section";
-                  const isLastRow = rowIndex === summaryRows.length - 1;
+            <div className="border-border-soft bg-surface-white rounded-panel m-[4px] mt-8 flex flex-col border break-all shadow-sm">
+              <div className="border-border-soft border-b px-4 py-3">
+                <p className="text-text-primary text-[16px] font-semibold">
+                  Quarterly Summary
+                </p>
+              </div>
+              {report.quarterlySummary && report.quarterNewLeads?.length! ? (
+                <table className="w-full table-fixed text-left text-[14px]">
+                  <thead>
+                    <tr className="bg-surface-soft text-text-secondary">
+                      <th className="w-1/3 px-3 py-3 font-medium">Metric</th>
+                      {report.quarterNewLeads?.map((option) => (
+                        <th
+                          key={option.key}
+                          className="w-[15%] px-3 py-3 text-right font-medium"
+                        >
+                          {option.label}
+                        </th>
+                      ))}
+                      <th className="w-[15%] px-3 py-3 text-right font-medium">
+                        {report.fiscalYearOptions?.find(
+                          (option) => option.key === report.fiscalYear,
+                        )?.label ?? "—"}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {summaryRows.map((row, rowIndex) => {
+                      const isLastRow = rowIndex === summaryRows.length - 1;
+                      const isSection = row.type === "section";
+                      const columnCount = report.quarterNewLeads!.length + 1;
 
-                  return (
-                    <tr
-                      key={`${row.label}-${rowIndex}`}
-                      className={cn(
-                        "border-border-soft text-text-primary border-t",
-                        isSection ? "bg-surface-soft font-semibold" : "",
-                      )}
-                    >
-                      <td
-                        className={cn(
-                          "text-text-primary px-3 py-3",
-                          !isLastRow ? "" : "font-semibold",
-                        )}
-                      >
-                        {row.label}
-                      </td>
-                      {row.values?.map((value, valueIndex) => (
-                        <td
-                          key={`${row.label}-${valueIndex}`}
+                      return (
+                        <tr
+                          key={`${row.label}-${rowIndex}`}
                           className={cn(
-                            "text-text-primary px-3 py-3 text-center",
-                            !isLastRow ? "" : "font-semibold",
+                            "border-border-soft text-text-primary border-t",
+                            isSection ? "bg-surface-soft font-semibold" : "",
                           )}
                         >
-                          {isSection ? "" : renderSummaryValue(row, value)}
-                        </td>
-                      ))}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                          <td
+                            className={cn(
+                              "px-3 py-3",
+                              !isLastRow ? "" : "font-semibold",
+                            )}
+                          >
+                            {row.label}
+                          </td>
+                          {Array.from({ length: columnCount }).map(
+                            (_, colIndex) => {
+                              const value = row.values?.[colIndex] ?? null;
+                              return (
+                                <td
+                                  key={`${row.label}-${colIndex}`}
+                                  className={cn(
+                                    "px-3 py-3 text-right",
+                                    !isLastRow ? "" : "font-semibold",
+                                  )}
+                                >
+                                  {isSection
+                                    ? ""
+                                    : renderSummaryValue(row, value)}
+                                </td>
+                              );
+                            },
+                          )}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              ) : (
+                <div className="flex min-h-50 flex-1 items-center justify-center">
+                  <p className="text-text-secondary text-[0.8rem]">No Data</p>
+                </div>
+              )}
+            </div>
+            <p className="text-text-secondary mt-4 text-right text-[11pt]">
+              2002 Jesus Street, Pandacan, Manila · (02) 8562-0020 ·
+              www.caritasmanila.org.ph
+            </p>
           </div>
-          <p className="text-text-muted mt-4 text-right">
-            2002 Jesus Street, Pandacan, Manila · (02) 8562-0020 ·
-            www.caritasmanila.org.ph
-          </p>
         </div>
+        <p className="text-text-muted no-print mt-8 text-center">
+          Vertical and horizontal spacing may vary when exported.
+          <br />
+          Set paper size and custom scale to match content during export.
+        </p>
       </div>
     </AppShell>
   );

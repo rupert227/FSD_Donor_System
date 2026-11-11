@@ -1,50 +1,57 @@
+export type none = null | undefined;
+
 export namespace Primitives {
   export interface ChartOption<K = string, L = string, V = number> {
     key: K;
-    label: L | null | undefined;
-    value: V | null | undefined;
-  };
+    label: L | none;
+    value: V | none;
+  }
 
   export interface DropdownOption<K = string, V = string> {
     key: K;
-    label: V | null | undefined;
-  };
+    label: V | none;
+  }
 }
 
 export namespace Leads {
   export interface Report {
-    timestamp: string | null | undefined;
-    fiscalYear: string | null | undefined;
-    donorType: string | null | undefined;
-    pipelineStage: string | null | undefined;
-    weightedForecast: number | null | undefined;
-    leadConversionRate: number | null | undefined;
-    totalPipelineValue: number | null | undefined;
-    averageProbability: number | null | undefined;
-    fiscalYearOptions: Primitives.DropdownOption[] | null | undefined;
-    donorTypeOptions: Primitives.DropdownOption[] | null | undefined;
-    pipelineStageOptions: Primitives.DropdownOption[] | null | undefined;
-    leadOrigins: Primitives.ChartOption[] | null | undefined;
-    pipelineStages: Primitives.ChartOption[] | null | undefined;
-    quarterNewLeads: Primitives.ChartOption[] | null | undefined;
-    quarterlySummary: {
-      totalEstimatedValue: number[] | null | undefined;
-      probabilityAdjustedValue: number[] | null | undefined;
-      securedValue: number[] | null | undefined;
-      unsecuredBalance: number[] | null | undefined;
-    };
-    conversion: {
-      leadConversionRate: number[] | null | undefined;
-      valueRealizationRate: number[] | null | undefined;
-    };
-    leadsOrigin: {
-      referral: number[] | null | undefined;
-      research: number[] | null | undefined;
-      booths: number[] | null | undefined;
-      directCall: number[] | null | undefined;
-      walkIn: number[] | null | undefined;
-    };
-    totalNewLeads: number[] | null | undefined;
+    timestamp: string | none;
+    fiscalYear: string | none;
+    donorType: string | none;
+    pipelineStage: string | none;
+    weightedForecast: number | none;
+    leadConversionRate: number | none;
+    totalPipelineValue: number | none;
+    averageProbability: number | none;
+    fiscalYearOptions: Primitives.DropdownOption[] | none;
+    donorTypeOptions: Primitives.DropdownOption[] | none;
+    pipelineStageOptions: Primitives.DropdownOption[] | none;
+    leadOrigins: Primitives.ChartOption[] | none;
+    pipelineStages: Primitives.ChartOption[] | none;
+    quarterNewLeads: Primitives.ChartOption[] | none;
+    quarterlySummary:
+      | {
+          pipelineValue: {
+            totalEstimatedValue: (number | none)[] | none;
+            probabilityAdjustedValue: (number | none)[] | none;
+            securedValue: (number | none)[] | none;
+            unsecuredBalance: (number | none)[] | none;
+          };
+          conversion: {
+            leadConversionRate: (number | none)[] | none;
+            valueRealizationRate: (number | none)[] | none;
+          };
+          leadsOrigin: {
+            referral: (number | none)[] | none;
+            research: (number | none)[] | none;
+            booths: (number | none)[] | none;
+            directCall: (number | none)[] | none;
+            walkIn: (number | none)[] | none;
+          };
+          totalNewLeads: (number | none)[] | none;
+        }
+      | null
+      | undefined;
   }
 
   export interface ReportFilters {
@@ -68,23 +75,6 @@ export namespace Leads {
     leadOrigins: undefined,
     pipelineStages: undefined,
     quarterNewLeads: undefined,
-    quarterlySummary: {
-      totalEstimatedValue: undefined,
-      probabilityAdjustedValue: undefined,
-      securedValue: undefined,
-      unsecuredBalance: undefined,
-    },
-    conversion: {
-      leadConversionRate: undefined,
-      valueRealizationRate: undefined,
-    },
-    leadsOrigin: {
-      referral: undefined,
-      research: undefined,
-      booths: undefined,
-      directCall: undefined,
-      walkIn: undefined,
-    },
-    totalNewLeads: undefined,
+    quarterlySummary: undefined,
   };
 }

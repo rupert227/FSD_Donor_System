@@ -1,14 +1,14 @@
 "use client";
 
 import { AppShell } from "@/components/AppShell";
-import { moduleName, navbarPreset } from "@/app/dashboard/struct";
+import { getNavbarPreset, moduleName } from "@/app/dashboard/struct";
 import { useDocumentTitle } from "@/components/Navbar";
 
 const pageName = "Dashboard";
 
 export default function DashboardPage() {
   useDocumentTitle(`${moduleName}`);
-  navbarPreset.selectedTabIndex = 0;
+  const navbarPreset = getNavbarPreset(0);
 
   return (
     <AppShell navbarPreset={navbarPreset}>

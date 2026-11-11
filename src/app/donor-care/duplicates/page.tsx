@@ -1,14 +1,14 @@
 "use client";
 
 import { AppShell } from "@/components/AppShell";
-import { moduleName, navbarPreset } from "@/app/donor-care/struct";
+import { getNavbarPreset, moduleName } from "@/app/donor-care/struct";
 import { useDocumentTitle } from "@/components/Navbar";
 
 const pageName = "Duplicates";
 
 export default function DuplicatesPage() {
   useDocumentTitle(`${moduleName} - ${pageName}`);
-  navbarPreset.selectedTabIndex = 2;
+  const navbarPreset = getNavbarPreset(2);
 
   return (
     <AppShell navbarPreset={navbarPreset}>

@@ -1,10 +1,10 @@
-import { Leads } from "@/lib/types";
+import { Leads, none } from "@/lib/types";
 import { formatNumber, formatPercent } from "@/lib/utils";
 
 type SummaryRow = {
   type: "header" | "row" | "section";
   label: string;
-  values: number[] | null | undefined;
+  values: (number | none)[] | none;
 };
 
 export function generateSummaryRows(report: Leads.Report): SummaryRow[] {
@@ -17,69 +17,72 @@ export function generateSummaryRows(report: Leads.Report): SummaryRow[] {
     {
       type: "row",
       label: "Total estimated value",
-      values: report.quarterlySummary.totalEstimatedValue,
+      values: report.quarterlySummary?.pipelineValue.totalEstimatedValue,
     },
     {
       type: "row",
       label: "Probability-adjusted value",
-      values: report.quarterlySummary.probabilityAdjustedValue,
+      values: report.quarterlySummary?.pipelineValue.probabilityAdjustedValue,
     },
     {
       type: "row",
       label: "Secured value",
-      values: report.quarterlySummary.securedValue,
+      values: report.quarterlySummary?.pipelineValue.securedValue,
     },
     {
       type: "row",
       label: "Unsecured balance",
-      values: report.quarterlySummary.unsecuredBalance,
+      values: report.quarterlySummary?.pipelineValue.unsecuredBalance,
     },
     { type: "section", label: "Conversion", values: [0, 0, 0, 0, 0] },
     {
       type: "row",
       label: "Lead conversion rate",
-      values: report.conversion.leadConversionRate,
+      values: report.quarterlySummary?.conversion.leadConversionRate,
     },
     {
       type: "row",
       label: "Value realization rate",
-      values: report.conversion.valueRealizationRate,
+      values: report.quarterlySummary?.conversion.valueRealizationRate,
     },
     { type: "section", label: "Leads Origin", values: [0, 0, 0, 0, 0] },
     {
       type: "row",
       label: "Referral",
-      values: report.leadsOrigin.referral,
+      values: report.quarterlySummary?.leadsOrigin.referral,
     },
     {
       type: "row",
       label: "Research",
-      values: report.leadsOrigin.research,
+      values: report.quarterlySummary?.leadsOrigin.research,
     },
     {
       type: "row",
       label: "Booths",
-      values: report.leadsOrigin.booths,
+      values: report.quarterlySummary?.leadsOrigin.booths,
     },
     {
       type: "row",
       label: "Direct Call",
-      values: report.leadsOrigin.directCall,
+      values: report.quarterlySummary?.leadsOrigin.directCall,
     },
     {
       type: "row",
       label: "Walk-in",
-      values: report.leadsOrigin.walkIn,
+      values: report.quarterlySummary?.leadsOrigin.walkIn,
     },
     {
       type: "row",
       label: "Total new leads",
-      values: report.totalNewLeads,
+      values: report.quarterlySummary?.totalNewLeads,
     },
   ];
 }
 
-export function renderSummaryValue(row: SummaryRow, value: number): string {
+export function renderSummaryValue(
+  row: SummaryRow,
+  value: number | null | undefined,
+): string {
   if (row.type === "section") return "";
 
   if (

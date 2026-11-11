@@ -3,21 +3,20 @@
 import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  ArrowLeft,
-  PhoneCall,
-  Check,
-  FileText,
-  X,
-  Calendar,
-  User,
-  History as HistoryIcon,
-} from "lucide-react";
+import { ArrowLeft, Check, CheckCircle2 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { moduleName, navbarPreset } from "@/app/donor-conv/struct";
+import { cn } from "cn";
+import { getNavbarPreset, moduleName } from "@/app/donor-conv/struct";
 import { useDocumentTitle } from "@/components/Navbar";
-import { SAMPLE_LEADS, type LeadDetail } from "@/lib/mock-data/leads";
+import { SAMPLE_LEADS, type LeadDetail } from "@supabase/seeds/prospects-seed";
 import type { PipelineStatusEnum } from "@/types";
+import {
+  ProspectDatePicker,
+  ProspectScoreField,
+  ProspectSelectMenu,
+  ProspectUpdateSkeleton,
+} from "../_components";
+import { calculateProspectProbability } from "../utils/prospect-score";
 
 const pageName = "Edit Prospect";
 
@@ -29,15 +28,80 @@ const PIPELINE_STAGES: PipelineStatusEnum[] = [
   "Secured Donor",
 ];
 
+const DONOR_TYPE_OPTIONS = ["corporate", "individual", "community", "international"];
+const LEAD_SOURCE_OPTIONS = ["Research", "Booths", "Direct Call", "Referral", "Walk-in"];
+const TARGET_CAMPAIGN_OPTIONS = [
+  "Health and Disaster Relief",
+  "Youth Servant Leadership",
+  "In-Kind Social Enterprise",
+  "At-Risk Restorative Justice",
+  "Institute for Stewardship",
+];
+const ASSIGNED_OFFICER_OPTIONS = [
+  "Officer J. Reyes",
+  "Officer A. Tan",
+  "Officer M. Cruz",
+];
+
+interface OutreachEntry {
+  id: string;
+  dateTime: string;
+  status: PipelineStatusEnum;
+  followupDate?: string;
+  notes: string;
+}
+
 function EditProspectForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const idParam = searchParams.get("id");
 
+  // Enforce zero horizontal page scroll and responsiveness strictly on this page
+  useEffect(() => {
+    const prevMinWidth = document.body.style.minWidth;
+    const prevOverflowX = document.body.style.overflowX;
+    const prevHtmlMinWidth = document.documentElement.style.minWidth;
+    const prevHtmlOverflowX = document.documentElement.style.overflowX;
+
+    document.body.style.minWidth = "0px";
+    document.body.style.overflowX = "hidden";
+    document.body.style.width = "100%";
+    document.body.style.maxWidth = "100vw";
+
+    document.documentElement.style.minWidth = "0px";
+    document.documentElement.style.overflowX = "hidden";
+    document.documentElement.style.width = "100%";
+    document.documentElement.style.maxWidth = "100vw";
+
+    return () => {
+      document.body.style.minWidth = prevMinWidth;
+      document.body.style.overflowX = prevOverflowX;
+      document.documentElement.style.minWidth = prevHtmlMinWidth;
+      document.documentElement.style.overflowX = prevHtmlOverflowX;
+    };
+  }, []);
+
   const matchedLead: LeadDetail =
     SAMPLE_LEADS.find((lead) => String(lead.id) === idParam) ?? SAMPLE_LEADS[0];
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    prospectName: string;
+    donorType: string;
+    leadSource: string;
+    contactPerson: string;
+    designation: string;
+    email: string;
+    phone: string;
+    streetAddress: string;
+    cityProvince: string;
+    targetCampaign: string;
+    targetAmount: string;
+    pipelineStatus: PipelineStatusEnum;
+    probability: string;
+    assignedOfficer: string;
+    followupDate: string;
+    actionPlan: string;
+  }>({
     prospectName: matchedLead.prospect_name,
     donorType: matchedLead.donor_type,
     leadSource: matchedLead.lead_source,
@@ -56,13 +120,75 @@ function EditProspectForm() {
     actionPlan: matchedLead.action_plan,
   });
 
+  const [activeTab, setActiveTab] = useState<"details" | "proposals" | "history">("details");
   const [isTrackCallOpen, setIsTrackCallOpen] = useState(false);
+  const [isOutreachModalExiting, setIsOutreachModalExiting] = useState(false);
+
+  const closeOutreachModal = React.useCallback(() => {
+    setIsOutreachModalExiting(true);
+    setTimeout(() => {
+      setIsTrackCallOpen(false);
+      setIsOutreachModalExiting(false);
+    }, 180);
+  }, []);
+
+  const [isSecuredNoticeModalOpen, setIsSecuredNoticeModalOpen] = useState(false);
+  const [isSecuredNoticeExiting, setIsSecuredNoticeExiting] = useState(false);
+  const [floatingToast, setFloatingToast] = useState<{
+    title: string;
+    message: string;
+  } | null>(null);
+  const [isToastExiting, setIsToastExiting] = useState(false);
+
+  const closeSecuredNoticeModal = React.useCallback(() => {
+    setIsSecuredNoticeExiting(true);
+    setTimeout(() => {
+      setIsSecuredNoticeModalOpen(false);
+      setIsSecuredNoticeExiting(false);
+    }, 180);
+  }, []);
   const [modalCallNotes, setModalCallNotes] = useState("");
   const [modalFollowupDate, setModalFollowupDate] = useState(matchedLead.target_followup_date ?? "");
   const [modalStage, setModalStage] = useState<PipelineStatusEnum>(
     matchedLead.pipeline_status === "New Lead" ? "Outreach Started" : (matchedLead.pipeline_status as PipelineStatusEnum)
   );
+
   const [saveSuccessMessage, setSaveSuccessMessage] = useState<string | null>(null);
+
+  const [historyRecords, setHistoryRecords] = useState<OutreachEntry[]>(() => {
+    const list: OutreachEntry[] = [];
+    if (matchedLead.action_plan) {
+      list.push({
+        id: "initial-outreach",
+        dateTime: "Oct 24, 2026, 2:30 PM",
+        status: (matchedLead.pipeline_status as PipelineStatusEnum) || "Outreach Started",
+        followupDate: matchedLead.target_followup_date || undefined,
+        notes: matchedLead.action_plan,
+      });
+    }
+    list.push({
+      id: "intake-record",
+      dateTime: "Oct 18, 2026, 9:15 AM",
+      status: "New Lead",
+      followupDate: undefined,
+      notes: "Prospect profile created",
+    });
+    return list;
+  });
+
+  const [expandedNoteId, setExpandedNoteId] = useState<string | null>(null);
+
+  // Dynamic probability calculation using deterministic formula
+  const prospectScore = calculateProspectProbability({
+    leadSource: formData.leadSource,
+    targetCampaign: formData.targetCampaign,
+    donorType: formData.donorType,
+    contactPerson: formData.contactPerson,
+    phone: formData.phone,
+    email: formData.email,
+    pipelineStatus: formData.pipelineStatus,
+    targetAmount: formData.targetAmount,
+  });
 
   useEffect(() => {
     if (matchedLead) {
@@ -106,19 +232,63 @@ function EditProspectForm() {
       pipelineStatus: "Secured Donor",
       probability: "100",
     }));
-    setSaveSuccessMessage("Prospect marked as Secured Donor!");
-    setTimeout(() => setSaveSuccessMessage(null), 3000);
+    setIsSecuredNoticeModalOpen(true);
   };
 
-  const handleSaveForm = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaveSuccessMessage("Prospect profile changes saved successfully!");
-    setTimeout(() => setSaveSuccessMessage(null), 3000);
+  const handleConfirmSecuredNotice = () => {
+    setFormData((prev) => ({
+      ...prev,
+      pipelineStatus: "Secured Donor",
+      probability: "100",
+    }));
+    closeSecuredNoticeModal();
+    setFloatingToast({
+      title: "Notice Sent",
+      message: `Notice sent to Donor Care to process transaction for "${formData.prospectName || "this prospect"}" for ₱${Number(formData.targetAmount || 0).toLocaleString()}.`,
+    });
+    setTimeout(() => {
+      router.push("/donor-conv/prospects");
+    }, 600);
+  };
+
+  const handleSaveForm = (e?: React.FormEvent | React.MouseEvent) => {
+    if (e) e.preventDefault();
+    if (formData.pipelineStatus === "Secured Donor") {
+      setIsSecuredNoticeModalOpen(true);
+      return;
+    }
+    setFloatingToast({
+      title: "Profile Updated",
+      message: `Profile changes for "${formData.prospectName || "this prospect"}" saved successfully!`,
+    });
+    setTimeout(() => {
+      router.push("/donor-conv/prospects");
+    }, 600);
   };
 
   const handleTrackCallSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!modalCallNotes.trim()) return;
+
+    const now = new Date();
+    const formattedDateTime = now.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+
+    const newEntry: OutreachEntry = {
+      id: `outreach-${Date.now()}`,
+      dateTime: formattedDateTime,
+      status: modalStage,
+      followupDate: modalFollowupDate || undefined,
+      notes: modalCallNotes.trim(),
+    };
+
+    setHistoryRecords((prev) => [newEntry, ...prev]);
 
     // Direct update to actual schema fields: next_step_action_plan, target_followup_date, pipeline_status
     setFormData((prev) => ({
@@ -126,31 +296,46 @@ function EditProspectForm() {
       actionPlan: modalCallNotes.trim(),
       followupDate: modalFollowupDate,
       pipelineStatus: modalStage,
-      probability:
-        modalStage === "Secured Donor"
-          ? "100"
-          : modalStage === "Proposal Sent"
-          ? "80"
-          : modalStage === "Outreach Started"
-          ? "60"
-          : modalStage === "Under Research"
-          ? "40"
-          : "20",
+      probability: String(
+        calculateProspectProbability({
+          ...prev,
+          pipelineStatus: modalStage,
+        }).tier
+      ),
     }));
 
     setModalCallNotes("");
-    setIsTrackCallOpen(false);
-    setSaveSuccessMessage("Call recorded and action plan updated!");
+    closeOutreachModal();
+    setSaveSuccessMessage("Outreach recorded and added to history!");
     setTimeout(() => setSaveSuccessMessage(null), 3500);
   };
 
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 320);
+    return () => clearTimeout(timer);
+  }, []);
+
   const currentStageIndex = PIPELINE_STAGES.indexOf(formData.pipelineStatus);
+
+  if (isLoading) {
+    return <ProspectUpdateSkeleton />;
+  }
 
   return (
     <div
-      className="w-full max-w-[954px] mx-auto space-y-1.5 pb-8"
+      className="w-[75%] max-w-full min-w-0 mx-auto space-y-2.5 pb-8 overflow-hidden animate-in fade-in duration-300"
       style={{ fontFamily: "var(--font-poppins), sans-serif" }}
     >
+      <style dangerouslySetInnerHTML={{ __html: `
+        html, body {
+          min-width: 0 !important;
+          max-width: 100vw !important;
+          overflow-x: hidden !important;
+          width: 100% !important;
+        }
+      `}} />
       {/* Back Link */}
       <div className="flex items-center text-[11px] text-[#5c5757]">
         <Link
@@ -167,26 +352,26 @@ function EditProspectForm() {
           <span>{saveSuccessMessage}</span>
           <button
             onClick={() => setSaveSuccessMessage(null)}
-            className="text-[#166534] hover:text-[#14532d] ml-2 font-bold"
+            className="text-[#166534] hover:text-[#14532d] ml-2 font-bold cursor-pointer"
           >
             ×
           </button>
         </div>
       )}
 
-      {/* TOP RECORD SUMMARY CARD (Figma V2 Highlights) */}
-      <div className="rounded-lg border border-[#e3dfdf] bg-white shadow-xs p-3.5 space-y-2.5">
+      {/* TOP RECORD SUMMARY CARD */}
+      <div className="rounded-lg border border-[#e3dfdf] bg-white shadow-xs p-3.5 space-y-2.5 w-full min-w-0">
         {/* Title row */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
-          <div>
+        <div className="flex flex-col min-[1100px]:flex-row min-[1100px]:items-center min-[1100px]:justify-between gap-2.5">
+          <div className="min-w-0">
             <div className="text-[10px] text-[#5c5757]">Prospect</div>
-            <h1 className="text-[16px] sm:text-[18px] font-semibold text-[#1c1a1a] leading-tight">
+            <h1 className="text-[16px] sm:text-[18px] font-semibold text-[#1c1a1a] leading-tight break-words">
               {formData.prospectName || "Unnamed Prospect"}
             </h1>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center gap-2 flex-wrap">
+          {/* Action Buttons - In one horizontal line/row only always */}
+          <div className="flex flex-row items-center gap-1.5 sm:gap-2 flex-nowrap w-full min-[1100px]:w-auto">
             <button
               type="button"
               onClick={() => {
@@ -196,34 +381,31 @@ function EditProspectForm() {
                 );
                 setIsTrackCallOpen(true);
               }}
-              className="h-[30px] px-3 inline-flex items-center gap-1.5 text-[11px] font-medium text-[#1c1a1a] bg-white border border-[#d1d5db] rounded-md hover:bg-[#f7f6f6] transition shadow-xs cursor-pointer"
+              className="flex-1 min-[1100px]:flex-initial h-[26px] sm:h-[30px] px-2 sm:px-3 text-[9.5px] sm:text-[11px] font-medium text-[#1c1a1a] bg-white border border-[#d1d5db] rounded-md hover:bg-[#f7f6f6] transition shadow-xs cursor-pointer inline-flex items-center justify-center whitespace-nowrap min-w-0"
             >
-              <PhoneCall className="w-3.5 h-3.5 text-[#5c5757]" />
-              <span>Track a call</span>
+              Record outreach
             </button>
             <button
               type="button"
               onClick={handleMarkAsSecured}
-              className="h-[30px] px-3 inline-flex items-center gap-1.5 text-[11px] font-medium text-[#1c1a1a] bg-white border border-[#d1d5db] rounded-md hover:bg-[#f7f6f6] transition shadow-xs cursor-pointer"
+              className="flex-1 min-[1100px]:flex-initial h-[26px] sm:h-[30px] px-2 sm:px-3 text-[9.5px] sm:text-[11px] font-medium text-[#1c1a1a] bg-white border border-[#d1d5db] rounded-md hover:bg-[#f7f6f6] transition shadow-xs cursor-pointer inline-flex items-center justify-center whitespace-nowrap min-w-0"
             >
-              <Check className="w-3.5 h-3.5 text-[#166534]" />
-              <span>Mark as secured</span>
+              Mark as secured
             </button>
             <Link
               href="/donor-conv/proposals/send-proposal"
-              className="h-[30px] px-3 inline-flex items-center gap-1.5 text-[11px] font-medium text-[#6b0f0f] bg-white border border-[#6b0f0f] rounded-md hover:bg-[#fdf1f1] transition shadow-xs cursor-pointer"
+              className="flex-1 min-[1100px]:flex-initial h-[26px] sm:h-[30px] px-2 sm:px-3 inline-flex items-center justify-center text-[9.5px] sm:text-[11px] font-medium text-[#6b0f0f] bg-white border border-[#6b0f0f] rounded-md hover:bg-[#fdf1f1] transition shadow-xs cursor-pointer whitespace-nowrap min-w-0"
             >
-              <FileText className="w-3.5 h-3.5 text-[#6b0f0f]" />
-              <span>Generate proposal</span>
+              Generate proposal
             </Link>
           </div>
         </div>
 
         {/* Highlights Row (Summary Metrics) */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 pt-2 border-t border-[#f0eeee]">
+        <div className="grid grid-cols-1 min-[1100px]:grid-cols-5 gap-2.5 pt-2 border-t border-[#f0eeee]">
           <div>
             <div className="text-[10px] font-medium text-[#5c5757]">Target campaign</div>
-            <div className="text-[11px] font-medium text-[#1c1a1a] truncate" title={formData.targetCampaign}>
+            <div className="text-[11px] font-medium text-[#1c1a1a] break-words">
               {formData.targetCampaign || "—"}
             </div>
           </div>
@@ -235,13 +417,13 @@ function EditProspectForm() {
           </div>
           <div>
             <div className="text-[10px] font-medium text-[#5c5757]">Probability</div>
-            <div className="text-[11px] font-medium text-[#1c1a1a]">
-              {formData.probability ? `${formData.probability}%` : "—"}
+            <div className="text-[11px] font-medium text-[#1c1a1a] whitespace-nowrap">
+              {prospectScore.tier}% · {prospectScore.tierLabel}
             </div>
           </div>
           <div>
             <div className="text-[10px] font-medium text-[#5c5757]">Owner</div>
-            <div className="text-[11px] font-medium text-[#1c1a1a] truncate">
+            <div className="text-[11px] font-medium text-[#1c1a1a] break-words">
               {formData.assignedOfficer || "—"}
             </div>
           </div>
@@ -255,7 +437,7 @@ function EditProspectForm() {
 
         {/* Pipeline Path Bar - Read-only visual indicator (NOT clickable) */}
         <div className="pt-2 border-t border-[#f0eeee]">
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+          <div className="grid grid-cols-1 min-[1100px]:grid-cols-5 gap-1.5">
             {PIPELINE_STAGES.map((stage, idx) => {
               const isPast = idx < currentStageIndex;
               const isCurrent = idx === currentStageIndex;
@@ -272,7 +454,7 @@ function EditProspectForm() {
                   }`}
                 >
                   {isPast && <Check className="w-3 h-3 text-[#166534] shrink-0" />}
-                  <span className="truncate">{stage}</span>
+                  <span className="whitespace-nowrap">{stage}</span>
                 </div>
               );
             })}
@@ -280,32 +462,68 @@ function EditProspectForm() {
         </div>
       </div>
 
-      {/* MAIN INLINE EDITABLE FORM (954px width) */}
-      <form
-        onSubmit={handleSaveForm}
-        className="rounded-lg border border-[#e3dfdf] bg-white shadow-xs overflow-hidden"
-      >
-        {/* Card Header */}
-        <div className="flex items-center justify-between border-b border-[#e3dfdf] px-5 py-2 bg-white">
-          <h2 className="text-[13px] font-semibold text-[#1c1a1a]">
-            Prospect Details & Record Settings
-          </h2>
-          <span className="text-[10px] text-[#5c5757]">
-            Fields marked with <span className="text-[#b42318]">*</span> are mandatory
-          </span>
+      {/* RECORD CARD WITH TABS */}
+      <div className="rounded-lg border border-[#e3dfdf] bg-white shadow-xs overflow-visible w-full min-w-0">
+        {/* Card Tabs Header */}
+        <div className="flex items-center justify-between border-b border-[#e3dfdf] px-5 bg-white overflow-x-auto min-w-0">
+          <div className="flex gap-6">
+            <button
+              type="button"
+              onClick={() => setActiveTab("details")}
+              className={`py-2.5 text-[12.5px] font-semibold border-b-2 transition-colors cursor-pointer ${
+                activeTab === "details"
+                  ? "border-[#6b0f0f] text-[#6b0f0f]"
+                  : "border-transparent text-[#5c5757] hover:text-[#1c1a1a]"
+              }`}
+            >
+              Details
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("proposals")}
+              className={`py-2.5 text-[12.5px] font-semibold border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
+                activeTab === "proposals"
+                  ? "border-[#6b0f0f] text-[#6b0f0f]"
+                  : "border-transparent text-[#5c5757] hover:text-[#1c1a1a]"
+              }`}
+            >
+              <span>Proposals</span>
+              <span className="rounded-full bg-[#f0eeee] px-1.5 py-0.2 text-[9.5px] font-medium text-[#5c5757]">
+                1
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("history")}
+              className={`py-2.5 text-[12.5px] font-semibold border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
+                activeTab === "history"
+                  ? "border-[#6b0f0f] text-[#6b0f0f]"
+                  : "border-transparent text-[#5c5757] hover:text-[#1c1a1a]"
+              }`}
+            >
+              <span>History</span>
+              <span className="rounded-full bg-[#f0eeee] px-1.5 py-0.2 text-[9.5px] font-medium text-[#5c5757]">
+                {historyRecords.length}
+              </span>
+            </button>
+          </div>
+
         </div>
 
-        {/* Form Body - Exact V1 Measurements & Styling */}
-        <div className="px-5 py-2.5 space-y-2">
+        {/* TAB 1: DETAILS */}
+        {activeTab === "details" && (
+          <form onSubmit={handleSaveForm}>
+            {/* Form Body - Fully responsive grids, natural spacing */}
+            <div className="p-5 sm:p-6 space-y-4">
           {/* SECTION 1: PROSPECT BASIC INFORMATION */}
           <div>
-            <h3 className="text-[11px] font-bold text-[#3d0707] mb-1">
+            <h3 className="text-[11px] font-semibold text-[#3d0707] mb-1.5">
               Prospect Basic Information
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-1.5">
+            <div className="grid grid-cols-1 min-[1100px]:grid-cols-3 gap-x-4 gap-y-2.5">
               <div>
-                <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
-                  Organization / Prospect Name <span className="text-[#b42318]">*</span>
+                <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
+                  Organization / Prospect Name
                 </label>
                 <input
                   type="text"
@@ -314,74 +532,49 @@ function EditProspectForm() {
                   onChange={handleChange}
                   placeholder="Enter organization or prospect name"
                   required
-                  className="w-full h-[30px] px-2.5 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition"
+                  className="w-full h-[30px] px-2.5 text-[11px] font-medium rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition"
                 />
               </div>
 
               <div>
-                <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
-                  Donor Type <span className="text-[#b42318]">*</span>
+                <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
+                  Donor Type
                 </label>
-                <div className="relative">
-                  <select
-                    name="donorType"
-                    value={formData.donorType}
-                    onChange={handleChange}
-                    required
-                    className="w-full h-[30px] px-2.5 pr-7 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition appearance-none cursor-pointer"
-                  >
-                    <option value="" disabled>Select donor type</option>
-                    <option value="Corporate">Corporate</option>
-                    <option value="Individual">Individual</option>
-                    <option value="Community">Community</option>
-                    <option value="International">International</option>
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[#5c5757]">
-                    <svg className="w-3 h-3 fill-current" viewBox="0 0 20 20">
-                      <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                    </svg>
-                  </div>
-                </div>
+                <ProspectSelectMenu
+                  value={formData.donorType}
+                  onChange={(val) =>
+                    setFormData((prev) => ({ ...prev, donorType: val as any }))
+                  }
+                  options={DONOR_TYPE_OPTIONS}
+                  placeholder="Select donor type"
+                />
               </div>
 
               <div>
-                <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
-                  Lead Source Origin <span className="text-[#b42318]">*</span>
+                <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
+                  Lead Source Origin
                 </label>
-                <div className="relative">
-                  <select
-                    name="leadSource"
-                    value={formData.leadSource}
-                    onChange={handleChange}
-                    required
-                    className="w-full h-[30px] px-2.5 pr-7 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition appearance-none cursor-pointer"
-                  >
-                    <option value="" disabled>Select source origin</option>
-                    <option value="Research">Research</option>
-                    <option value="Booths">Booths</option>
-                    <option value="Direct Call">Direct Call</option>
-                    <option value="Referral">Referral</option>
-                    <option value="Walk-in">Walk-in</option>
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[#5c5757]">
-                    <svg className="w-3 h-3 fill-current" viewBox="0 0 20 20">
-                      <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                    </svg>
-                  </div>
-                </div>
+                <ProspectSelectMenu
+                  value={formData.leadSource}
+                  onChange={(val) =>
+                    setFormData((prev) => ({ ...prev, leadSource: val as any }))
+                  }
+                  options={LEAD_SOURCE_OPTIONS}
+                  placeholder="Select source origin"
+                />
               </div>
             </div>
           </div>
 
           {/* SECTION 2: PRIMARY CONTACT & ADDRESS DETAILS */}
-          <div className="pt-1.5 border-t border-[#e3dfdf]">
-            <h3 className="text-[11px] font-bold text-[#3d0707] mb-1">
+          <div className="pt-3 border-t border-[#e3dfdf]">
+            <h3 className="text-[11px] font-semibold text-[#3d0707] mb-1.5">
               Primary Contact & Address Details
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-1.5">
+            <div className="grid grid-cols-1 min-[1100px]:grid-cols-3 gap-x-4 gap-y-2.5">
               <div>
-                <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
-                  Primary Contact Person <span className="text-[#b42318]">*</span>
+                <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
+                  Primary Contact Person
                 </label>
                 <input
                   type="text"
@@ -390,12 +583,12 @@ function EditProspectForm() {
                   onChange={handleChange}
                   placeholder="Enter full contact name"
                   required
-                  className="w-full h-[30px] px-2.5 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition"
+                  className="w-full h-[30px] px-2.5 text-[11px] font-medium rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition"
                 />
               </div>
 
               <div>
-                <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
+                <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
                   Title / Designation
                 </label>
                 <input
@@ -404,12 +597,12 @@ function EditProspectForm() {
                   value={formData.designation}
                   onChange={handleChange}
                   placeholder="Enter designation"
-                  className="w-full h-[30px] px-2.5 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition"
+                  className="w-full h-[30px] px-2.5 text-[11px] font-medium rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition"
                 />
               </div>
 
               <div>
-                <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
+                <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
                   Email Address
                 </label>
                 <input
@@ -418,13 +611,13 @@ function EditProspectForm() {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="name@example.com"
-                  className="w-full h-[30px] px-2.5 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition"
+                  className="w-full h-[30px] px-2.5 text-[11px] font-medium rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition"
                 />
               </div>
 
               <div>
-                <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
-                  Mobile / Landline Number <span className="text-[#b42318]">*</span>
+                <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
+                  Mobile / Landline Number
                 </label>
                 <input
                   type="tel"
@@ -433,12 +626,12 @@ function EditProspectForm() {
                   onChange={handleChange}
                   placeholder="Enter phone number"
                   required
-                  className="w-full h-[30px] px-2.5 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition"
+                  className="w-full h-[30px] px-2.5 text-[11px] font-medium rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition"
                 />
               </div>
 
               <div>
-                <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
+                <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
                   Street Address
                 </label>
                 <input
@@ -447,12 +640,12 @@ function EditProspectForm() {
                   value={formData.streetAddress}
                   onChange={handleChange}
                   placeholder="Enter street address"
-                  className="w-full h-[30px] px-2.5 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition"
+                  className="w-full h-[30px] px-2.5 text-[11px] font-medium rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition"
                 />
               </div>
 
               <div>
-                <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
+                <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
                   City & Province
                 </label>
                 <input
@@ -461,48 +654,35 @@ function EditProspectForm() {
                   value={formData.cityProvince}
                   onChange={handleChange}
                   placeholder="Enter city and province"
-                  className="w-full h-[30px] px-2.5 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition"
+                  className="w-full h-[30px] px-2.5 text-[11px] font-medium rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition"
                 />
               </div>
             </div>
           </div>
 
           {/* SECTION 3: STEWARDSHIP & PROPOSAL TARGET */}
-          <div className="pt-1.5 border-t border-[#e3dfdf]">
-            <h3 className="text-[11px] font-bold text-[#3d0707] mb-1">
+          <div className="pt-3 border-t border-[#e3dfdf]">
+            <h3 className="text-[11px] font-semibold text-[#3d0707] mb-1.5">
               Stewardship & Proposal Target
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-1.5 mb-1.5">
+            <div className="grid grid-cols-1 min-[1100px]:grid-cols-3 gap-x-4 gap-y-2.5 mb-2.5">
               <div>
-                <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
-                  Target Campaign <span className="text-[#b42318]">*</span>
+                <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
+                  Target Campaign
                 </label>
-                <div className="relative">
-                  <select
-                    name="targetCampaign"
-                    value={formData.targetCampaign}
-                    onChange={handleChange}
-                    required
-                    className="w-full h-[30px] px-2.5 pr-7 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition appearance-none cursor-pointer"
-                  >
-                    <option value="" disabled>Select target campaign</option>
-                    <option value="Health and Disaster Relief">Health and Disaster Relief</option>
-                    <option value="Youth Servant Leadership">Youth Servant Leadership</option>
-                    <option value="In-Kind Social Enterprise">In-Kind Social Enterprise</option>
-                    <option value="At-Risk Restorative Justice">At-Risk Restorative Justice</option>
-                    <option value="Institute for Stewardship">Institute for Stewardship</option>
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[#5c5757]">
-                    <svg className="w-3 h-3 fill-current" viewBox="0 0 20 20">
-                      <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                    </svg>
-                  </div>
-                </div>
+                <ProspectSelectMenu
+                  value={formData.targetCampaign}
+                  onChange={(val) =>
+                    setFormData((prev) => ({ ...prev, targetCampaign: val as any }))
+                  }
+                  options={TARGET_CAMPAIGN_OPTIONS}
+                  placeholder="Select target campaign"
+                />
               </div>
 
               <div>
-                <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
-                  Target Amount (₱) <span className="text-[#b42318]">*</span>
+                <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
+                  Target Amount (₱)
                 </label>
                 <input
                   type="number"
@@ -512,97 +692,66 @@ function EditProspectForm() {
                   placeholder="500,000"
                   required
                   min={0}
-                  className="w-full h-[30px] px-2.5 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition"
+                  className="w-full h-[30px] px-2.5 text-[11px] font-medium rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition"
                 />
               </div>
 
               <div>
-                <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
-                  Pipeline Status <span className="text-[#b42318]">*</span>
+                <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
+                  Pipeline Status
                 </label>
-                <div className="relative">
-                  <select
-                    name="pipelineStatus"
-                    value={formData.pipelineStatus}
-                    onChange={handleChange}
-                    required
-                    className="w-full h-[30px] px-2.5 pr-7 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition appearance-none cursor-pointer"
-                  >
-                    <option value="New Lead">New Lead</option>
-                    <option value="Under Research">Under Research</option>
-                    <option value="Outreach Started">Outreach Started</option>
-                    <option value="Proposal Sent">Proposal Sent</option>
-                    <option value="Secured Donor">Secured Donor</option>
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[#5c5757]">
-                    <svg className="w-3 h-3 fill-current" viewBox="0 0 20 20">
-                      <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                    </svg>
-                  </div>
-                </div>
+                <ProspectSelectMenu
+                  value={formData.pipelineStatus}
+                  onChange={(val) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      pipelineStatus: val as PipelineStatusEnum,
+                    }));
+                  }}
+                  options={PIPELINE_STAGES}
+                  placeholder="Select pipeline status"
+                  direction="up"
+                />
               </div>
 
               <div>
-                <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
+                <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
                   Probability Estimate (%)
                 </label>
-                <div className="relative">
-                  <select
-                    name="probability"
-                    value={formData.probability}
-                    onChange={handleChange}
-                    className="w-full h-[30px] px-2.5 pr-7 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition appearance-none cursor-pointer"
-                  >
-                    <option value="" disabled>Select probability</option>
-                    <option value="20">20% - Low Likelihood</option>
-                    <option value="40">40% - Fair Likelihood</option>
-                    <option value="60">60% - Good Likelihood</option>
-                    <option value="80">80% - High Likelihood</option>
-                    <option value="100">100% - Secured Donor</option>
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[#5c5757]">
-                    <svg className="w-3 h-3 fill-current" viewBox="0 0 20 20">
-                      <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                    </svg>
-                  </div>
-                </div>
+                <ProspectScoreField
+                  value={prospectScore.tier}
+                  rawProbability={prospectScore.rawProbability}
+                  tierLabel={prospectScore.tierLabel}
+                  direction="up"
+                />
               </div>
 
               <div>
-                <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
-                  Assigned Officer <span className="text-[#b42318]">*</span>
+                <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
+                  Assigned Officer
                 </label>
-                <div className="relative">
-                  <select
-                    name="assignedOfficer"
-                    value={formData.assignedOfficer}
-                    onChange={handleChange}
-                    required
-                    className="w-full h-[30px] px-2.5 pr-7 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition appearance-none cursor-pointer"
-                  >
-                    <option value="" disabled>Select officer</option>
-                    <option value="Officer J. Reyes">Officer J. Reyes</option>
-                    <option value="Officer A. Tan">Officer A. Tan</option>
-                    <option value="Officer M. Cruz">Officer M. Cruz</option>
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[#5c5757]">
-                    <svg className="w-3 h-3 fill-current" viewBox="0 0 20 20">
-                      <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                    </svg>
-                  </div>
-                </div>
+                <ProspectSelectMenu
+                  value={formData.assignedOfficer}
+                  onChange={(val) =>
+                    setFormData((prev) => ({ ...prev, assignedOfficer: val as any }))
+                  }
+                  options={ASSIGNED_OFFICER_OPTIONS}
+                  placeholder="Select officer"
+                  direction="up"
+                />
               </div>
 
               <div>
-                <label className="block text-[10.5px] font-normal text-[#5c5757] mb-0.5">
+                <label className="block text-[10.5px] font-medium text-[#5c5757] mb-0.5">
                   Target Follow-up Date
                 </label>
-                <input
-                  type="date"
-                  name="followupDate"
+                <ProspectDatePicker
                   value={formData.followupDate}
-                  onChange={handleChange}
-                  className="w-full h-[30px] px-2.5 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition"
+                  onChange={(val) =>
+                    setFormData((prev) => ({ ...prev, followupDate: val }))
+                  }
+                  placeholder="Select target date"
+                  direction="up"
                 />
               </div>
             </div>
@@ -610,7 +759,7 @@ function EditProspectForm() {
         </div>
 
         {/* Card Footer Actions */}
-        <div className="flex items-center justify-end gap-2 border-t border-[#e3dfdf] px-5 py-2 bg-white">
+        <div className="flex items-center justify-end gap-2 border-t border-[#e3dfdf] px-5 sm:px-6 py-2.5 bg-white">
           <button
             type="button"
             onClick={() => router.push("/donor-conv/prospects")}
@@ -620,116 +769,243 @@ function EditProspectForm() {
           </button>
           <button
             type="submit"
+            onClick={handleSaveForm}
             className="h-[30px] px-4 text-[11px] font-medium text-white bg-[#6b0f0f] hover:bg-[#520b0b] rounded-md transition shadow-xs cursor-pointer"
           >
             Update Profile
           </button>
         </div>
       </form>
+    )}
 
-      {/* TRACK A CALL MODAL (Spacious, binds to real schema fields) */}
+    {/* TAB 2: PROPOSALS */}
+    {activeTab === "proposals" && (
+      <div className="px-5 py-4 space-y-3">
+        <div>
+          <h3 className="text-[12px] font-bold text-[#3d0707]">Formal Proposals & Documents</h3>
+          <p className="text-[10px] text-[#5c5757]">
+            Documents and pitch packages prepared for this prospective donor
+          </p>
+        </div>
+
+        <div className="rounded-md border border-[#e3dfdf] overflow-x-auto bg-white shadow-2xs">
+          <table className="w-full min-w-[500px] text-left border-collapse">
+            <thead>
+              <tr className="bg-[#f7f6f6] border-b border-[#e3dfdf] text-[9.5px] uppercase font-semibold text-[#5c5757]">
+                <th className="px-3.5 py-2">Document ID</th>
+                <th className="px-3.5 py-2">Target Campaign</th>
+                <th className="px-3.5 py-2">Proposed Target</th>
+                <th className="px-3.5 py-2">Date</th>
+                <th className="px-3.5 py-2">Status</th>
+                <th className="px-3.5 py-2 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#f0eeee] text-[11px]">
+              <tr>
+                <td className="px-3.5 py-2 text-[#1c1a1a] font-medium whitespace-nowrap text-[10.5px]">
+                  PROP-2026-{(formData.prospectName.replace(/[^A-Za-z]/g, "").slice(0, 4) || "LEAD").toUpperCase()}
+                </td>
+                <td className="px-3.5 py-2 text-[#1c1a1a] whitespace-nowrap text-[10.5px]">
+                  {formData.targetCampaign}
+                </td>
+                <td className="px-3.5 py-2 text-[#1c1a1a] font-medium whitespace-nowrap text-[10.5px]">
+                  ₱{Number(formData.targetAmount || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                </td>
+                <td className="px-3.5 py-2 text-[#5c5757] whitespace-nowrap text-[10.5px]">
+                  {formData.followupDate || "Current Period"}
+                </td>
+                <td className="px-3.5 py-2 whitespace-nowrap">
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9.5px] font-medium border ${
+                    formData.pipelineStatus === "Proposal Sent" || formData.pipelineStatus === "Secured Donor"
+                      ? "bg-green-50 text-green-700 border-green-200"
+                      : "bg-amber-50 text-amber-700 border-amber-200"
+                  }`}>
+                    {formData.pipelineStatus === "Proposal Sent" ? "Sent" : formData.pipelineStatus === "Secured Donor" ? "Accepted" : "Draft"}
+                  </span>
+                </td>
+                <td className="px-3.5 py-2 text-right whitespace-nowrap">
+                  <Link
+                    href={`/donor-conv/proposals?prospect=${encodeURIComponent(formData.prospectName)}`}
+                    className="text-[10.5px] font-medium text-[#6b0f0f] hover:underline inline-flex items-center gap-1"
+                  >
+                    <span>View Document</span>
+                  </Link>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    )}
+
+    {/* TAB 3: HISTORY */}
+    {activeTab === "history" && (
+      <div className="px-5 py-4 space-y-3">
+        <div>
+          <h3 className="text-[12px] font-bold text-[#3d0707]">
+            Activity & Outreach Timeline
+          </h3>
+          <p className="text-[10px] text-[#5c5757]">
+            Chronological record of outreach notes, status updates, and next follow-up dates
+          </p>
+        </div>
+
+        <div className="rounded-md border border-[#e3dfdf] overflow-x-auto bg-white shadow-2xs">
+          <table className="w-full min-w-[500px] text-left border-collapse">
+            <thead>
+              <tr className="bg-[#f7f6f6] border-b border-[#e3dfdf] text-[9.5px] uppercase font-semibold text-[#5c5757]">
+                <th className="px-3.5 py-2 w-[160px]">Date & Time</th>
+                <th className="px-3.5 py-2 w-[140px]">Status</th>
+                <th className="px-3.5 py-2 w-[130px]">Next Follow-up</th>
+                <th className="px-3.5 py-2">Notes & Action Plan</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#f0eeee] text-[11px]">
+              {historyRecords.map((record) => {
+                const isExpanded = expandedNoteId === record.id;
+                const isLong = record.notes.length > 90;
+
+                return (
+                  <tr key={record.id} className="hover:bg-[#faf9f9] transition-colors align-top">
+                    <td className="px-3.5 py-2.5 text-[#5c5757] whitespace-nowrap text-[10.5px]">
+                      {record.dateTime}
+                    </td>
+                    <td className="px-3.5 py-2.5 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9.5px] font-medium border ${
+                        record.status === "Secured Donor"
+                          ? "bg-green-50 text-green-700 border-green-200"
+                          : record.status === "Proposal Sent"
+                          ? "bg-blue-50 text-blue-700 border-blue-200"
+                          : record.status === "Outreach Started"
+                          ? "bg-amber-50 text-amber-700 border-amber-200"
+                          : "bg-gray-100 text-gray-700 border-gray-200"
+                      }`}>
+                        {record.status}
+                      </span>
+                    </td>
+                    <td className="px-3.5 py-2.5 text-[#5c5757] whitespace-nowrap text-[10.5px]">
+                      {record.followupDate ? record.followupDate : "—"}
+                    </td>
+                    <td className="px-3.5 py-2.5">
+                      <div className="text-[#1c1a1a] text-[11px] leading-relaxed">
+                        {isExpanded || !isLong ? (
+                          <div className="whitespace-pre-wrap">{record.notes}</div>
+                        ) : (
+                          <div className="line-clamp-2">{record.notes}</div>
+                        )}
+                      </div>
+                      {isLong && (
+                        <button
+                          type="button"
+                          onClick={() => setExpandedNoteId(isExpanded ? null : record.id)}
+                          className="text-[10px] text-[#6b0f0f] hover:underline font-semibold mt-1 inline-flex items-center cursor-pointer"
+                        >
+                          {isExpanded ? "Show less" : "View full note"}
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    )}
+  </div>
+
+      {/* RECORD OUTREACH MODAL */}
       {isTrackCallOpen && (
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-150"
-          onClick={() => setIsTrackCallOpen(false)}
+          className={cn(
+            "fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4",
+            isOutreachModalExiting ? "modal-backdrop-out" : "modal-backdrop-in",
+          )}
+          onClick={closeOutreachModal}
         >
           <div
-            className="w-full max-w-[800px] max-h-[88vh] bg-white rounded-lg shadow-2xl border border-[#e3dfdf] flex flex-col overflow-hidden"
+            className={cn(
+              "w-full max-w-[800px] bg-white rounded-lg shadow-2xl border border-[#e3dfdf] flex flex-col overflow-visible",
+              isOutreachModalExiting ? "modal-content-out" : "modal-content-in",
+            )}
             style={{ fontFamily: "var(--font-poppins), sans-serif" }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-[#e3dfdf] px-6 py-3.5 bg-white">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-md bg-[#fdf1f1] flex items-center justify-center text-[#6b0f0f]">
-                  <PhoneCall className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-[13px] font-semibold text-[#1c1a1a]">
-                    Track a Call — {formData.prospectName}
-                  </h3>
-                  <p className="text-[10px] text-[#5c5757]">
-                    Update next step action plan and follow-up timeline based on outreach call
-                  </p>
-                </div>
+              <div>
+                <h3 className="text-[13px] font-semibold text-[#1c1a1a]">
+                  Record Outreach — {formData.prospectName}
+                </h3>
+                <p className="text-[10px] text-[#5c5757]">
+                  Enter outreach notes, update status, and set next follow-up date
+                </p>
               </div>
               <button
                 type="button"
-                onClick={() => setIsTrackCallOpen(false)}
-                className="w-7 h-7 flex items-center justify-center rounded-md text-[#5c5757] hover:text-[#1c1a1a] hover:bg-[#f0eeee] transition cursor-pointer"
+                onClick={closeOutreachModal}
+                className="w-7 h-7 flex items-center justify-center rounded-md text-[#5c5757] hover:text-[#1c1a1a] hover:bg-[#f0eeee] text-base leading-none transition cursor-pointer"
                 aria-label="Close modal"
               >
-                <X className="w-4 h-4" />
+                ×
               </button>
             </div>
 
             {/* Modal Body */}
-            <div className="overflow-y-auto px-6 py-4 space-y-4">
-              {/* TOP: COMPOSER ENTRY FIELDS (Directly updates schema fields) */}
+            <div className="px-6 py-4 space-y-4">
               <div className="rounded-md border border-[#e3dfdf] bg-[#faf9f9] p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-[#3d0707] flex items-center gap-1.5">
-                    Record Outreach Call
+                  <span className="text-[11px] font-bold text-[#3d0707]">
+                    Outreach Details
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Status Dropdown */}
                   <div>
-                    <label className="block text-[10.5px] font-normal text-[#5c5757] mb-1">
-                      Advance Pipeline Status <span className="text-[#b42318]">*</span>
+                    <label className="block text-[11px] font-medium text-[#1c1a1a] mb-1">
+                      Status
                     </label>
-                    <div className="relative">
-                      <select
-                        value={modalStage}
-                        onChange={(e) => setModalStage(e.target.value as PipelineStatusEnum)}
-                        className="w-full h-[32px] px-2.5 pr-7 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition appearance-none cursor-pointer"
-                      >
-                        {PIPELINE_STAGES.map((stg) => (
-                          <option key={stg} value={stg}>
-                            {stg}
-                          </option>
-                        ))}
-                      </select>
-                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[#5c5757]">
-                        <svg className="w-3 h-3 fill-current" viewBox="0 0 20 20">
-                          <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                        </svg>
-                      </div>
-                    </div>
+                    <ProspectSelectMenu
+                      value={modalStage}
+                      onChange={(val) => setModalStage(val as PipelineStatusEnum)}
+                      options={PIPELINE_STAGES}
+                      placeholder="Select status"
+                    />
                   </div>
 
+                  {/* Date Input */}
                   <div>
-                    <label className="block text-[10.5px] font-normal text-[#5c5757] mb-1">
-                      New Target Follow-up Date
+                    <label className="block text-[11px] font-medium text-[#1c1a1a] mb-1">
+                      Next Follow-up Date
                     </label>
-                    <input
-                      type="date"
+                    <ProspectDatePicker
                       value={modalFollowupDate}
-                      onChange={(e) => setModalFollowupDate(e.target.value)}
-                      className="w-full h-[32px] px-2.5 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition"
+                      onChange={(val) => setModalFollowupDate(val)}
+                      placeholder="Select follow-up date"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-[10.5px] font-normal text-[#5c5757] mb-1">
-                    Call Discussion & Next Step Action Plan <span className="text-[#b42318]">*</span>
+                  <label className="block text-[11px] font-medium text-[#1c1a1a] mb-1">
+                    Notes & Action Plan
                   </label>
                   <textarea
-                    rows={3}
+                    rows={4}
                     value={modalCallNotes}
                     onChange={(e) => setModalCallNotes(e.target.value)}
-                    placeholder="Enter what was discussed during the call and agreed next action steps..."
-                    className="w-full h-[64px] px-2.5 py-1.5 text-[11px] font-normal rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition resize-none"
+                    placeholder="Enter discussion details, next steps, and outreach notes..."
+                    className="w-full h-[80px] px-2.5 py-1.5 text-[11px] font-medium rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] hover:border-[#8a8484] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition resize-none"
                   />
                 </div>
 
                 <div className="flex items-center justify-end gap-2 pt-1">
                   <button
                     type="button"
-                    onClick={() => setIsTrackCallOpen(false)}
+                    onClick={closeOutreachModal}
                     className="h-[28px] px-3.5 text-[10.5px] font-medium text-[#1c1a1a] bg-white border border-[#d1d5db] rounded-md hover:bg-[#f7f6f6] transition cursor-pointer"
                   >
                     Cancel
@@ -738,75 +1014,91 @@ function EditProspectForm() {
                     type="button"
                     onClick={handleTrackCallSubmit}
                     disabled={!modalCallNotes.trim()}
-                    className="h-[28px] px-4 text-[10.5px] font-medium text-white bg-[#6b0f0f] hover:bg-[#520b0b] disabled:bg-gray-300 disabled:cursor-not-allowed rounded-md transition shadow-xs cursor-pointer inline-flex items-center gap-1.5"
+                    className="h-[28px] px-4 text-[10.5px] font-medium text-white bg-[#6b0f0f] hover:bg-[#520b0b] disabled:bg-gray-300 disabled:cursor-not-allowed rounded-md transition shadow-xs cursor-pointer"
                   >
-                    <Check className="w-3 h-3" />
-                    <span>Save & Update Action Plan</span>
+                    Save Outreach
                   </button>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
 
-              {/* BOTTOM: INTERACTION HISTORY (Derived strictly from schema fields) */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-[11px] font-bold text-[#3d0707] flex items-center gap-1.5">
-                    <HistoryIcon className="w-3.5 h-3.5 text-[#5c5757]" />
-                    Interaction History
-                  </h4>
-                  <span className="text-[10px] text-[#5c5757]">
-                    Current Status: <strong className="text-[#1c1a1a]">{formData.pipelineStatus}</strong>
-                  </span>
-                </div>
-
-                <div className="rounded-md border border-[#e3dfdf] overflow-hidden bg-white shadow-2xs">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-[#f7f6f6] border-b border-[#e3dfdf] text-[9.5px] uppercase font-semibold text-[#5c5757]">
-                        <th className="px-3.5 py-2">Milestone / Date</th>
-                        <th className="px-3.5 py-2">Status Stage</th>
-                        <th className="px-3.5 py-2">Action Plan / Notes</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#f0eeee] text-[11px]">
-                      {formData.actionPlan && (
-                        <tr className="bg-[#fdfcfc]">
-                          <td className="px-3.5 py-2 text-[#1c1a1a] font-medium whitespace-nowrap text-[10.5px]">
-                            {formData.followupDate ? `Due: ${formData.followupDate}` : "Active Follow-up"}
-                          </td>
-                          <td className="px-3.5 py-2 whitespace-nowrap">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9.5px] font-medium bg-blue-50 text-blue-700 border border-blue-200">
-                              {formData.pipelineStatus}
-                            </span>
-                          </td>
-                          <td className="px-3.5 py-2">
-                            <div className="text-[#1c1a1a] font-medium">Next Step Action Plan</div>
-                            <div className="text-[10px] text-[#5c5757] line-clamp-2 mt-0.5">
-                              {formData.actionPlan}
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                      <tr>
-                        <td className="px-3.5 py-2 text-[#5c5757] whitespace-nowrap text-[10.5px]">
-                          Initial Intake
-                        </td>
-                        <td className="px-3.5 py-2 whitespace-nowrap">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9.5px] font-medium bg-gray-100 text-gray-700 border border-gray-200">
-                            New Lead
-                          </span>
-                        </td>
-                        <td className="px-3.5 py-2">
-                          <div className="text-[#1c1a1a] font-medium">Prospect record created</div>
-                          <div className="text-[10px] text-[#5c5757] mt-0.5">
-                            Sourced via {formData.leadSource} · Target campaign: {formData.targetCampaign}
-                          </div>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
+      {/* CONFIRMATION MODAL: Send notice to Donor Care for Secured Donor */}
+      {isSecuredNoticeModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className={cn(
+            "fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4",
+            isSecuredNoticeExiting ? "modal-backdrop-out" : "modal-backdrop-in",
+          )}
+          onClick={closeSecuredNoticeModal}
+        >
+          <div
+            className={cn(
+              "w-full max-w-sm rounded-xl border border-border-soft bg-white p-5 shadow-2xl space-y-4",
+              isSecuredNoticeExiting ? "modal-content-out" : "modal-content-in",
+            )}
+            style={{ fontFamily: "var(--font-poppins), sans-serif" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-2.5">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#fdf1f1] text-[#6b0f0f] border border-[#f5c2c2]/70">
+                <CheckCircle2 className="h-4 w-4 text-[#6b0f0f]" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-text-primary">
+                  Mark as Secured Donor
+                </h3>
+                <p className="mt-0.5 text-[11px] text-text-secondary leading-normal">
+                  Send notice to Donor Care to process this transaction for <strong>{formData.prospectName || "this prospect"}</strong> for <strong>₱{Number(formData.targetAmount || 0).toLocaleString()}</strong>?
+                </p>
               </div>
             </div>
+
+            <div className="flex items-center justify-end gap-2 pt-1">
+              <button
+                type="button"
+                onClick={closeSecuredNoticeModal}
+                className="rounded-button border border-border-strong bg-white px-3 py-1.5 text-[11px] font-medium text-text-primary hover:bg-surface-soft cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmSecuredNotice}
+                className="rounded-button bg-[#6b0f0f] px-3.5 py-1.5 text-[11px] font-semibold text-white hover:bg-[#520b0b] shadow-xs cursor-pointer"
+              >
+                Confirm & Notify
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* FLOATING VIEWPORT TOAST */}
+      {floatingToast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className={cn(
+            "fixed bottom-5 right-5 z-50 flex items-start gap-3 rounded-xl border border-[#e3dfdf] bg-white p-3.5 shadow-xl transition-all duration-300 max-w-sm",
+            isToastExiting ? "toast-out" : "toast-in"
+          )}
+          style={{ fontFamily: "var(--font-poppins), sans-serif" }}
+        >
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#fdf1f1] text-[#6b0f0f] border border-[#f5c2c2]/70">
+            <CheckCircle2 className="h-4 w-4 text-[#6b0f0f]" />
+          </div>
+          <div className="flex-1 min-w-0 pr-1">
+            <p className="text-xs font-semibold text-[#1c1a1a]">
+              {floatingToast.title}
+            </p>
+            <p className="text-[11px] text-[#5c5757] leading-snug mt-0.5">
+              {floatingToast.message}
+            </p>
           </div>
         </div>
       )}
@@ -816,20 +1108,11 @@ function EditProspectForm() {
 
 export default function EditProspectPage() {
   useDocumentTitle(`${moduleName} - ${pageName}`);
-  navbarPreset.selectedTabIndex = 0;
+  const navbarPreset = getNavbarPreset(0);
 
   return (
     <AppShell navbarPreset={navbarPreset}>
-      <Suspense
-        fallback={
-          <div
-            className="w-full max-w-[954px] mx-auto py-6 text-center text-xs text-[#5c5757]"
-            style={{ fontFamily: "var(--font-poppins), sans-serif" }}
-          >
-            Loading prospect profile...
-          </div>
-        }
-      >
+      <Suspense fallback={<ProspectUpdateSkeleton />}>
         <EditProspectForm />
       </Suspense>
     </AppShell>

@@ -1,14 +1,14 @@
 "use client";
 
 import { AppShell } from "@/components/AppShell";
-import { moduleName, navbarPreset } from "@/app/preferences/struct";
+import { getNavbarPreset, moduleName } from "@/app/preferences/struct";
 import { useDocumentTitle } from "@/components/Navbar";
 
 const pageName = "Preferences";
 
 export default function PreferencesPage() {
   useDocumentTitle(`${moduleName}`);
-  navbarPreset.selectedTabIndex = 0;
+  const navbarPreset = getNavbarPreset();
 
   return (
     <AppShell navbarPreset={navbarPreset}>
