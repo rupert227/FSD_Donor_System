@@ -7,6 +7,12 @@ import { cn } from "cn";
 import { useEffect, useRef, useState } from "react";
 
 import { createClient } from "@/lib/supabase/client";
+import {
+  allowedModules,
+  isUserRole,
+  type ModuleKey,
+  type UserRole,
+} from "@/lib/access";
 
 import {
   Bell,
@@ -41,6 +47,7 @@ interface ListOption {
   href?: string;
   icon?: LucideIcon;
   action?: () => void;
+  module?: ModuleKey;
 }
 
 interface NavbarProps {
@@ -50,6 +57,7 @@ interface NavbarProps {
 interface UserProfile {
   displayName: string;
   username: string;
+  email?: string;
   description?: string;
   iconLabel?: string;
 }
@@ -59,18 +67,26 @@ const moduleOptions: ListOption[] = [
     label: "Dashboard",
     href: "/dashboard",
     icon: LayoutGrid,
+    module: "dashboard",
   },
   {
     label: "Donor Conversion",
     href: "/donor-conv/prospects",
     icon: UserPlus,
+    module: "donor-conv",
   },
   {
     label: "Donor Retention",
     href: "/donor-retn/donors",
     icon: RefreshCw,
+    module: "donor-retn",
   },
-  { label: "Donor Care", href: "/donor-care/transactions", icon: Database },
+  {
+    label: "Donor Care",
+    href: "/donor-care/transactions",
+    icon: Database,
+    module: "donor-care",
+  },
 ] as const;
 
 const moduleOptionsPlaceholder: ListOption = {
@@ -101,6 +117,13 @@ const searchBarAction = (input: string) => {
   console.log(`Searched: ${input}`);
 };
 
+// "leon_pavino" gives "LP". A single word ("admin") gives its first two letters.
+function initialsFrom(name: string): string {
+  const words = name.split(/[._\-\s]+/).filter(Boolean);
+  if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase();
+  return name.slice(0, 2).toUpperCase();
+}
+
 export function useDocumentTitle(title: string) {
   useEffect(() => {
     document.title = title;
@@ -123,11 +146,19 @@ export function Navbar({
   const [notificationCount, setNotificationCount] = useState(10);
 
   const [userProfile, setUserProfile] = useState<UserProfile>({
-    displayName: "User Profile",
-    username: "user_profile",
-    description: "Profile description",
-    iconLabel: "UP",
+    displayName: "Loading",
+    username: "loading",
+    description: "Signed-in user",
+    iconLabel: "..",
   });
+  const [role, setRole] = useState<UserRole | null>(null);
+
+  // Only the modules this role may open. Cosmetic: the proxy is what enforces it.
+  const visibleModules = role
+    ? moduleOptions.filter(
+        (option) => option.module && allowedModules(role).includes(option.module),
+      )
+    : [];
 
   const selectedModule =
     selectedModuleIndex != undefined
@@ -140,15 +171,47 @@ export function Navbar({
     ? userProfile.displayName
     : "Unknown Profile";
 
-  const username = userProfile?.username
-    ? `@${userProfile.username}`
-    : "unknown_profile";
-
   const description = userProfile?.description
     ? userProfile.description
     : "No description";
 
   const iconLabel = userProfile?.iconLabel ? userProfile.iconLabel : "?";
+
+  useEffect(() => {
+    const supabase = createClient();
+    let cancelled = false;
+
+    async function loadUser() {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user || cancelled) return;
+
+      const { data: account } = await supabase
+        .from("user_accounts")
+        .select("email_address, user_role")
+        .eq("auth_user_id", userData.user.id)
+        .maybeSingle();
+
+      if (!account || cancelled || !isUserRole(account.user_role)) return;
+
+      const email: string = account.email_address;
+      // The part before the @ stands in for a name until officer_profiles has real names.
+      const name = email.split("@")[0];
+      setRole(account.user_role);
+      setUserProfile({
+        displayName: name,
+        username: name,
+        email,
+        description: account.user_role,
+        iconLabel: initialsFrom(name),
+      });
+    }
+
+    loadUser();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!isModuleOpen) return;
@@ -255,10 +318,10 @@ export function Navbar({
                 {iconLabel}
               </p>
               <div className="ml-1.5 flex flex-col items-start leading-[1.3]">
-                <p className="text-text-primary max-w-30 truncate text-[0.75rem] font-medium whitespace-nowrap">
+                <p className="text-text-primary max-w-40 truncate text-[0.75rem] font-medium whitespace-nowrap">
                   {displayName}
                 </p>
-                <p className="text-text-secondary max-w-30 truncate text-[0.7rem] whitespace-nowrap">
+                <p className="text-text-secondary max-w-40 truncate text-[0.7rem] whitespace-nowrap">
                   {description}
                 </p>
               </div>
@@ -270,7 +333,7 @@ export function Navbar({
               />
             </button>
             {isProfileOpen && (
-              <div className="scrollbar-primary bg-surface-white overflow-0 border-border-soft absolute top-[calc(100%+1px)] right-0 z-20 max-h-100 w-50 overflow-hidden rounded-[6px] border shadow-lg">
+              <div className="scrollbar-primary bg-surface-white overflow-0 border-border-soft absolute top-[calc(100%+1px)] right-0 z-20 max-h-100 w-64 overflow-hidden rounded-[6px] border shadow-lg">
                 {profileOptions.map((option) => {
                   const Icon = option.icon ?? Dot;
 
@@ -291,13 +354,10 @@ export function Navbar({
                   );
                 })}
                 <div className="border-border-strong flex flex-col items-start border-t px-3 py-2">
-                  <p className="text-text-primary text-[0.8rem] leading-[1.3] font-medium break-all">
-                    {displayName}
+                  <p className="text-text-primary text-[0.8rem] leading-[1.3] font-medium break-words">
+                    {userProfile.email ?? displayName}
                   </p>
-                  <p className="text-text-muted mb-1 text-[0.75rem] tracking-tight break-all">
-                    {username}
-                  </p>
-                  <p className="text-text-secondary text-[0.75rem] text-wrap break-all">
+                  <p className="text-text-secondary text-[0.75rem] text-wrap">
                     {description}
                   </p>
                 </div>
@@ -328,7 +388,7 @@ export function Navbar({
           {isModuleOpen && (
             <div className="scrollbar-primary bg-surface-white border-border-soft absolute top-[calc(100%+1px)] left-0 z-20 max-h-100 max-w-75 overflow-auto rounded-[6px] border shadow-lg text-[80%] xl:text-[84%] 2xl:text-[87.5%]">
               <div className="w-max">
-                {moduleOptions.map((option) => {
+                {visibleModules.map((option) => {
                   const Icon = option.icon ?? Dot;
                   const isSelected = option.label === selectedModule.label;
 
