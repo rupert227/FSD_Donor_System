@@ -621,7 +621,14 @@ function ProposalBuilderForm({
           )}
           {savedProposalId !== null && (
             <p role="status" className="text-[13px] font-medium">
-              Proposal saved (no. {savedProposalId}).
+              Proposal saved (no. {savedProposalId}).{" "}
+              {/* The next step: the Send screen (DTI0-35) opens this saved proposal. */}
+              <Link
+                href={`/donor-conv/proposals/send-proposal?proposalId=${savedProposalId}`}
+                className="text-brand-primary cursor-pointer underline"
+              >
+                Send proposal
+              </Link>
             </p>
           )}
           <div className="flex justify-end gap-2">
