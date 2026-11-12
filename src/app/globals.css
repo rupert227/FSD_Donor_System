@@ -104,6 +104,41 @@
     }
   }
 
+  @keyframes toastFadeIn {
+    0% {
+      opacity: 0;
+      transform: translateY(16px) scale(0.96);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes toastFadeOut {
+    0% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(12px) scale(0.96);
+    }
+  }
+
+  .toast-in,
+  .toast-animate-in {
+    animation: toastFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    will-change: transform, opacity;
+  }
+
+  .toast-out,
+  .toast-animate-out {
+    animation: toastFadeOut 0.22s cubic-bezier(0.4, 0, 1, 1) forwards;
+    pointer-events: none;
+    will-change: transform, opacity;
+  }
+
   .modal-backdrop-in {
     animation: modalBackdropFadeIn 0.2s ease-out forwards;
   }
@@ -278,6 +313,7 @@
 html,
 body {
   font-family: var(--font-ibm-plex-sans), sans-serif;
+  background-color: var(--content-background);
   overflow-x: auto;
   min-width: 48rem;
 }

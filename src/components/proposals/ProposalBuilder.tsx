@@ -4,10 +4,12 @@ import {
   type ComponentProps,
   type ReactNode,
   useEffect,
+  useMemo,
   useState,
   useSyncExternalStore,
 } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   Check,
   ChevronDown,
@@ -127,7 +129,44 @@ const toggleClass =
   "border-border-strong hover:bg-surface-soft-hover inline-flex h-8 cursor-pointer items-center rounded-[6px] border px-3 text-[13px] font-medium";
 
 export function ProposalBuilder() {
-  const [prospectId, setProspectId] = useState(eligibleProspects[0].id);
+  const searchParams = useSearchParams();
+  const queryId = searchParams.get("id") ?? searchParams.get("prospectId");
+  const queryProspect = searchParams.get("prospect");
+
+  const requestedProspect = useMemo(() => {
+    return SAMPLE_LEADS.find((p) => {
+      if (queryId && String(p.id) === queryId) return true;
+      if (
+        queryProspect &&
+        p.prospect_name.trim().toLowerCase() === queryProspect.trim().toLowerCase()
+      )
+        return true;
+      return false;
+    });
+  }, [queryId, queryProspect]);
+
+  const availableProspects = useMemo(() => {
+    if (
+      requestedProspect &&
+      !eligibleProspects.some((p) => p.id === requestedProspect.id)
+    ) {
+      return [requestedProspect, ...eligibleProspects];
+    }
+    return eligibleProspects;
+  }, [requestedProspect]);
+
+  const defaultProspectId = requestedProspect
+    ? requestedProspect.id
+    : availableProspects[0]?.id ?? eligibleProspects[0].id;
+
+  const [prospectId, setProspectId] = useState(defaultProspectId);
+
+  useEffect(() => {
+    if (requestedProspect) {
+      setProspectId(requestedProspect.id);
+    }
+  }, [requestedProspect]);
+
   const [templateId, setTemplateId] = useState(sampleTemplates[0].id);
   const [signatoryId, setSignatoryId] = useState(sampleSignatories[0].id);
   // The date the officer picked. null means "use today's date".
@@ -158,7 +197,9 @@ export function ProposalBuilder() {
 
   // Look up the full records from the chosen ids.
   const prospect =
-    eligibleProspects.find((p) => p.id === prospectId) ?? eligibleProspects[0];
+    availableProspects.find((p) => p.id === prospectId) ??
+    eligibleProspects.find((p) => p.id === prospectId) ??
+    eligibleProspects[0];
   const template =
     sampleTemplates.find((t) => t.id === templateId) ?? sampleTemplates[0];
   const signatory =
@@ -274,7 +315,7 @@ export function ProposalBuilder() {
                 changeChoice(() => setProspectId(value));
               }}
             >
-              {eligibleProspects.map((p) => (
+              {availableProspects.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.prospect_name}
                 </option>

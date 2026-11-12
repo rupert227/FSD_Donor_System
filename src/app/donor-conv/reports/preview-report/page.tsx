@@ -5,7 +5,7 @@ import Image from "next/image";
 import { AppShell } from "@/components/AppShell";
 import { ChevronLeft, Download, Loader } from "lucide-react";
 import { Leads } from "@/lib/types";
-import { LoadingScreen } from "@/components/prefabs";
+import ReportPreviewSkeleton from "./skeleton";
 import { cn } from "cn";
 import { getNavbarPreset, moduleName } from "@/app/donor-conv/struct";
 import { useDocumentTitle } from "@/components/Navbar";
@@ -36,15 +36,18 @@ export default function PreviewReportPage() {
   const [canReturnToReports, setCanReturnToReports] = useState(true);
   const [reportContent, setReportContent] = useState<Leads.Report>();
   const [reportIsReady, setReportIsReady] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const content = window.sessionStorage.getItem(previewStorageKey);
 
-    if (!content) return;
-
-    setReportContent(JSON.parse(content) as Leads.Report);
-    setCanReturnToReports(true);
-    setReportIsReady(true);
+    if (content) {
+      setReportContent(JSON.parse(content) as Leads.Report);
+      setCanReturnToReports(true);
+      setReportIsReady(true);
+    }
+    const timer = setTimeout(() => setIsLoading(false), 280);
+    return () => clearTimeout(timer);
   }, []);
   
   const report = reportContent ?? Leads.emptyReport;
@@ -75,43 +78,41 @@ export default function PreviewReportPage() {
 
   return (
     <AppShell navbarPreset={navbarPreset}>
-      <div className="flex w-full flex-1 flex-col">
-        <div className="no-print flex justify-end">
-          <div className="align-end flex items-center gap-3">
-            {!canReturnToReports && (
-              <div className="flex items-center justify-center gap-1 overflow-hidden">
-                <Loader className="text-brand-primary h-4 w-4 shrink-0 animate-spin" />
-                <p className="text-text-secondary text-[0.9rem]">
-                  Returning to Reports
-                </p>
-              </div>
-            )}
-            <button
-              type="button"
-              disabled={!canReturnToReports}
-              onClick={backToReportsAction}
-              className="border-border-soft text-text-primary enabled:hover:bg-surface-soft-hover bg-surface-white rounded-button disabled:opacity-button-disabled flex h-9 cursor-pointer items-center gap-1 border px-3 py-2 text-[0.75rem] font-medium disabled:cursor-not-allowed"
-            >
-              <ChevronLeft className="h-5 w-5" />
-              Back to Reports
-            </button>
-            <button
-              type="button"
-              disabled={!reportIsReady}
-              onClick={downloadPDFAction}
-              className="border-brand-primary bg-brand-primary text-surface-white rounded-button disabled:opacity-button-disabled inline-flex cursor-pointer items-center gap-2 border px-3 py-2 text-[0.75rem] font-medium enabled:hover:opacity-80 disabled:cursor-not-allowed"
-            >
-              <Download className="h-5 w-5" />
-              Download PDF
-            </button>
+      {isLoading || !reportIsReady ? (
+        <ReportPreviewSkeleton />
+      ) : (
+        <div className="flex w-full flex-1 flex-col animate-in fade-in duration-300">
+          <div className="no-print flex justify-end">
+            <div className="align-end flex items-center gap-3">
+              {!canReturnToReports && (
+                <div className="flex items-center justify-center gap-1 overflow-hidden">
+                  <Loader className="text-brand-primary h-4 w-4 shrink-0 animate-spin" />
+                  <p className="text-text-secondary text-[0.9rem]">
+                    Returning to Reports
+                  </p>
+                </div>
+              )}
+              <button
+                type="button"
+                disabled={!canReturnToReports}
+                onClick={backToReportsAction}
+                className="border-border-soft text-text-primary enabled:hover:bg-surface-soft-hover bg-surface-white rounded-button disabled:opacity-button-disabled flex h-9 cursor-pointer items-center gap-1 border px-3 py-2 text-[0.75rem] font-medium disabled:cursor-not-allowed"
+              >
+                <ChevronLeft className="h-5 w-5" />
+                Back to Reports
+              </button>
+              <button
+                type="button"
+                disabled={!reportIsReady}
+                onClick={downloadPDFAction}
+                className="border-brand-primary bg-brand-primary text-surface-white rounded-button disabled:opacity-button-disabled inline-flex cursor-pointer items-center gap-2 border px-3 py-2 text-[0.75rem] font-medium enabled:hover:opacity-80 disabled:cursor-not-allowed"
+              >
+                <Download className="h-5 w-5" />
+                Download PDF
+              </button>
+            </div>
           </div>
-        </div>
 
-        {!reportIsReady ? (
-          <div className="flex flex-1">
-            <LoadingScreen label="Generating PDF Report" />
-          </div>
-        ) : (
           <div className="mt-6">
             <div className="mx-auto max-w-275 break-all">
               <div className="pdf-sheet bg-surface-white mx-auto p-10 shadow-lg">
@@ -326,8 +327,8 @@ export default function PreviewReportPage() {
               Set paper size and custom scale to match content during export.
             </p>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </AppShell>
   );
 }
