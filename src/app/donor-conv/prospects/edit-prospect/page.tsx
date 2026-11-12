@@ -271,6 +271,8 @@ function EditProspectForm() {
   });
 
   const [isLoading, setIsLoading] = useState(true);
+  // True when ?id= does not match a prospect, so no blank form is shown for it.
+  const [notFound, setNotFound] = useState(false);
   const [proposalRecord, setProposalRecord] = useState<ProposalRecord | null>(null);
 
   useEffect(() => {
@@ -290,6 +292,8 @@ function EditProspectForm() {
 
         if (isCancelled) return;
         setProposalRecord(dbProposal);
+
+        if (!dbLead) setNotFound(true);
 
         if (dbLead) {
           setFormData({
@@ -642,6 +646,17 @@ function EditProspectForm() {
 
   if (isLoading) {
     return <ProspectUpdateSkeleton canWrite={canWrite} />;
+  }
+
+  if (notFound) {
+    return (
+      <div className="mx-auto w-[75%] space-y-3 py-8 text-sm" role="alert">
+        <p>That prospect was not found. Open one from the prospects list.</p>
+        <Link href="/donor-conv/prospects" className="text-[#6b0f0f] underline">
+          Back to prospects
+        </Link>
+      </div>
+    );
   }
 
   return (
