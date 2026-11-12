@@ -3,11 +3,12 @@
 import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Check, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Check, CheckCircle2, Users, X } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { cn } from "cn";
 import { getNavbarPreset, moduleName } from "@/app/donor-conv/struct";
 import { useDocumentTitle } from "@/components/Navbar";
+import { useUserRole } from "@/lib/use-user-role";
 import { SAMPLE_LEADS, type LeadDetail } from "@supabase/seeds/prospects-seed";
 import type { PipelineStatusEnum } from "@/types";
 import {
@@ -17,6 +18,14 @@ import {
   ProspectUpdateSkeleton,
 } from "../_components";
 import { calculateProspectProbability } from "../utils/prospect-score";
+import {
+  getProspectById,
+  updateProspect,
+  recordOutreachActivity,
+  getOutreachActivities,
+  notifyDonorCareSecured,
+} from "@/lib/prospects/actions";
+import { showToast, setPendingToast } from "@/lib/toast";
 
 const pageName = "Edit Prospect";
 
@@ -49,12 +58,22 @@ interface OutreachEntry {
   status: PipelineStatusEnum;
   followupDate?: string;
   notes: string;
+  authorOfficer?: string;
 }
 
 function EditProspectForm() {
   const router = useRouter();
+  const { role, officerName, canWriteModule } = useUserRole();
+  const canWrite = canWriteModule("donor-conv");
   const searchParams = useSearchParams();
   const idParam = searchParams.get("id");
+  const fromParam = searchParams.get("from");
+  const returnUrl =
+    fromParam === "board"
+      ? "/donor-conv/prospects/pipeline-board"
+      : "/donor-conv/prospects";
+  const returnLabel =
+    fromParam === "board" ? "Back to Pipeline Board" : "Back to Prospects";
 
   // Enforce zero horizontal page scroll and responsiveness strictly on this page
   useEffect(() => {
@@ -83,6 +102,7 @@ function EditProspectForm() {
 
   const matchedLead: LeadDetail =
     SAMPLE_LEADS.find((lead) => String(lead.id) === idParam) ?? SAMPLE_LEADS[0];
+  const prospectId = idParam || String(matchedLead.id);
 
   const [formData, setFormData] = useState<{
     prospectName: string;
@@ -120,6 +140,28 @@ function EditProspectForm() {
     actionPlan: matchedLead.action_plan,
   });
 
+  const isAssignedOwner = Boolean(
+    officerName &&
+      formData.assignedOfficer &&
+      (officerName.toLowerCase().includes(formData.assignedOfficer.toLowerCase()) ||
+        formData.assignedOfficer.toLowerCase().includes(officerName.toLowerCase()) ||
+        (officerName.toLowerCase().includes("reyes") && formData.assignedOfficer.includes("Reyes")) ||
+        (officerName.toLowerCase().includes("tan") && formData.assignedOfficer.includes("Tan")) ||
+        (officerName.toLowerCase().includes("cruz") && formData.assignedOfficer.includes("Cruz")))
+  );
+
+  const isPeerCollaborator =
+    canWrite &&
+    role === "Conversion Officer" &&
+    !isAssignedOwner &&
+    Boolean(formData.assignedOfficer);
+
+  const canReassignOwner =
+    canWrite &&
+    (role === "System Administrator" ||
+      role === "Donor Care Officer" ||
+      isAssignedOwner);
+
   const [activeTab, setActiveTab] = useState<"details" | "proposals" | "history">("details");
   const [isTrackCallOpen, setIsTrackCallOpen] = useState(false);
   const [isOutreachModalExiting, setIsOutreachModalExiting] = useState(false);
@@ -134,11 +176,6 @@ function EditProspectForm() {
 
   const [isSecuredNoticeModalOpen, setIsSecuredNoticeModalOpen] = useState(false);
   const [isSecuredNoticeExiting, setIsSecuredNoticeExiting] = useState(false);
-  const [floatingToast, setFloatingToast] = useState<{
-    title: string;
-    message: string;
-  } | null>(null);
-  const [isToastExiting, setIsToastExiting] = useState(false);
 
   const closeSecuredNoticeModal = React.useCallback(() => {
     setIsSecuredNoticeExiting(true);
@@ -153,8 +190,6 @@ function EditProspectForm() {
     matchedLead.pipeline_status === "New Lead" ? "Outreach Started" : (matchedLead.pipeline_status as PipelineStatusEnum)
   );
 
-  const [saveSuccessMessage, setSaveSuccessMessage] = useState<string | null>(null);
-
   const [historyRecords, setHistoryRecords] = useState<OutreachEntry[]>(() => {
     const list: OutreachEntry[] = [];
     if (matchedLead.action_plan) {
@@ -164,6 +199,7 @@ function EditProspectForm() {
         status: (matchedLead.pipeline_status as PipelineStatusEnum) || "Outreach Started",
         followupDate: matchedLead.target_followup_date || undefined,
         notes: matchedLead.action_plan,
+        authorOfficer: matchedLead.assigned_officer || "Officer J. Reyes",
       });
     }
     list.push({
@@ -172,6 +208,7 @@ function EditProspectForm() {
       status: "New Lead",
       followupDate: undefined,
       notes: "Prospect profile created",
+      authorOfficer: matchedLead.assigned_officer || "Officer J. Reyes",
     });
     return list;
   });
@@ -190,32 +227,78 @@ function EditProspectForm() {
     targetAmount: formData.targetAmount,
   });
 
+  const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
-    if (matchedLead) {
-      setFormData({
-        prospectName: matchedLead.prospect_name,
-        donorType: matchedLead.donor_type,
-        leadSource: matchedLead.lead_source,
-        contactPerson: matchedLead.primary_contact_person,
-        designation: matchedLead.title_designation,
-        email: matchedLead.email_address ?? "",
-        phone: matchedLead.phone_number,
-        streetAddress: matchedLead.street_address,
-        cityProvince: matchedLead.city_province,
-        targetCampaign: matchedLead.target_campaign,
-        targetAmount: String(matchedLead.target_amount),
-        pipelineStatus: matchedLead.pipeline_status as PipelineStatusEnum,
-        probability: matchedLead.probability,
-        assignedOfficer: matchedLead.assigned_officer,
-        followupDate: matchedLead.target_followup_date ?? "",
-        actionPlan: matchedLead.action_plan,
-      });
-      setModalFollowupDate(matchedLead.target_followup_date ?? "");
-      setModalStage(
-        matchedLead.pipeline_status === "New Lead" ? "Outreach Started" : (matchedLead.pipeline_status as PipelineStatusEnum)
-      );
+    let isCancelled = false;
+
+    async function loadData() {
+      if (!idParam) {
+        setIsLoading(false);
+        return;
+      }
+      try {
+        const [dbLead, dbActivities] = await Promise.all([
+          getProspectById(idParam),
+          getOutreachActivities(idParam),
+        ]);
+
+        if (isCancelled) return;
+
+        if (dbLead) {
+          setFormData({
+            prospectName: dbLead.prospect_name,
+            donorType: dbLead.donor_type,
+            leadSource: dbLead.lead_source,
+            contactPerson: dbLead.primary_contact_person,
+            designation: dbLead.title_designation,
+            email: dbLead.email_address ?? "",
+            phone: dbLead.phone_number,
+            streetAddress: dbLead.street_address,
+            cityProvince: dbLead.city_province,
+            targetCampaign: dbLead.target_campaign,
+            targetAmount: String(dbLead.target_amount),
+            pipelineStatus: dbLead.pipeline_status as PipelineStatusEnum,
+            probability: dbLead.probability,
+            assignedOfficer: dbLead.assigned_officer,
+            followupDate: dbLead.target_followup_date ?? "",
+            actionPlan: dbLead.action_plan,
+          });
+          setModalFollowupDate(dbLead.target_followup_date ?? "");
+          setModalStage(
+            dbLead.pipeline_status === "New Lead"
+              ? "Outreach Started"
+              : (dbLead.pipeline_status as PipelineStatusEnum)
+          );
+        }
+
+        if (dbActivities && dbActivities.length > 0) {
+          setHistoryRecords(
+            dbActivities.map((a) => ({
+              id: String(a.id),
+              dateTime: a.dateTime,
+              status: a.status,
+              followupDate: a.followupDate,
+              notes: a.notes,
+              authorOfficer: dbLead?.assigned_officer || undefined,
+            }))
+          );
+        }
+      } catch (err) {
+        console.error("Error loading prospect from DB:", err);
+      } finally {
+        if (!isCancelled) {
+          setIsLoading(false);
+        }
+      }
     }
-  }, [idParam, matchedLead]);
+
+    loadData();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [idParam]);
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -235,38 +318,62 @@ function EditProspectForm() {
     setIsSecuredNoticeModalOpen(true);
   };
 
-  const handleConfirmSecuredNotice = () => {
+  const handleConfirmSecuredNotice = async () => {
     setFormData((prev) => ({
       ...prev,
       pipelineStatus: "Secured Donor",
       probability: "100",
     }));
     closeSecuredNoticeModal();
-    setFloatingToast({
+
+    try {
+      await updateProspect(prospectId, {
+        ...formData,
+        pipelineStatus: "Secured Donor",
+        probability: "100",
+      });
+      await notifyDonorCareSecured(
+        prospectId,
+        formData.prospectName,
+        formData.targetAmount
+      );
+    } catch (err) {
+      console.error("Error securing donor in DB:", err);
+    }
+
+    const noticeToast = {
       title: "Notice Sent",
       message: `Notice sent to Donor Care to process transaction for "${formData.prospectName || "this prospect"}" for ₱${Number(formData.targetAmount || 0).toLocaleString()}.`,
-    });
-    setTimeout(() => {
-      router.push("/donor-conv/prospects");
-    }, 600);
+      type: "success" as const,
+    };
+    showToast(noticeToast);
+    setPendingToast(noticeToast);
+    router.push(returnUrl);
   };
 
-  const handleSaveForm = (e?: React.FormEvent | React.MouseEvent) => {
+  const handleSaveForm = async (e?: React.FormEvent | React.MouseEvent) => {
     if (e) e.preventDefault();
-    if (formData.pipelineStatus === "Secured Donor") {
-      setIsSecuredNoticeModalOpen(true);
-      return;
+
+    try {
+      await updateProspect(prospectId, {
+        ...formData,
+        probability: prospectScore.tier,
+      });
+    } catch (err) {
+      console.error("Error saving prospect in DB:", err);
     }
-    setFloatingToast({
+
+    const savedToast = {
       title: "Profile Updated",
       message: `Profile changes for "${formData.prospectName || "this prospect"}" saved successfully!`,
-    });
-    setTimeout(() => {
-      router.push("/donor-conv/prospects");
-    }, 600);
+      type: "success" as const,
+    };
+    showToast(savedToast);
+    setPendingToast(savedToast);
+    router.push(returnUrl);
   };
 
-  const handleTrackCallSubmit = (e: React.FormEvent) => {
+  const handleTrackCallSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!modalCallNotes.trim()) return;
 
@@ -280,12 +387,17 @@ function EditProspectForm() {
       hour12: true,
     });
 
+    const currentAuthor =
+      officerName ||
+      (role === "Conversion Officer" ? "Officer J. Reyes" : "Officer");
+
     const newEntry: OutreachEntry = {
       id: `outreach-${Date.now()}`,
       dateTime: formattedDateTime,
       status: modalStage,
       followupDate: modalFollowupDate || undefined,
       notes: modalCallNotes.trim(),
+      authorOfficer: currentAuthor,
     };
 
     setHistoryRecords((prev) => [newEntry, ...prev]);
@@ -304,23 +416,33 @@ function EditProspectForm() {
       ),
     }));
 
+    try {
+      await recordOutreachActivity(prospectId, {
+        status: modalStage,
+        followupDate: modalFollowupDate || undefined,
+        notes: modalCallNotes.trim(),
+        probabilityTier: calculateProspectProbability({
+          ...formData,
+          pipelineStatus: modalStage,
+        }).tier,
+      });
+    } catch (err) {
+      console.error("Error recording outreach in DB:", err);
+    }
+
     setModalCallNotes("");
     closeOutreachModal();
-    setSaveSuccessMessage("Outreach recorded and added to history!");
-    setTimeout(() => setSaveSuccessMessage(null), 3500);
+    showToast({
+      title: "Outreach Recorded",
+      message: "Outreach activity logged and added to history!",
+      type: "success",
+    });
   };
-
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 320);
-    return () => clearTimeout(timer);
-  }, []);
 
   const currentStageIndex = PIPELINE_STAGES.indexOf(formData.pipelineStatus);
 
   if (isLoading) {
-    return <ProspectUpdateSkeleton />;
+    return <ProspectUpdateSkeleton canWrite={canWrite} />;
   }
 
   return (
@@ -339,23 +461,22 @@ function EditProspectForm() {
       {/* Back Link */}
       <div className="flex items-center text-[0.6875rem] text-[#5c5757]">
         <Link
-          href="/donor-conv/prospects"
+          href={returnUrl}
           className="flex items-center gap-1 text-[#5c5757] hover:text-[#6b0f0f] transition-colors"
         >
           <ArrowLeft className="h-3 w-3" />
-          <span>Back to Prospects</span>
+          <span>{returnLabel}</span>
         </Link>
       </div>
 
-      {saveSuccessMessage && (
-        <div className="bg-[#ebf7ef] border border-[#bbf7d0] text-[#166534] px-4 py-2 rounded-md text-[0.71875rem] flex items-center justify-between">
-          <span>{saveSuccessMessage}</span>
-          <button
-            onClick={() => setSaveSuccessMessage(null)}
-            className="text-[#166534] hover:text-[#14532d] ml-2 font-bold cursor-pointer"
-          >
-            ×
-          </button>
+      {/* COLLABORATIVE EDITING NOTICE */}
+      {isPeerCollaborator && (
+        <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50/70 px-4 py-2 text-[0.71875rem] text-amber-900 shadow-2xs">
+          <Users className="h-4 w-4 shrink-0 text-amber-700" />
+          <span>
+            <strong>Collaborative Editing:</strong> This prospect is assigned to{" "}
+            <strong>{formData.assignedOfficer}</strong>. As a unit teammate, you can update notes, touchpoints, and contact details. All outreach activity will be attributed to you ({officerName || "Current Officer"}).
+          </span>
         </div>
       )}
 
@@ -372,32 +493,40 @@ function EditProspectForm() {
 
           {/* Action Buttons - In one horizontal line/row only always */}
           <div className="flex flex-row items-center gap-1.5 sm:gap-2 flex-nowrap w-full min-[1100px]:w-auto">
-            <button
-              type="button"
-              onClick={() => {
-                setModalFollowupDate(formData.followupDate);
-                setModalStage(
-                  formData.pipelineStatus === "New Lead" ? "Outreach Started" : formData.pipelineStatus
-                );
-                setIsTrackCallOpen(true);
-              }}
-              className="flex-1 min-[1100px]:flex-initial h-[26px] sm:h-[30px] px-2 sm:px-3 text-[0.59375rem] sm:text-[0.6875rem] font-medium text-[#1c1a1a] bg-white border border-[#d1d5db] rounded-md hover:bg-[#f7f6f6] transition shadow-xs cursor-pointer inline-flex items-center justify-center whitespace-nowrap min-w-0"
-            >
-              Record outreach
-            </button>
-            <button
-              type="button"
-              onClick={handleMarkAsSecured}
-              className="flex-1 min-[1100px]:flex-initial h-[26px] sm:h-[30px] px-2 sm:px-3 text-[0.59375rem] sm:text-[0.6875rem] font-medium text-[#1c1a1a] bg-white border border-[#d1d5db] rounded-md hover:bg-[#f7f6f6] transition shadow-xs cursor-pointer inline-flex items-center justify-center whitespace-nowrap min-w-0"
-            >
-              Mark as secured
-            </button>
-            <Link
-              href="/donor-conv/proposals/send-proposal"
-              className="flex-1 min-[1100px]:flex-initial h-[26px] sm:h-[30px] px-2 sm:px-3 inline-flex items-center justify-center text-[0.59375rem] sm:text-[0.6875rem] font-medium text-[#6b0f0f] bg-white border border-[#6b0f0f] rounded-md hover:bg-[#fdf1f1] transition shadow-xs cursor-pointer whitespace-nowrap min-w-0"
-            >
-              Generate proposal
-            </Link>
+            {canWrite ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setModalFollowupDate(formData.followupDate);
+                    setModalStage(
+                      formData.pipelineStatus === "New Lead" ? "Outreach Started" : formData.pipelineStatus
+                    );
+                    setIsTrackCallOpen(true);
+                  }}
+                  className="flex-1 min-[1100px]:flex-initial h-[26px] sm:h-[30px] px-2 sm:px-3 text-[0.59375rem] sm:text-[0.6875rem] font-medium text-[#1c1a1a] bg-white border border-[#d1d5db] rounded-md hover:bg-[#f7f6f6] transition shadow-xs cursor-pointer inline-flex items-center justify-center whitespace-nowrap min-w-0"
+                >
+                  Record outreach
+                </button>
+                <button
+                  type="button"
+                  onClick={handleMarkAsSecured}
+                  className="flex-1 min-[1100px]:flex-initial h-[26px] sm:h-[30px] px-2 sm:px-3 text-[0.59375rem] sm:text-[0.6875rem] font-medium text-[#1c1a1a] bg-white border border-[#d1d5db] rounded-md hover:bg-[#f7f6f6] transition shadow-xs cursor-pointer inline-flex items-center justify-center whitespace-nowrap min-w-0"
+                >
+                  Mark as secured
+                </button>
+                <Link
+                  href={`/donor-conv/proposals?id=${prospectId}`}
+                  className="flex-1 min-[1100px]:flex-initial h-[26px] sm:h-[30px] px-2 sm:px-3 inline-flex items-center justify-center text-[0.59375rem] sm:text-[0.6875rem] font-medium text-[#6b0f0f] bg-white border border-[#6b0f0f] rounded-md hover:bg-[#fdf1f1] transition shadow-xs cursor-pointer whitespace-nowrap min-w-0"
+                >
+                  Generate proposal
+                </Link>
+              </>
+            ) : (
+              <span className="h-[26px] sm:h-[30px] px-3 inline-flex items-center justify-center rounded-md bg-gray-100 text-xs font-medium text-gray-500 border border-gray-200 select-none">
+                View only
+              </span>
+            )}
           </div>
         </div>
 
@@ -730,15 +859,22 @@ function EditProspectForm() {
                 <label className="block text-[0.65625rem] font-medium text-[#5c5757] mb-0.5">
                   Assigned Officer
                 </label>
-                <ProspectSelectMenu
-                  value={formData.assignedOfficer}
-                  onChange={(val) =>
-                    setFormData((prev) => ({ ...prev, assignedOfficer: val as any }))
-                  }
-                  options={ASSIGNED_OFFICER_OPTIONS}
-                  placeholder="Select officer"
-                  direction="up"
-                />
+                {canReassignOwner ? (
+                  <ProspectSelectMenu
+                    value={formData.assignedOfficer}
+                    onChange={(val) =>
+                      setFormData((prev) => ({ ...prev, assignedOfficer: val as any }))
+                    }
+                    options={ASSIGNED_OFFICER_OPTIONS}
+                    placeholder="Select officer"
+                    direction="up"
+                  />
+                ) : (
+                  <div className="flex h-[30px] sm:h-[32px] w-full items-center justify-between rounded-md border border-[#e3dfdf] bg-[#faf9f9] px-2.5 py-1 text-[0.6875rem] font-medium text-[#1c1a1a]">
+                    <span>{formData.assignedOfficer || "—"}</span>
+                    <span className="text-[0.625rem] text-[#8a8484] font-normal">Primary owner</span>
+                  </div>
+                )}
               </div>
 
               <div>
@@ -758,23 +894,25 @@ function EditProspectForm() {
           </div>
         </div>
 
-        {/* Card Footer Actions */}
-        <div className="flex items-center justify-end gap-2 border-t border-[#e3dfdf] px-5 sm:px-6 py-2.5 bg-white">
-          <button
-            type="button"
-            onClick={() => router.push("/donor-conv/prospects")}
-            className="h-[30px] px-3.5 text-[0.6875rem] font-medium text-[#1c1a1a] bg-white border border-[#d1d5db] rounded-md hover:bg-[#f7f6f6] transition shadow-xs cursor-pointer"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            onClick={handleSaveForm}
-            className="h-[30px] px-4 text-[0.6875rem] font-medium text-white bg-[#6b0f0f] hover:bg-[#520b0b] rounded-md transition shadow-xs cursor-pointer"
-          >
-            Update Profile
-          </button>
-        </div>
+        {/* Card Footer Actions - only visible for conversion officers with write access */}
+        {canWrite && (
+          <div className="flex items-center justify-end gap-2 border-t border-[#e3dfdf] px-5 sm:px-6 py-2.5 bg-white">
+            <button
+              type="button"
+              onClick={() => router.push(returnUrl)}
+              className="h-[30px] px-3.5 text-[0.6875rem] font-medium text-[#1c1a1a] bg-white border border-[#d1d5db] rounded-md hover:bg-[#f7f6f6] transition shadow-xs cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveForm}
+              className="h-[30px] px-4 text-[0.6875rem] font-medium text-white bg-[#6b0f0f] hover:bg-[#520b0b] rounded-md transition shadow-xs cursor-pointer"
+            >
+              Update Profile
+            </button>
+          </div>
+        )}
       </form>
     )}
 
@@ -825,7 +963,7 @@ function EditProspectForm() {
                 </td>
                 <td className="px-3.5 py-2 text-right whitespace-nowrap">
                   <Link
-                    href={`/donor-conv/proposals?prospect=${encodeURIComponent(formData.prospectName)}`}
+                    href={`/donor-conv/proposals?id=${prospectId}&prospect=${encodeURIComponent(formData.prospectName)}`}
                     className="text-[0.65625rem] font-medium text-[#6b0f0f] hover:underline inline-flex items-center gap-1"
                   >
                     <span>View Document</span>
@@ -854,9 +992,10 @@ function EditProspectForm() {
           <table className="w-full min-w-[500px] text-left border-collapse">
             <thead>
               <tr className="bg-[#f7f6f6] border-b border-[#e3dfdf] text-[0.59375rem] uppercase font-semibold text-[#5c5757]">
-                <th className="px-3.5 py-2 w-[160px]">Date & Time</th>
-                <th className="px-3.5 py-2 w-[140px]">Status</th>
-                <th className="px-3.5 py-2 w-[130px]">Next Follow-up</th>
+                <th className="px-3.5 py-2 w-[150px]">Date & Time</th>
+                <th className="px-3.5 py-2 w-[130px]">Logged By</th>
+                <th className="px-3.5 py-2 w-[130px]">Status</th>
+                <th className="px-3.5 py-2 w-[120px]">Next Follow-up</th>
                 <th className="px-3.5 py-2">Notes & Action Plan</th>
               </tr>
             </thead>
@@ -869,6 +1008,20 @@ function EditProspectForm() {
                   <tr key={record.id} className="hover:bg-[#faf9f9] transition-colors align-top">
                     <td className="px-3.5 py-2.5 text-[#5c5757] whitespace-nowrap text-[0.65625rem]">
                       {record.dateTime}
+                    </td>
+                    <td className="px-3.5 py-2.5 text-[#1c1a1a] font-medium whitespace-nowrap text-[0.65625rem]">
+                      {record.authorOfficer ? (
+                        <span className="inline-flex items-center gap-1">
+                          <span>{record.authorOfficer}</span>
+                          {record.authorOfficer !== formData.assignedOfficer && (
+                            <span className="rounded bg-sky-50 px-1 py-0.2 text-[0.59375rem] font-normal text-sky-700 border border-sky-200">
+                              Collaborator
+                            </span>
+                          )}
+                        </span>
+                      ) : (
+                        <span>{formData.assignedOfficer || "Assigned Officer"}</span>
+                      )}
                     </td>
                     <td className="px-3.5 py-2.5 whitespace-nowrap">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[0.59375rem] font-medium border ${
@@ -1078,32 +1231,14 @@ function EditProspectForm() {
         </div>
       )}
 
-      {/* FLOATING VIEWPORT TOAST */}
-      {floatingToast && (
-        <div
-          role="status"
-          aria-live="polite"
-          className={cn(
-            "fixed bottom-5 right-5 z-50 flex items-start gap-3 rounded-xl border border-[#e3dfdf] bg-white p-3.5 shadow-xl transition-all duration-300 max-w-sm",
-            isToastExiting ? "toast-out" : "toast-in"
-          )}
-          style={{ fontFamily: "var(--font-poppins), sans-serif" }}
-        >
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#fdf1f1] text-[#6b0f0f] border border-[#f5c2c2]/70">
-            <CheckCircle2 className="h-4 w-4 text-[#6b0f0f]" />
-          </div>
-          <div className="flex-1 min-w-0 pr-1">
-            <p className="text-xs font-semibold text-[#1c1a1a]">
-              {floatingToast.title}
-            </p>
-            <p className="text-[0.6875rem] text-[#5c5757] leading-snug mt-0.5">
-              {floatingToast.message}
-            </p>
-          </div>
-        </div>
-      )}
     </div>
   );
+}
+
+function EditProspectLoader() {
+  const searchParams = useSearchParams();
+  const idParam = searchParams.get("id");
+  return <EditProspectForm key={idParam ?? "default"} />;
 }
 
 export default function EditProspectPage() {
@@ -1113,7 +1248,7 @@ export default function EditProspectPage() {
   return (
     <AppShell navbarPreset={navbarPreset}>
       <Suspense fallback={<ProspectUpdateSkeleton />}>
-        <EditProspectForm />
+        <EditProspectLoader />
       </Suspense>
     </AppShell>
   );

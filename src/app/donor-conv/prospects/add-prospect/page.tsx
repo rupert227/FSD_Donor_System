@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { getNavbarPreset, moduleName } from "@/app/donor-conv/struct";
 import { useDocumentTitle } from "@/components/Navbar";
+import { useUserRole } from "@/lib/use-user-role";
 
 const pageName = "Add Prospect";
 import {
@@ -16,6 +17,8 @@ import {
   ProspectCreateSkeleton,
 } from "../_components";
 import { calculateProspectProbability } from "../utils/prospect-score";
+import { createProspect } from "@/lib/prospects/actions";
+import { setPendingToast } from "@/lib/toast";
 
 const DONOR_TYPE_OPTIONS = ["corporate", "individual", "community", "international"];
 const LEAD_SOURCE_OPTIONS = ["Research", "Booths", "Direct Call", "Referral", "Walk-in"];
@@ -39,10 +42,19 @@ const ASSIGNED_OFFICER_OPTIONS = [
   "Officer M. Cruz",
 ];
 
-export default function AddProspectPage() {
-  useDocumentTitle(`${moduleName} - ${pageName}`);
-  const navbarPreset = getNavbarPreset(0);
+function AddProspectForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { role, officerName, canWriteModule } = useUserRole();
+  const canWrite = canWriteModule("donor-conv");
+  const fromParam = searchParams.get("from");
+  const returnUrl =
+    fromParam === "board"
+      ? "/donor-conv/prospects/pipeline-board"
+      : "/donor-conv/prospects";
+  const returnLabel =
+    fromParam === "board" ? "Back to Pipeline Board" : "Back to Prospects";
+
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -115,21 +127,69 @@ export default function AddProspectPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (officerName && !formData.assignedOfficer) {
+      const matched = ASSIGNED_OFFICER_OPTIONS.find((opt) =>
+        officerName.toLowerCase().includes(opt.replace("Officer ", "").toLowerCase()) ||
+        opt.toLowerCase().includes(officerName.toLowerCase())
+      );
+      if (matched) {
+        setFormData((prev) => ({ ...prev, assignedOfficer: matched }));
+      }
+    }
+  }, [officerName, formData.assignedOfficer]);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    router.push("/donor-conv/prospects");
+    setIsSubmitting(true);
+    setErrorMessage(null);
+    try {
+      const res = await createProspect({
+        prospectName: formData.prospectName,
+        donorType: formData.donorType,
+        leadSource: formData.leadSource,
+        contactPerson: formData.contactPerson,
+        designation: formData.designation,
+        email: formData.email,
+        phone: formData.phone,
+        streetAddress: formData.streetAddress,
+        cityProvince: formData.cityProvince,
+        targetCampaign: formData.targetCampaign,
+        targetAmount: formData.targetAmount,
+        pipelineStatus: formData.pipelineStatus as any,
+        probability: prospectScore.tier,
+        assignedOfficer: formData.assignedOfficer,
+        followupDate: formData.followupDate,
+        actionPlan: formData.actionPlan,
+      });
+
+      if (!res.success) {
+        setErrorMessage(res.error || "Failed to save prospect to database");
+        setIsSubmitting(false);
+        return;
+      }
+
+      setPendingToast({
+        title: "Prospect Created",
+        message: `New prospect "${formData.prospectName}" was added successfully!`,
+        type: "success",
+      });
+      router.push(returnUrl);
+    } catch (err: any) {
+      setErrorMessage(err.message || "An unexpected error occurred");
+      setIsSubmitting(false);
+    }
   };
 
   if (isLoading) {
-    return (
-      <AppShell navbarPreset={navbarPreset}>
-        <ProspectCreateSkeleton />
-      </AppShell>
-    );
+    return <ProspectCreateSkeleton />;
   }
 
   return (
-    <AppShell navbarPreset={navbarPreset}>
+    <>
       <style dangerouslySetInnerHTML={{ __html: `
         html, body {
           min-width: 0 !important;
@@ -142,11 +202,11 @@ export default function AddProspectPage() {
         {/* Back Link */}
         <div className="flex items-center text-[0.6875rem] text-[#5c5757]">
           <Link
-            href="/donor-conv/prospects"
+            href={returnUrl}
             className="flex items-center gap-1 text-[#5c5757] hover:text-[#6b0f0f] transition-colors"
           >
             <ArrowLeft className="h-3 w-3" />
-            <span>Back to Prospects</span>
+            <span>{returnLabel}</span>
           </Link>
         </div>
 
@@ -420,24 +480,51 @@ export default function AddProspectPage() {
             </div>
           </div>
 
+          {errorMessage && (
+            <div className="mx-5 sm:mx-6 mb-3 p-2.5 rounded-md bg-red-50 border border-red-200 text-red-700 text-[0.6875rem]">
+              {errorMessage}
+            </div>
+          )}
+
           {/* Card Footer Actions */}
           <div className="flex items-center justify-end gap-2 border-t border-[#e3dfdf] px-5 sm:px-6 py-2.5 bg-white">
             <button
               type="button"
-              onClick={() => router.push("/donor-conv/prospects")}
-              className="h-[30px] px-3.5 text-[0.6875rem] font-medium text-[#1c1a1a] bg-white border border-[#d1d5db] rounded-md hover:bg-[#f7f6f6] transition shadow-xs cursor-pointer"
+              onClick={() => router.push(returnUrl)}
+              disabled={isSubmitting}
+              className="h-[30px] px-3.5 text-[0.6875rem] font-medium text-[#1c1a1a] bg-white border border-[#d1d5db] rounded-md hover:bg-[#f7f6f6] transition shadow-xs cursor-pointer disabled:opacity-50"
             >
               Cancel
             </button>
-            <button
-              type="submit"
-              className="h-[30px] px-4 text-[0.6875rem] font-medium text-white bg-[#6b0f0f] hover:bg-[#520b0b] rounded-md transition shadow-xs cursor-pointer"
-            >
-              Save Prospect
-            </button>
+            {canWrite ? (
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="h-[30px] px-4 text-[0.6875rem] font-medium text-white bg-[#6b0f0f] hover:bg-[#520b0b] rounded-md transition shadow-xs cursor-pointer disabled:opacity-50"
+              >
+                {isSubmitting ? "Saving..." : "Save Prospect"}
+              </button>
+            ) : (
+              <span className="h-[30px] inline-flex items-center px-3.5 text-[0.6875rem] font-medium text-gray-500 bg-gray-100 border border-gray-200 rounded-md select-none">
+                View only
+              </span>
+            )}
           </div>
         </form>
       </div>
+    </>
+  );
+}
+
+export default function AddProspectPage() {
+  useDocumentTitle(`${moduleName} - ${pageName}`);
+  const navbarPreset = getNavbarPreset(0);
+
+  return (
+    <AppShell navbarPreset={navbarPreset}>
+      <Suspense fallback={<ProspectCreateSkeleton />}>
+        <AddProspectForm />
+      </Suspense>
     </AppShell>
   );
 }

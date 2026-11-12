@@ -20,6 +20,11 @@ const nextConfig: NextConfig = {
         destination: "/dashboard",
         permanent: false,
       },
+      {
+        source: "/notifications",
+        destination: "/dashboard",
+        permanent: false,
+      },
     ];
   }
 };
