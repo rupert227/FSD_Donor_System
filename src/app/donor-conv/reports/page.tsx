@@ -1,7 +1,7 @@
 import ReportsPageContent from "./content";
-import ReportsSkeleton from "@/app/donor-conv/reports/skeleton";
 
 import { AppShell } from "@/components/AppShell";
+import { LoadingScreen } from "@/components/prefabs";
 import { Suspense } from "react";
 import { getNavbarPreset } from "@/app/donor-conv/struct";
 
@@ -12,7 +12,7 @@ export default function ReportsPage() {
     <Suspense
       fallback={
         <AppShell navbarPreset={navbarPreset}>
-          <ReportsSkeleton />
+          <LoadingScreen label="Loading Reports" />
         </AppShell>
       }
     >
