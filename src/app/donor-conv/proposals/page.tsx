@@ -25,7 +25,7 @@ export default function ProposalsPage() {
       {isLoading ? (
         <ProposalsSkeleton />
       ) : (
-        <div className="space-y-4 animate-in fade-in duration-300">
+        <div className="space-y-4">
           {/* Page header (not printed): the page title. */}
           <div className="no-print flex items-center gap-3">
             <div className="bg-surface-soft flex size-10 shrink-0 items-center justify-center rounded-lg">

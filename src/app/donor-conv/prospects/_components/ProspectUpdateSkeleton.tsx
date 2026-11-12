@@ -11,7 +11,7 @@ export function ProspectUpdateSkeleton({
 }: ProspectUpdateSkeletonProps) {
   return (
     <div
-      className="w-[75%] max-w-full min-w-0 mx-auto space-y-2.5 pb-8 overflow-hidden animate-in fade-in duration-300"
+      className="w-[75%] max-w-full min-w-0 mx-auto space-y-2.5 pb-8 overflow-hidden"
       style={{ fontFamily: "var(--font-poppins), sans-serif" }}
     >
       {/* Back Link Skeleton */}

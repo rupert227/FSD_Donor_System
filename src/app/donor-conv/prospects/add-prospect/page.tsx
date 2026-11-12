@@ -198,7 +198,7 @@ function AddProspectForm() {
           width: 100% !important;
         }
       `}} />
-      <div className="w-[75%] max-w-full min-w-0 mx-auto space-y-2.5 overflow-hidden animate-in fade-in duration-300" style={{ fontFamily: "var(--font-poppins), sans-serif" }}>
+      <div className="w-[75%] max-w-full min-w-0 mx-auto space-y-2.5 overflow-hidden" style={{ fontFamily: "var(--font-poppins), sans-serif" }}>
         {/* Back Link */}
         <div className="flex items-center text-[0.6875rem] text-[#5c5757]">
           <Link

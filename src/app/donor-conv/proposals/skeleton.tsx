@@ -4,7 +4,7 @@ import React from "react";
 
 export default function ProposalsSkeleton() {
   return (
-    <div className="space-y-4 animate-in fade-in duration-300">
+    <div className="space-y-4">
       {/* Title Header Skeleton */}
       <div className="flex items-center gap-3">
         <div className="bg-gray-200/80 size-10 rounded-lg animate-pulse shrink-0" />

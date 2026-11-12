@@ -1,6 +1,6 @@
 export default function ReportsSkeleton() {
   return (
-    <div className="animate-pulse space-y-5 animate-in fade-in duration-300">
+    <div className="animate-pulse space-y-5">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="bg-skeleton-primary rounded-button h-10 w-10" />

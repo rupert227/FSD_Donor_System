@@ -181,7 +181,7 @@ export default function ReportsPageContent() {
   } else
     return (
       <AppShell navbarPreset={navbarPreset}>
-        <div className="animate-in fade-in space-y-5 duration-300">
+        <div className="space-y-5">
           <div className="flex justify-between">
             <div className="flex items-center gap-3">
               <BarChart3 className="text-brand-primary h-10 w-10" />

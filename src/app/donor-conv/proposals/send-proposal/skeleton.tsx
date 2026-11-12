@@ -4,7 +4,7 @@ import React from "react";
 
 export default function SendProposalSkeleton() {
   return (
-    <div className="space-y-4 animate-in fade-in duration-300">
+    <div className="space-y-4">
       {/* Back Link Skeleton */}
       <div className="h-3.5 w-32 bg-gray-200/80 rounded animate-pulse" />
 

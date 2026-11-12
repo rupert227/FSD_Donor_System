@@ -25,7 +25,7 @@ export default function SendProposalPage() {
       {isLoading ? (
         <SendProposalSkeleton />
       ) : (
-        <div className="space-y-4 animate-in fade-in duration-300">
+        <div className="space-y-4">
           <div className="flex items-center text-[11px] text-[#5c5757]">
             <Link
               href="/donor-conv/proposals"
