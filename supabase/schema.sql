@@ -499,7 +499,20 @@ SET search_path = public
 AS $$
 DECLARE
   sent proposals;
+  prospect_email TEXT;
 BEGIN
+  -- An emailed PDF needs an address to go to. Checked first, so nothing is changed.
+  IF p_delivery = 'Email PDF (Softcopy)' THEN
+    SELECT lp.email_address INTO prospect_email
+    FROM proposals p
+    JOIN lead_prospects lp ON lp.id = p.prospect_id
+    WHERE p.id = p_proposal_id;
+
+    IF prospect_email IS NULL OR prospect_email !~ '^[^\s@]+@[^\s@]+\.[^\s@]+$' THEN
+      RAISE EXCEPTION 'This prospect has no valid email address. Add one on the prospect record, or choose Postal Mail or Hand Delivered.';
+    END IF;
+  END IF;
+
   UPDATE proposals
   SET status = 'Sent',
       delivery_preference = p_delivery,
