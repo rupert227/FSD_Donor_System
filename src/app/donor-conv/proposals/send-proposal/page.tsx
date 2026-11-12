@@ -10,6 +10,7 @@ import { getNavbarPreset, moduleName } from "@/app/donor-conv/struct";
 import { useDocumentTitle } from "@/components/Navbar";
 import { createClient } from "@/lib/supabase/client";
 import { proposalFileName } from "@/lib/letter";
+import { isValidEmail } from "@/lib/proposals-data";
 import { buildEmailBody, buildEmailSubject } from "@/lib/proposal-email";
 import type { DeliveryPreferenceEnum } from "@/types";
 import { getMailModeForScreen, sendProposal } from "./actions";
@@ -174,7 +175,8 @@ function SendProposalContent() {
     prospect.prospect_name,
     proposal.letter_date,
   );
-  const hasEmail = Boolean(prospect.email_address?.trim());
+  // Same check the server runs before sending, so the screen never offers a send that will fail.
+  const hasEmail = isValidEmail(prospect.email_address);
   const realDelivery = mailMode === "send";
 
   async function handleSend() {
@@ -287,8 +289,8 @@ function SendProposalContent() {
                         className="mt-0.5 size-4 shrink-0"
                         aria-hidden="true"
                       />
-                      This prospect has no email address. Add one with Edit on
-                      record, or choose another delivery option.
+                      This prospect has no valid email address. Add one with Edit
+                      on record, or choose another delivery option.
                     </p>
                   )}
                   {mailMode && !realDelivery && (

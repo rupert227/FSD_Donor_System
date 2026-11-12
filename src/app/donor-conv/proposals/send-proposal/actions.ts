@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { proposalFileName } from "@/lib/letter";
+import { isValidEmail } from "@/lib/proposals-data";
 import { getMailMode, sendMail, type MailMode } from "@/lib/mail";
 import { buildProposalPdf } from "@/lib/proposal-pdf";
 import type { DeliveryPreferenceEnum } from "@/types";
@@ -30,7 +31,6 @@ export type SendProposalResult =
     }
   | { ok: false; error: string };
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Dispatches a saved proposal. For email it attaches the PDF and sends the message, and only
 // when that works does it mark the proposal Sent (and move the prospect to Proposal Sent)
@@ -83,7 +83,7 @@ export async function sendProposal(
       .eq("id", proposal.prospect_id)
       .maybeSingle();
     const recipient = prospect?.email_address?.trim() ?? "";
-    if (!EMAIL_PATTERN.test(recipient)) {
+    if (!isValidEmail(recipient)) {
       return {
         ok: false,
         error:
