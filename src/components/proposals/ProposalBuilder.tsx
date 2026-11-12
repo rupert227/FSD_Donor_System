@@ -15,6 +15,7 @@ import {
   FileText,
   Minus,
   RotateCcw,
+  Send,
   TriangleAlert,
 } from "lucide-react";
 import { cn } from "cn";
@@ -36,9 +37,11 @@ import {
   todayIso,
 } from "@/lib/letter";
 import { LetterPreview } from "./LetterPreview";
-
-const selectClass =
-  "border-dropdown-stroke rounded-dropdown bg-surface-white h-9 w-full cursor-pointer border px-3 text-sm";
+import { ProspectSearchBar } from "./ProspectSearchBar";
+import {
+  ProspectDatePicker,
+  ProspectSelectMenu,
+} from "@/app/donor-conv/prospects/_components";
 
 // Nothing to subscribe to: today's date only needs reading once in the browser.
 const subscribeToNothing = () => () => {};
@@ -86,21 +89,6 @@ function ChecklistRow({
   );
 }
 
-// A real <select> (keyboard, screen readers and the mobile picker all keep
-// working) with the system's own chevron drawn over it instead of the browser's.
-function SelectField({ children, ...props }: ComponentProps<"select">) {
-  return (
-    <div className="relative">
-      <select {...props} className={cn(selectClass, "appearance-none pr-8")}>
-        {children}
-      </select>
-      <ChevronDown
-        aria-hidden="true"
-        className="text-text-secondary pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2"
-      />
-    </div>
-  );
-}
 
 function ReadOnlyField({ label, value }: { label: string; value: string }) {
   return (
@@ -123,15 +111,19 @@ type ProposalBuilderProps = {
   initialProspectId?: number;
 };
 
-// Without prospects or signatories there is nothing to build a letter from,
+const DEFAULT_SIGNATORY: Signatory = {
+  id: "anton-pascual",
+  name: "Fr. Anton C.T. Pascual",
+  title: "Executive Director",
+};
+
+// Without prospects there is nothing to build a letter from,
 // so say that instead of showing an empty form.
 export function ProposalBuilder(props: ProposalBuilderProps) {
-  if (props.prospects.length === 0 || props.signatories.length === 0) {
+  if (props.prospects.length === 0) {
     return (
       <p className="border-border-soft bg-surface-white mt-5 rounded-lg border px-5 py-4 text-sm">
-        {props.prospects.length === 0
-          ? "No prospects are ready for a proposal yet. A prospect needs to be at Outreach Started or later."
-          : "No signatories are set up yet. Mark at least one officer profile as a signatory."}
+        No prospects are ready for a proposal yet. A prospect needs to be at Outreach Started or later.
       </p>
     );
   }
@@ -146,15 +138,80 @@ function ProposalBuilderForm({
   // The prospect list from the server. The selected prospect is re-read when the
   // officer comes back to this tab, so a fix made through "Edit on record" shows up.
   const [prospects, setProspects] = useState(initialProspects);
-  const [prospectId, setProspectId] = useState(
-    prospects.find((p) => p.id === initialProspectId)?.id ?? prospects[0].id,
+  const [prospectId, setProspectId] = useState<number | null>(
+    initialProspectId && prospects.some((p) => p.id === initialProspectId)
+      ? initialProspectId
+      : null,
   );
   const [templateId, setTemplateId] = useState(sampleTemplates[0].id);
-  const [signatoryId, setSignatoryId] = useState(signatories[0].id);
   // Saving state for Generate: whether a save is running, the last error, and the saved id.
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [savedProposalId, setSavedProposalId] = useState<number | null>(null);
+  // Existing proposal in database for the currently selected prospect
+  const [existingProposal, setExistingProposal] = useState<{
+    id: number;
+    status: string;
+    letter_date: string;
+    letter_text?: string;
+    template_id?: string;
+    created_at: string;
+  } | null>(null);
+
+  // Sync prospectId if initialProspectId changes
+  useEffect(() => {
+    if (initialProspectId && prospects.some((p) => p.id === initialProspectId)) {
+      setProspectId(initialProspectId);
+    }
+  }, [initialProspectId, prospects]);
+
+  // Load existing proposal for the active prospect
+  useEffect(() => {
+    if (!prospectId) {
+      setExistingProposal(null);
+      setEditedText(null);
+      return;
+    }
+    let isCancelled = false;
+    async function loadExistingProposal() {
+      try {
+        const supabase = createClient();
+        const { data } = await supabase
+          .from("proposals")
+          .select("id, status, letter_date, letter_text, template_id, created_at")
+          .eq("prospect_id", prospectId)
+          .order("id", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (!isCancelled) {
+          if (data) {
+            setExistingProposal(data);
+            if (data.letter_text) {
+              setEditedText(data.letter_text);
+            }
+            if (data.letter_date) {
+              setPickedDate(data.letter_date);
+            }
+            if (
+              data.template_id &&
+              sampleTemplates.some((t) => t.id === data.template_id)
+            ) {
+              setTemplateId(data.template_id);
+            }
+          } else {
+            setExistingProposal(null);
+            setEditedText(null);
+          }
+        }
+      } catch (err) {
+        console.error("Error loading existing proposal for prospect:", err);
+      }
+    }
+    loadExistingProposal();
+    return () => {
+      isCancelled = true;
+    };
+  }, [prospectId, savedProposalId]);
   // The date the officer picked. null means "use today's date".
   const [pickedDate, setPickedDate] = useState<string | null>(null);
 
@@ -182,6 +239,7 @@ function ProposalBuilderForm({
   const [promptToSelect, setPromptToSelect] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!prospectId) return;
     async function refreshSelectedProspect() {
       if (document.visibilityState !== "visible") return;
       const { data } = await createClient()
@@ -208,17 +266,23 @@ function ProposalBuilderForm({
   }, [prospectId]);
 
   // Look up the full records from the chosen ids.
-  const prospect = prospects.find((p) => p.id === prospectId) ?? prospects[0];
+  const prospect = prospectId ? prospects.find((p) => p.id === prospectId) : undefined;
   const template =
     sampleTemplates.find((t) => t.id === templateId) ?? sampleTemplates[0];
   const signatory =
-    signatories.find((s) => s.id === signatoryId) ?? signatories[0];
+    signatories.find(
+      (s) =>
+        s.name.toLowerCase().includes("anton") ||
+        s.name.toLowerCase().includes("pascual"),
+    ) ??
+    signatories[0] ??
+    DEFAULT_SIGNATORY;
 
   // The officer assigned to this prospect (their title and email go in the letter).
-  const officer = prospect.officer;
+  const officer = prospect?.officer;
 
   // Derived from the choices above on every render (not stored in state).
-  const generatedText = prospect
+  const generatedText = prospect && officer
     ? buildLetterText(
         prospect,
         template,
@@ -277,11 +341,12 @@ function ProposalBuilderForm({
 
   // A prospect without a usable email cannot receive the PDF by email. This only
   // flags it: Postal Mail and Hand Delivered still work, so Generate stays enabled.
-  const hasEmail = isValidEmail(prospect.email_address);
+  const hasEmail = prospect ? isValidEmail(prospect.email_address) : false;
 
   // Saves the letter as a new "Generated" proposal. The pipeline status does
   // not change here: it moves to "Proposal Sent" when the letter is sent.
   async function generate() {
+    if (!prospect) return;
     setShowWarning(false);
     setSaveError(null);
     setSavedProposalId(null);
@@ -346,38 +411,59 @@ function ProposalBuilderForm({
     applyChoice(apply);
   }
 
+  const activeProposalId = savedProposalId ?? existingProposal?.id ?? null;
+  const proposalStatus = savedProposalId
+    ? "Generated"
+    : existingProposal?.status ?? null;
+
   return (
-    <div className="focus-scope ui-motion mt-5 grid gap-5 lg:grid-cols-[440px_minmax(0,1fr)] xl:grid-cols-[460px_minmax(0,1fr)] print:mt-0 print:block">
-      {/* Left card: inputs and actions (not printed) */}
-      <div className="no-print border-border-soft bg-surface-white flex flex-col self-start overflow-hidden rounded-lg border">
-        <div className="space-y-4 px-5 py-4">
-          <div className="flex flex-col gap-2">
-            <label htmlFor="prospect" className="text-[13px] font-medium">
-              Prospect{" "}
-              <span aria-hidden="true" className="text-brand-danger">
-                *
-              </span>
-            </label>
-            <SelectField
-              id="prospect"
-              aria-required="true"
-              aria-describedby="prospect-help"
-              value={prospectId}
-              onChange={(e) => {
-                const value = Number(e.target.value);
-                changeChoice(() => setProspectId(value));
-              }}
-            >
-              {prospects.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.prospect_name}
-                </option>
-              ))}
-            </SelectField>
-            <p id="prospect-help" className="text-text-secondary text-xs">
-              Prospects in Outreach started or later.
+    <div className="focus-scope ui-motion mt-5 space-y-4 print:mt-0 print:block">
+      {/* Top Banner when a Proposal already exists in database or was just generated */}
+      {activeProposalId && (
+        <div className="no-print flex items-center justify-between gap-4 rounded-lg border border-[#e3dfdf] bg-white px-4 py-3 shadow-xs">
+          <div>
+            <h2 className="text-xs font-semibold text-[#1c1a1a]">
+              {proposalStatus === "Sent" ? "Proposal Sent" : "Proposal Ready"}
+            </h2>
+            <p className="text-[11px] text-[#5c5757] mt-0.5">
+              {proposalStatus === "Sent"
+                ? `A proposal was previously dispatched to ${prospect?.prospect_name || "this prospect"}.`
+                : `A proposal document has been generated for ${prospect?.prospect_name || "this prospect"}. You can proceed to send it.`}
             </p>
           </div>
+          <Link
+            href={`/donor-conv/proposals/send-proposal?proposalId=${activeProposalId}`}
+            className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md bg-[#6b0f0f] px-3.5 text-xs font-medium text-white hover:bg-[#520b0b] transition shadow-xs cursor-pointer"
+          >
+            <Send className="size-3.5" aria-hidden="true" />
+            <span>Send Proposal</span>
+          </Link>
+        </div>
+      )}
+
+      <div className="grid gap-5 lg:grid-cols-[440px_minmax(0,1fr)] xl:grid-cols-[460px_minmax(0,1fr)] print:mt-0 print:block">
+        {/* Left card: inputs and actions (not printed) */}
+        <div className="no-print border-border-soft bg-surface-white flex flex-col self-start overflow-hidden rounded-lg border">
+          <div className="space-y-4 px-5 py-4">
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="prospect" className="text-[13px] font-medium text-[#1c1a1a]">
+                Prospect{" "}
+                <span aria-hidden="true" className="text-brand-danger">
+                  *
+                </span>
+              </label>
+              <ProspectSearchBar
+                prospects={prospects}
+                selectedProspectId={prospectId}
+                onSelect={(id) => changeChoice(() => setProspectId(id))}
+                onClear={() => changeChoice(() => setProspectId(null))}
+                placeholder="Search prospect by name or campaign..."
+                inputClassName="h-9"
+              />
+              <p id="prospect-help" className="text-text-secondary text-xs">
+                Select any active prospect to build or review their proposal letter.
+              </p>
+            </div>
 
           {/* Template and date share a row to keep the form short. The date
               starts as today and can be changed (for example when the letter
@@ -390,21 +476,18 @@ function ProposalBuilderForm({
                   *
                 </span>
               </label>
-              <SelectField
-                id="template"
-                aria-required="true"
+              <ProspectSelectMenu
                 value={templateId}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  changeChoice(() => setTemplateId(value));
+                onChange={(val) => {
+                  changeChoice(() => setTemplateId(val));
                 }}
-              >
-                {sampleTemplates.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                  </option>
-                ))}
-              </SelectField>
+                options={sampleTemplates.map((t) => ({
+                  label: t.name,
+                  value: t.id,
+                }))}
+                direction="down"
+                triggerClassName="h-9 text-[13px]"
+              />
             </div>
 
             <div className="flex flex-col gap-2">
@@ -414,18 +497,15 @@ function ProposalBuilderForm({
               >
                 Proposal date
               </label>
-              <input
-                id="proposal-date"
-                type="date"
-                className={cn(
-                  selectClass,
-                  "[&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-60 [&::-webkit-calendar-picker-indicator]:hover:opacity-100",
-                )}
+              <ProspectDatePicker
                 value={date}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  changeChoice(() => setPickedDate(value));
+                onChange={(val) => {
+                  changeChoice(() => setPickedDate(val || null));
                 }}
+                placeholder="Select date"
+                direction="down"
+                align="right"
+                triggerClassName="h-9 text-[13px]"
               />
             </div>
           </div>
@@ -438,31 +518,33 @@ function ProposalBuilderForm({
               {/* Opens the team's edit page in a new tab so the builder keeps its state.
                   When the officer returns, the prospect is re-read (see the effect above).
                   A letter the officer already edited keeps its text; "Reset to template" rebuilds it. */}
-              <Link
-                href={`/donor-conv/prospects/edit-prospect?id=${prospect.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-brand-primary -my-1.5 ml-auto inline-flex h-8 items-center text-sm font-medium hover:underline"
-              >
-                Edit on record
-              </Link>
+              {prospect && (
+                <Link
+                  href={`/donor-conv/prospects/edit-prospect?id=${prospect.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-brand-primary -my-1.5 ml-auto inline-flex h-8 items-center text-sm font-medium hover:underline"
+                >
+                  Edit on record
+                </Link>
+              )}
             </div>
             <dl className="grid grid-cols-2 gap-x-5 gap-y-3">
               <ReadOnlyField
                 label="Recipient"
-                value={prospect.primary_contact_person}
+                value={prospect?.primary_contact_person || "—"}
               />
               <ReadOnlyField
                 label="Organization"
-                value={prospect.prospect_name}
+                value={prospect?.prospect_name || "—"}
               />
               <ReadOnlyField
                 label="Campaign"
-                value={prospect.target_campaign}
+                value={prospect?.target_campaign || "—"}
               />
               <ReadOnlyField
                 label="Requested amount"
-                value={formatPeso(prospect.target_amount)}
+                value={prospect ? formatPeso(prospect.target_amount) : "—"}
               />
             </dl>
             {/* Slides open: a grid row animating from 0fr to 1fr is the way to
@@ -480,17 +562,21 @@ function ProposalBuilderForm({
               <dl className="grid min-h-0 grid-cols-2 gap-x-5 gap-y-4 overflow-hidden">
                 <ReadOnlyField
                   label="Title"
-                  value={prospect.title_designation ?? ""}
+                  value={prospect?.title_designation || "—"}
                 />
                 <ReadOnlyField
                   label="Address"
-                  value={[prospect.street_address, prospect.city_province]
-                    .filter(Boolean)
-                    .join(", ")}
+                  value={
+                    prospect
+                      ? [prospect.street_address, prospect.city_province]
+                          .filter(Boolean)
+                          .join(", ") || "—"
+                      : "—"
+                  }
                 />
                 <ReadOnlyField
                   label="Prepared by"
-                  value={officer?.full_name || prospect.assigned_officer}
+                  value={officer?.full_name || prospect?.assigned_officer || "—"}
                 />
               </dl>
             </div>
@@ -511,25 +597,6 @@ function ProposalBuilderForm({
             </button>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <label htmlFor="signatory" className="text-[13px] font-medium">
-              Signatory
-            </label>
-            <SelectField
-              id="signatory"
-              value={signatoryId}
-              onChange={(e) => {
-                const value = e.target.value;
-                changeChoice(() => setSignatoryId(value));
-              }}
-            >
-              {signatories.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </SelectField>
-          </div>
 
           {/* Readiness: what the letter looks like right now, before Generate. */}
           <div className="border-border-soft rounded-[6px] border bg-white px-3 py-2.5">
@@ -543,11 +610,17 @@ function ProposalBuilderForm({
                 value={lengthValue}
               />
               <ChecklistRow
-                status={hasEmail ? "ok" : "warn"}
+                status={prospect ? (hasEmail ? "ok" : "warn") : "unknown"}
                 label="Email"
-                value={hasEmail ? prospect.email_address! : "None on file"}
+                value={
+                  prospect
+                    ? hasEmail
+                      ? prospect.email_address!
+                      : "None on file"
+                    : "—"
+                }
               >
-                {!hasEmail && (
+                {prospect && !hasEmail && (
                   <p className="mt-1 text-xs leading-relaxed">
                     The PDF cannot be emailed to this prospect.{" "}
                     <Link
@@ -720,7 +793,8 @@ function ProposalBuilderForm({
             <button
               type="button"
               onClick={handleGenerate}
-              disabled={saving}
+              disabled={saving || !prospect}
+              title={!prospect ? "Select a prospect first to generate proposal" : undefined}
               className="bg-brand-primary text-surface-white inline-flex h-8 cursor-pointer items-center gap-2 rounded-[6px] px-3 text-[13px] font-medium hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <FileText className="size-4" aria-hidden="true" />
@@ -851,6 +925,7 @@ function ProposalBuilderForm({
           </p>
         )}
       </div>
+    </div>
     </div>
   );
 }

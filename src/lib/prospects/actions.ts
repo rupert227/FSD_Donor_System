@@ -272,7 +272,7 @@ export async function updateProspect(
         prospect_id: numericId,
         status: input.pipelineStatus,
         followup_date: input.followupDate || null,
-        notes: input.actionPlan?.trim() || `Pipeline stage transitioned to "${input.pipelineStatus}".`,
+        notes: input.actionPlan?.trim() || "",
       });
     }
 
@@ -311,7 +311,7 @@ export async function updateProspectStage(
     await supabase.from("lead_outreach_activities").insert({
       prospect_id: numericId,
       status: targetStage,
-      notes: `Stage transitioned to "${targetStage}" via Pipeline Board.`,
+      notes: "",
     });
 
     revalidatePath("/donor-conv/prospects");

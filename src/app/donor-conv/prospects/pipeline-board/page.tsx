@@ -1117,19 +1117,6 @@ export default function PipelineBoardPage() {
                       />
                     </div>
 
-                    {/* Assigned Officer */}
-                    <div>
-                      <label className="block text-[0.75rem] font-medium text-[#5c5757] mb-1.5">
-                        Assigned Officer
-                      </label>
-                      <ProspectSelectMenu
-                        value={draftFilters.officer}
-                        onChange={(val) =>
-                          setDraftFilters((prev) => ({ ...prev, officer: val }))
-                        }
-                        options={[{ label: "All assigned officers", value: "all" }, ...availableOwners.map((o) => ({ label: o, value: o }))]}
-                      />
-                    </div>
                     {/* Target Amount */}
                     <div>
                       <label className="block text-[0.75rem] font-medium text-[#5c5757] mb-1.5">
@@ -1160,7 +1147,7 @@ export default function PipelineBoardPage() {
 
                     {/* Lead Source */}
                     <div>
-                      <label className="block text-[11px] font-medium text-[#5c5757] mb-1.5">
+                      <label className="block text-[0.75rem] font-medium text-[#5c5757] mb-1.5">
                         Lead Source
                       </label>
                       <ProspectSelectMenu
@@ -1229,19 +1216,6 @@ export default function PipelineBoardPage() {
                           </>
                         );
                       })()}
-                    </div>
-                    {/* Lead Source */}
-                    <div>
-                      <label className="block text-[0.75rem] font-medium text-[#5c5757] mb-1.5">
-                        Lead Source
-                      </label>
-                      <ProspectSelectMenu
-                        value={draftFilters.leadSource}
-                        onChange={(val) =>
-                          setDraftFilters((prev) => ({ ...prev, leadSource: val }))
-                        }
-                        options={LEAD_SOURCE_OPTIONS}
-                      />
                     </div>
                   </div>
 
