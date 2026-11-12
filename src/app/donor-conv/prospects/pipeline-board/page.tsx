@@ -30,10 +30,18 @@ import { AppShell } from "@/components/AppShell";
 import { moduleName, navbarPreset } from "@/app/donor-conv/struct";
 import { ProspectSelectMenu, ProspectsBoardSkeleton } from "../_components";
 
-import { SAMPLE_LEADS, type LeadDetail } from "@supabase/seeds/prospects-seed";
+import type { LeadDetail } from "@supabase/seeds/prospects-seed";
 import type { PipelineStatusEnum } from "@/types";
+import {
+  getProspects,
+  updateProspectStage,
+  notifyDonorCareSecured,
+  getBuiltProposalProspectIds,
+} from "@/lib/prospects/actions";
+import { showToast } from "@/lib/toast";
 
 import { useDocumentTitle } from "@/components/Navbar";
+import { useUserRole } from "@/lib/use-user-role";
 
 const pageName = "Pipeline Board";
 
@@ -45,9 +53,11 @@ const STAGES: PipelineStatusEnum[] = [
   "Secured Donor",
 ];
 
-const OWNERS = Array.from(
-  new Set(SAMPLE_LEADS.map((l) => l.assigned_officer)),
-).sort();
+const DEFAULT_OWNERS = [
+  "Officer A. Tan",
+  "Officer J. Reyes",
+  "Officer M. Cruz",
+];
 
 const CAMPAIGN_OPTIONS = [
   { label: "All Campaigns", value: "all" },
@@ -207,19 +217,61 @@ interface ToastNotification {
   };
 }
 
+const CURRENT_OFFICER = "Officer J. Reyes";
+
 export default function PipelineBoardPage() {
   useDocumentTitle(`${moduleName} - ${pageName}`);
   navbarPreset.selectedTabIndex = 0;
   const router = useRouter();
+  const { role, officerName, canWriteModule } = useUserRole();
+  const canWrite = canWriteModule("donor-conv");
+  const isConversionOfficer = role === "Conversion Officer";
+  const myOfficerFilterName = officerName || CURRENT_OFFICER;
 
   const today = useToday();
 
-  const [leads, setLeads] = useState<LeadDetail[]>(() => [...SAMPLE_LEADS]);
+  const [leads, setLeads] = useState<LeadDetail[]>([]);
   const [search, setSearch] = useState("");
 
+  // Quick view filter pills (matching prospects table exactly)
+  const [quickOfficer, setQuickOfficer] = useState<string | null>(null);
+  const [quickDate, setQuickDate] = useState<"today" | "overdue" | null>(null);
+  const [quickStage, setQuickStage] = useState<PipelineStatusEnum | null>(null);
+
+  const isAllView = !quickDate && !quickOfficer && !quickStage;
+  const isDueTodayView = quickDate === "today";
+  const isOverdueView = quickDate === "overdue";
+  const isMineView = isConversionOfficer && quickOfficer === myOfficerFilterName;
+  const isProposalSentView = quickStage === "Proposal Sent";
+
   // Track which prospects have official proposals generated in system
-  // (In canonical seed, Metrobank Foundation (id:1) and San Miguel (id:4) have proposals built)
-  const [proposalsBuilt] = useState<Set<number>>(() => new Set([1, 4]));
+  const [proposalsBuilt, setProposalsBuilt] = useState<Set<number>>(() => new Set());
+
+  useEffect(() => {
+    let isCancelled = false;
+    async function loadBoardData() {
+      try {
+        const [dbLeads, dbProposals] = await Promise.all([
+          getProspects(),
+          getBuiltProposalProspectIds(),
+        ]);
+        if (!isCancelled) {
+          setLeads(dbLeads ?? []);
+          if (dbProposals && dbProposals.length > 0) setProposalsBuilt(new Set(dbProposals));
+        }
+      } catch (err) {
+        console.error("Failed to load board data from DB:", err);
+      } finally {
+        if (!isCancelled) {
+          setIsRefreshing(false);
+        }
+      }
+    }
+    loadBoardData();
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
 
   // FILTERS STATE: Matches Prospect Table Filters Exactly
   const [appliedFilters, setAppliedFilters] = useState<BoardFilters>(DEFAULT_FILTERS);
@@ -227,41 +279,15 @@ export default function PipelineBoardPage() {
   const [filterOpen, setFilterOpen] = useState(false);
   const filterContainerRef = useRef<HTMLDivElement>(null);
 
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [toast, setToast] = useState<ToastNotification | null>(null);
-  const [isToastExiting, setIsToastExiting] = useState(false);
-  const toastTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const exitTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(true);
 
-  const dismissToast = useCallback(() => {
-    setIsToastExiting(true);
-    if (exitTimerRef.current) clearTimeout(exitTimerRef.current);
-    exitTimerRef.current = setTimeout(() => {
-      setToast(null);
-      setIsToastExiting(false);
-    }, 240);
-  }, []);
-
-  const triggerToast = useCallback(
-    (notif: ToastNotification) => {
-      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-      if (exitTimerRef.current) clearTimeout(exitTimerRef.current);
-
-      setIsToastExiting(false);
-      setToast(notif);
-
-      toastTimerRef.current = setTimeout(() => {
-        dismissToast();
-      }, 5000);
-    },
-    [dismissToast],
-  );
-
-  useEffect(() => {
-    return () => {
-      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-      if (exitTimerRef.current) clearTimeout(exitTimerRef.current);
-    };
+  const triggerToast = useCallback((notif: ToastNotification) => {
+    showToast({
+      title: notif.title,
+      message: notif.message,
+      type: notif.type,
+      action: notif.action,
+    });
   }, []);
   const [activeLead, setActiveLead] = useState<LeadDetail | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -314,12 +340,50 @@ export default function PipelineBoardPage() {
     return () => document.removeEventListener("mousedown", onDown);
   }, [closeFilterPopup]);
 
+  // Full screen vs window resized layout handling
+  const [fixedWidth, setFixedWidth] = useState<number | null>(null);
+  const [isFullScreen, setIsFullScreen] = useState(true);
+
+  useEffect(() => {
+    function updateLayoutMode() {
+      const isMax = window.outerWidth >= window.screen.availWidth - 32;
+      setIsFullScreen(isMax);
+      const base90 = Math.round(window.screen.availWidth * 0.9);
+      setFixedWidth(base90);
+    }
+    updateLayoutMode();
+    window.addEventListener("resize", updateLayoutMode);
+    return () => window.removeEventListener("resize", updateLayoutMode);
+  }, []);
+
+  const chipCounts = useMemo(() => {
+    return {
+      all: leads.length,
+      "due-today": leads.filter((l) => !!today && l.target_followup_date === today).length,
+      overdue: leads.filter((l) => !!today && !!l.target_followup_date && l.target_followup_date < today).length,
+      mine: isConversionOfficer
+        ? leads.filter((l) => {
+            const target = myOfficerFilterName.toLowerCase();
+            const leadOfficer = (l.assigned_officer || "").toLowerCase();
+            return (
+              leadOfficer === target ||
+              leadOfficer.includes(target) ||
+              target.includes(leadOfficer) ||
+              (target.includes("reyes") && leadOfficer.includes("reyes")) ||
+              (target.includes("tan") && leadOfficer.includes("tan")) ||
+              (target.includes("cruz") && leadOfficer.includes("cruz"))
+            );
+          }).length
+        : 0,
+      "proposal-sent": leads.filter((l) => l.pipeline_status === "Proposal Sent").length,
+    };
+  }, [leads, today, isConversionOfficer, myOfficerFilterName]);
+
   const appliedFilterCount = useMemo(() => {
     let count = 0;
     if (appliedFilters.campaign !== "all") count++;
     if (appliedFilters.amountRange !== "all") count++;
     if (appliedFilters.probability !== "all" && Number(appliedFilters.probability) > 0) count++;
-    if (appliedFilters.officer !== "all") count++;
     if (appliedFilters.donorType !== "all") count++;
     if (appliedFilters.leadSource !== "all") count++;
     return count;
@@ -338,6 +402,35 @@ export default function PipelineBoardPage() {
       ) {
         return false;
       }
+
+      // Quick officer shortcut
+      if (quickOfficer) {
+        const target = quickOfficer.toLowerCase();
+        const leadOfficer = (l.assigned_officer || "").toLowerCase();
+        const matches =
+          leadOfficer === target ||
+          leadOfficer.includes(target) ||
+          target.includes(leadOfficer) ||
+          (target.includes("reyes") && leadOfficer.includes("reyes")) ||
+          (target.includes("tan") && leadOfficer.includes("tan")) ||
+          (target.includes("cruz") && leadOfficer.includes("cruz"));
+        if (!matches) return false;
+      }
+
+      // Quick date shortcut
+      if (quickDate === "today") {
+        if (!today || l.target_followup_date !== today) return false;
+      } else if (quickDate === "overdue") {
+        if (!today || !l.target_followup_date || l.target_followup_date >= today) {
+          return false;
+        }
+      }
+
+      // Quick stage shortcut
+      if (quickStage && l.pipeline_status !== quickStage) {
+        return false;
+      }
+
       if (f.campaign !== "all" && l.target_campaign !== f.campaign) return false;
       if (f.donorType !== "all" && l.donor_type.toLowerCase() !== f.donorType.toLowerCase()) return false;
       if (f.leadSource !== "all" && (l.lead_source_origin || l.lead_source) !== f.leadSource) return false;
@@ -362,7 +455,7 @@ export default function PipelineBoardPage() {
         if (f.amountRange === "over1m" && amt <= 1000000) return false;
       }
 
-      // Probability filter (supports minimum threshold, tiers, and exact percentages)
+      // Probability filter (slider threshold >= num%, tiers, and exact percentages)
       if (f.probability !== "all") {
         const num = Number(f.probability);
         const p = Number(l.probability) || 0;
@@ -379,13 +472,14 @@ export default function PipelineBoardPage() {
 
       return true;
     });
-  }, [leads, search, appliedFilters]);
+  }, [leads, search, appliedFilters, quickOfficer, quickDate, quickStage, today]);
 
   const columns = STAGES.map((stage) => {
     const cards = visible.filter((l) => l.pipeline_status === stage);
     return {
       stage,
       cards,
+      total: cards.reduce((sum, l) => sum + l.target_amount, 0),
     };
   });
 
@@ -394,21 +488,39 @@ export default function PipelineBoardPage() {
   );
   const openTotal = openCards.reduce((sum, l) => sum + l.target_amount, 0);
 
-  function handleRefresh() {
+  const availableOwners = useMemo(() => {
+    const fromLeads = Array.from(
+      new Set(leads.map((l) => l.assigned_officer).filter(Boolean)),
+    ).sort();
+    return fromLeads.length > 0 ? fromLeads : DEFAULT_OWNERS;
+  }, [leads]);
+
+  async function handleRefresh() {
     setIsRefreshing(true);
-    setTimeout(() => {
-      setLeads([...SAMPLE_LEADS]);
+    try {
+      const [dbLeads, dbProposals] = await Promise.all([
+        getProspects(),
+        getBuiltProposalProspectIds(),
+      ]);
+      setLeads(dbLeads ?? []);
+      if (dbProposals && dbProposals.length > 0) setProposalsBuilt(new Set(dbProposals));
       setAppliedFilters(DEFAULT_FILTERS);
       setDraftFilters(DEFAULT_FILTERS);
+      setQuickOfficer(null);
+      setQuickDate(null);
+      setQuickStage(null);
       setSearch("");
-      setIsRefreshing(false);
       triggerToast({
         id: String(Date.now()),
         type: "success",
         title: "Board Refreshed",
-        message: "Pipeline board restored to initial seed state.",
+        message: "Pipeline board updated with latest database records.",
       });
-    }, 450);
+    } catch (err) {
+      console.error("Failed to refresh board from DB:", err);
+    } finally {
+      setIsRefreshing(false);
+    }
   }
 
   function handleStageUpdate(leadId: number, nextStage: PipelineStatusEnum) {
@@ -435,6 +547,11 @@ export default function PipelineBoardPage() {
         };
       }),
     );
+
+    // Persist to Supabase
+    updateProspectStage(leadId, nextStage).catch((err) => {
+      console.error("Failed to update prospect stage in DB:", err);
+    });
   }
 
   // STRICT GATING TRANSITION LOGIC
@@ -472,19 +589,21 @@ export default function PipelineBoardPage() {
 
     // Standard valid transition
     handleStageUpdate(lead.id, targetStage);
-    setToast({
+    triggerToast({
       id: String(Date.now()),
       type: "success",
       title: "Stage Updated",
       message: `Moved "${lead.prospect_name}" to ${stageLabel(targetStage)}.`,
     });
-  }, [proposalsBuilt, router]);
+  }, [handleStageUpdate, proposalsBuilt, router, triggerToast]);
 
   // WINDOW-LEVEL POINTER HANDLERS
   useEffect(() => {
     if (!activeLead) return;
 
     function handleWindowPointerMove(e: PointerEvent) {
+      if (!canWrite) return;
+
       const moveDist = Math.hypot(
         e.clientX - startCoordRef.current.x,
         e.clientY - startCoordRef.current.y,
@@ -537,7 +656,7 @@ export default function PipelineBoardPage() {
         }
       } else if (currentLead) {
         // Pure click: Navigate to edit prospect
-        router.push(`/donor-conv/prospects/edit-prospect?id=${currentLead.id}`);
+        router.push(`/donor-conv/prospects/edit-prospect?id=${currentLead.id}&from=board`);
       }
 
       activeLeadRef.current = null;
@@ -559,7 +678,7 @@ export default function PipelineBoardPage() {
       window.removeEventListener("pointerup", handleWindowPointerUp);
       window.removeEventListener("pointercancel", handleWindowPointerUp);
     };
-  }, [activeLead, executeDrop, router]);
+  }, [activeLead, canWrite, executeDrop, router]);
 
   function handleCardPointerDown(e: React.PointerEvent<HTMLDivElement>, lead: LeadDetail) {
     if (e.button !== 0) return;
@@ -642,6 +761,10 @@ export default function PipelineBoardPage() {
     <AppShell navbarPreset={navbarPreset}>
       {/* Scrollbar styles: Allotted 4px gutter, zero layout shift */}
       <style dangerouslySetInnerHTML={{ __html: `
+        html, body {
+          background-color: var(--content-background) !important;
+        }
+
         .kanban-scroll-stable {
           scrollbar-gutter: stable;
           scrollbar-width: thin;
@@ -666,6 +789,16 @@ export default function PipelineBoardPage() {
         }
         .kanban-scroll-stable:hover::-webkit-scrollbar-thumb:hover {
           background-color: rgba(0, 0, 0, 0.28);
+        }
+
+        .kanban-cards-container {
+          max-height: min(425px, calc(100vh - 230px));
+        }
+
+        @media (min-height: 820px) {
+          .kanban-cards-container {
+            max-height: min(525px, calc(100vh - 230px));
+          }
         }
 
         @keyframes toastFadeIn {
@@ -703,9 +836,9 @@ export default function PipelineBoardPage() {
       `}} />
 
       {isRefreshing ? (
-        <ProspectsBoardSkeleton />
+        <ProspectsBoardSkeleton isConversionOfficer={isConversionOfficer} />
       ) : (
-        <div className="w-[90%] max-w-full min-w-0 mx-auto space-y-4 animate-in fade-in duration-300">
+        <div className="w-full max-w-full min-w-0 mx-auto space-y-4">
         {/* Title row matching prospects table exactly */}
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -743,14 +876,164 @@ export default function PipelineBoardPage() {
               Export CSV
             </button>
 
-            <Link
-              href="/donor-conv/prospects/add-prospect"
-              className="flex h-9 items-center gap-2 rounded-button bg-brand-primary px-4 text-[0.8125rem] font-semibold text-white hover:opacity-90"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              New prospect
-            </Link>
+            {canWrite ? (
+              <Link
+                href="/donor-conv/prospects/add-prospect?from=board"
+                className="flex h-9 items-center gap-2 rounded-button bg-brand-primary px-4 text-[0.8125rem] font-semibold text-white hover:opacity-90"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                New prospect
+              </Link>
+            ) : (
+              <span className="flex h-9 items-center gap-1.5 rounded-button bg-gray-100 px-3 text-[0.8125rem] font-medium text-gray-500 border border-gray-200 select-none">
+                View only
+              </span>
+            )}
           </div>
+        </div>
+
+        {/* Quick views matching table screen exactly */}
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setQuickDate(null);
+              setQuickOfficer(null);
+              setQuickStage(null);
+            }}
+            className={cn(
+              "flex h-9 items-center gap-2 rounded-full border px-4 text-[13px] font-medium transition-colors cursor-pointer",
+              isAllView
+                ? "bg-text-primary text-white border-text-primary"
+                : "border-border-strong bg-white text-text-primary hover:bg-surface-soft-hover",
+            )}
+          >
+            All
+            <span
+              className={cn(
+                "rounded-full px-1.5 text-[11px] font-semibold",
+                isAllView
+                  ? "bg-white/20 text-white"
+                  : "bg-surface-soft text-text-secondary",
+              )}
+            >
+              {chipCounts.all}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setQuickDate((prev) => (prev === "today" ? null : "today"));
+              setQuickOfficer(null);
+              setQuickStage(null);
+            }}
+            className={cn(
+              "flex h-9 items-center gap-2 rounded-full border px-4 text-[13px] font-medium transition-colors cursor-pointer",
+              isDueTodayView
+                ? "bg-text-primary text-white border-text-primary"
+                : "border-border-strong bg-white text-text-primary hover:bg-surface-soft-hover",
+            )}
+          >
+            Due today
+            <span
+              className={cn(
+                "rounded-full px-1.5 text-[11px] font-semibold",
+                isDueTodayView
+                  ? "bg-white/20 text-white"
+                  : "bg-surface-soft text-text-secondary",
+              )}
+            >
+              {chipCounts["due-today"]}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setQuickDate((prev) => (prev === "overdue" ? null : "overdue"));
+              setQuickOfficer(null);
+              setQuickStage(null);
+            }}
+            className={cn(
+              "flex h-9 items-center gap-2 rounded-full border px-4 text-[13px] font-medium transition-colors cursor-pointer",
+              isOverdueView
+                ? "bg-text-primary text-white border-text-primary"
+                : "border-border-strong bg-white text-text-primary hover:bg-surface-soft-hover",
+            )}
+          >
+            Overdue
+            <span
+              className={cn(
+                "rounded-full px-1.5 text-[11px] font-semibold",
+                isOverdueView
+                  ? "bg-white/20 text-white"
+                  : "bg-surface-soft text-text-secondary",
+              )}
+            >
+              {chipCounts.overdue}
+            </span>
+          </button>
+
+          {isConversionOfficer && (
+            <button
+              type="button"
+              onClick={() => {
+                setQuickOfficer((prev) =>
+                  prev === myOfficerFilterName ? null : myOfficerFilterName,
+                );
+                setQuickDate(null);
+                setQuickStage(null);
+              }}
+              className={cn(
+                "flex h-9 items-center gap-2 rounded-full border px-4 text-[13px] font-medium transition-colors cursor-pointer",
+                isMineView
+                  ? "bg-text-primary text-white border-text-primary"
+                  : "border-border-strong bg-white text-text-primary hover:bg-surface-soft-hover",
+              )}
+            >
+              My prospects
+              <span
+                className={cn(
+                  "rounded-full px-1.5 text-[11px] font-semibold",
+                  isMineView
+                    ? "bg-white/20 text-white"
+                    : "bg-surface-soft text-text-secondary",
+                )}
+              >
+                {chipCounts.mine}
+              </span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={() => {
+              setQuickStage((prev) =>
+                prev === "Proposal Sent" ? null : "Proposal Sent",
+              );
+              setQuickDate(null);
+              setQuickOfficer(null);
+            }}
+            className={cn(
+              "flex h-9 items-center gap-2 rounded-full border px-4 text-[13px] font-medium transition-colors cursor-pointer",
+              isProposalSentView
+                ? "bg-text-primary text-white border-text-primary"
+                : "border-border-strong bg-white text-text-primary hover:bg-surface-soft-hover",
+            )}
+          >
+            Proposal sent
+            <span
+              className={cn(
+                "rounded-full px-1.5 text-[11px] font-semibold",
+                isProposalSentView
+                  ? "bg-white/20 text-white"
+                  : "bg-surface-soft text-text-secondary",
+              )}
+            >
+              {chipCounts["proposal-sent"]}
+            </span>
+          </button>
         </div>
 
         {/* Search + Table-Matched Filters */}
@@ -844,10 +1127,9 @@ export default function PipelineBoardPage() {
                         onChange={(val) =>
                           setDraftFilters((prev) => ({ ...prev, officer: val }))
                         }
-                        options={[{ label: "All assigned officers", value: "all" }, ...OWNERS.map((o) => ({ label: o, value: o }))]}
+                        options={[{ label: "All assigned officers", value: "all" }, ...availableOwners.map((o) => ({ label: o, value: o }))]}
                       />
                     </div>
-
                     {/* Target Amount */}
                     <div>
                       <label className="block text-[0.75rem] font-medium text-[#5c5757] mb-1.5">
@@ -876,8 +1158,22 @@ export default function PipelineBoardPage() {
                       />
                     </div>
 
-                    {/* Probability Slider */}
+                    {/* Lead Source */}
                     <div>
+                      <label className="block text-[11px] font-medium text-[#5c5757] mb-1.5">
+                        Lead Source
+                      </label>
+                      <ProspectSelectMenu
+                        value={draftFilters.leadSource}
+                        onChange={(val) =>
+                          setDraftFilters((prev) => ({ ...prev, leadSource: val }))
+                        }
+                        options={LEAD_SOURCE_OPTIONS}
+                      />
+                    </div>
+
+                    {/* Probability Slider */}
+                    <div className="col-span-2">
                       {(() => {
                         const probVal =
                           draftFilters.probability === "all" || !draftFilters.probability
@@ -893,7 +1189,7 @@ export default function PipelineBoardPage() {
                                 className={cn(
                                   "text-[0.6875rem] px-1.5 py-0.5 rounded transition-colors",
                                   probVal > 0
-                                    ? "bg-[#6B0F0F]/10 text-brand-primary font-semibold"
+                                    ? "bg-[#f0eeee] text-[#3c3838] border border-[#d6d2d2] font-semibold"
                                     : "text-text-muted font-normal",
                                 )}
                               >
@@ -916,9 +1212,9 @@ export default function PipelineBoardPage() {
                                   }));
                                 }}
                                 aria-label="Filter by minimum probability"
-                                className="w-full h-1.5 cursor-pointer appearance-none rounded-lg bg-[#e3dfdf] accent-[#6B0F0F] outline-none"
+                                className="w-full h-1.5 cursor-pointer appearance-none rounded-lg bg-[#e5e7eb] accent-[#757070] outline-none"
                                 style={{
-                                  background: `linear-gradient(to right, #6B0F0F 0%, #6B0F0F ${probVal}%, #e3dfdf ${probVal}%, #e3dfdf 100%)`,
+                                  background: `linear-gradient(to right, #757070 0%, #757070 ${probVal}%, #e5e7eb ${probVal}%, #e5e7eb 100%)`,
                                 }}
                               />
                               <div className="flex justify-between px-0.5 mt-1 text-[0.625rem] font-medium text-[#8a8484] select-none">
@@ -934,7 +1230,6 @@ export default function PipelineBoardPage() {
                         );
                       })()}
                     </div>
-
                     {/* Lead Source */}
                     <div>
                       <label className="block text-[0.75rem] font-medium text-[#5c5757] mb-1.5">
@@ -968,7 +1263,7 @@ export default function PipelineBoardPage() {
                         setAppliedFilters(draftFilters);
                         closeFilterPopup();
                       }}
-                      className="rounded-md bg-[#221f1f] hover:bg-[#110f0f] px-4 py-1.5 text-xs font-semibold text-white transition-colors cursor-pointer"
+                      className="rounded-md bg-[#6b0f0f] hover:bg-[#520b0b] px-4 py-1.5 text-xs font-semibold text-white transition-colors cursor-pointer shadow-xs"
                     >
                       Apply
                     </button>
@@ -997,9 +1292,9 @@ export default function PipelineBoardPage() {
           </div>
         </div>
 
-        {/* 5 Equal Kanban Columns Grid */}
-        <div className="grid grid-cols-5 items-start gap-3 w-full min-w-0">
-          {columns.map(({ stage, cards }) => {
+        {/* 5 Equal Fluid Kanban Columns Grid */}
+        <div className="grid grid-cols-5 items-start gap-2.5 w-full min-w-0">
+          {columns.map(({ stage, cards, total }) => {
             const style = STAGE_STYLES[stage];
             const isDragOver = dragOverStage === stage && isDragging;
 
@@ -1011,7 +1306,7 @@ export default function PipelineBoardPage() {
                 }}
                 aria-label={stageLabel(stage)}
                 className={cn(
-                  "flex flex-col rounded-[8px] p-2.5 transition-colors duration-150 w-full min-w-0",
+                  "flex flex-col rounded-[8px] p-2 transition-colors duration-150 w-full min-w-0",
                   isDragOver
                     ? style.dropGlow
                     : "bg-surface-soft/80 hover:bg-surface-soft",
@@ -1034,8 +1329,8 @@ export default function PipelineBoardPage() {
                   </div>
                 </header>
 
-                {/* Column Scrollable Body */}
-                <div className="space-y-2.5 max-h-[calc(100vh-230px)] overflow-y-auto pr-0.5 kanban-scroll-stable min-h-[380px]">
+                {/* Column Scrollable Body: 4 cards + 1/4 on laptop (~425px), 5 cards + 1/4 on big screens (~525px) */}
+                <div className="space-y-2 kanban-cards-container overflow-y-auto pr-0.5 kanban-scroll-stable min-h-[380px]">
                   {cards.length === 0 && (
                     <div
                       className={cn(
@@ -1066,19 +1361,20 @@ export default function PipelineBoardPage() {
                         onPointerDown={(e) => handleCardPointerDown(e, l)}
                         style={{ touchAction: "none" }}
                         className={cn(
-                          "group relative block cursor-grab active:cursor-grabbing rounded-[6px] border bg-white p-2.5 shadow-xs transition-all select-none",
+                          "group relative block rounded-[6px] border bg-white p-2 shadow-xs transition-all select-none min-w-0",
+                          canWrite ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
                           isHeld
                             ? "border-dashed border-gray-300 bg-gray-50/70 opacity-30 shadow-none pointer-events-none"
                             : "border-border-soft hover:border-border-strong hover:shadow-xs",
                         )}
                       >
-                        <div className="flex items-start justify-between gap-1.5">
-                          <p className="text-[0.75rem] leading-tight font-semibold text-text-primary hover:text-[#6b0f0f] transition-colors line-clamp-1 pointer-events-none">
+                        <div className="flex items-center justify-between gap-1 min-w-0">
+                          <p className="text-[0.75rem] leading-tight font-semibold text-text-primary hover:text-[#6b0f0f] transition-colors truncate min-w-0 pointer-events-none">
                             {l.prospect_name}
                           </p>
                           <span
                             className={cn(
-                              "shrink-0 rounded-[3px] px-1 py-0.2 text-[0.625rem] font-medium pointer-events-none",
+                              "shrink-0 rounded-[3px] px-1 py-0.2 text-[0.625rem] font-medium pointer-events-none whitespace-nowrap",
                               (Number(l.probability) || 0) >= 70
                                 ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
                                 : (Number(l.probability) || 0) >= 40
@@ -1090,23 +1386,23 @@ export default function PipelineBoardPage() {
                           </span>
                         </div>
 
-                        <p className="mt-0.5 text-[0.6875rem] text-text-secondary truncate pointer-events-none">
+                        <p className="mt-0.5 text-[0.6875rem] text-text-secondary truncate min-w-0 pointer-events-none">
                           {l.primary_contact_person}
                         </p>
 
-                        <div className="mt-1.5 flex items-center justify-between pointer-events-none">
-                          <span className="text-[0.75rem] font-semibold text-text-primary">
+                        <div className="mt-1 flex items-center justify-between gap-1 min-w-0 pointer-events-none">
+                          <span className="text-[0.75rem] font-semibold text-text-primary whitespace-nowrap shrink-0">
                             {peso.format(l.target_amount)}
                           </span>
-                          <span className="text-[0.625rem] text-text-muted capitalize">
+                          <span className="text-[0.625rem] text-text-muted capitalize truncate min-w-0 text-right">
                             {l.donor_type}
                           </span>
                         </div>
 
-                        <div className="mt-1.5 flex items-center justify-between gap-1 border-t border-gray-100 pt-1.5 pointer-events-none">
+                        <div className="mt-1 flex items-center justify-between gap-1 border-t border-gray-100 pt-1 pointer-events-none min-w-0">
                           <span
                             className={cn(
-                              "flex items-center gap-1 text-[0.6875rem]",
+                              "flex items-center gap-1 text-[0.6875rem] truncate min-w-0",
                               !l.target_followup_date && "text-text-muted",
                               l.target_followup_date && "text-text-secondary",
                               overdue && "font-medium text-brand-danger",
@@ -1114,13 +1410,15 @@ export default function PipelineBoardPage() {
                             )}
                           >
                             <Calendar className="h-2.5 w-2.5 shrink-0" />
-                            {!l.target_followup_date
-                              ? "No date"
-                              : dueToday
-                                ? "Due today"
-                                : overdue
-                                  ? `Overdue ${shortDate(l.target_followup_date)}`
-                                  : shortDate(l.target_followup_date)}
+                            <span className="truncate">
+                              {!l.target_followup_date
+                                ? "No date"
+                                : dueToday
+                                  ? "Due today"
+                                  : overdue
+                                    ? `Overdue ${shortDate(l.target_followup_date)}`
+                                    : shortDate(l.target_followup_date)}
+                            </span>
                           </span>
 
                           <span
@@ -1200,60 +1498,6 @@ export default function PipelineBoardPage() {
           </div>
         )}
 
-        {/* BOTTOM-RIGHT ACTIONABLE TOAST NOTIFICATIONS (Rejections, Errors, Shortcut Link, Confirmations) */}
-        {toast && (
-          <div
-            role="status"
-            aria-live="polite"
-            className={cn(
-              "fixed bottom-6 right-6 z-50 flex items-start gap-3 rounded-xl border border-gray-200/90 bg-white p-3.5 shadow-2xl w-max max-w-[calc(100vw-3rem)] select-none",
-              isToastExiting ? "toast-animate-out" : "toast-animate-in",
-            )}
-          >
-            {toast.type === "error" ? (
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-700">
-                <AlertCircle className="h-4 w-4" />
-              </div>
-            ) : (
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-                <CheckCircle2 className="h-4 w-4" />
-              </div>
-            )}
-            <div className="flex-1 min-w-0 pr-1">
-              <div className="flex items-center justify-between gap-4">
-                <p className="text-xs font-semibold text-text-primary whitespace-nowrap">
-                  {toast.title}
-                </p>
-                <button
-                  type="button"
-                  onClick={dismissToast}
-                  className="rounded-full p-0.5 text-text-muted hover:bg-gray-100 hover:text-text-primary transition-colors cursor-pointer"
-                  aria-label="Dismiss notification"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </div>
-              <p className="text-[0.75rem] text-text-secondary leading-snug whitespace-nowrap mt-0.5">
-                {toast.message}
-              </p>
-              {toast.action && (
-                <div className="mt-2.5">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      dismissToast();
-                      toast.action?.onClick();
-                    }}
-                    className="inline-flex items-center justify-center rounded-button bg-brand-primary px-3.5 py-1.5 text-[0.75rem] font-semibold text-white shadow-xs hover:bg-[#520b0b] active:scale-[0.98] transition-all cursor-pointer whitespace-nowrap"
-                  >
-                    {toast.action.label}
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
         {/* CONFIRMATION MODAL: Only for closing into Secured Donor */}
         {securingLead && (
           <div
@@ -1296,6 +1540,13 @@ export default function PipelineBoardPage() {
                   type="button"
                   onClick={() => {
                     handleStageUpdate(securingLead.id, "Secured Donor");
+                    notifyDonorCareSecured(
+                      securingLead.id,
+                      securingLead.prospect_name,
+                      securingLead.target_amount
+                    ).catch((err) => {
+                      console.error("Failed to dispatch secured notice:", err);
+                    });
                     triggerToast({
                       id: String(Date.now()),
                       type: "success",

@@ -2,9 +2,15 @@
 
 import React from "react";
 
-export function ProspectsTableSkeleton() {
+export function ProspectsTableSkeleton({
+  isConversionOfficer = false,
+}: {
+  isConversionOfficer?: boolean;
+} = {}) {
+  const chipCount = isConversionOfficer ? 5 : 4;
+
   return (
-    <div className="w-[90%] max-w-full min-w-0 mx-auto space-y-4 animate-in fade-in duration-300">
+    <div className="w-full max-w-full min-w-0 mx-auto space-y-4">
       {/* Title row skeleton */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -24,11 +30,11 @@ export function ProspectsTableSkeleton() {
 
       {/* Quick views chips */}
       <div className="flex flex-wrap gap-2">
-        {Array.from({ length: 5 }).map((_, i) => (
+        {Array.from({ length: chipCount }).map((_, i) => (
           <div
             key={i}
             className="h-9 bg-gray-200/80 rounded-full animate-pulse"
-            style={{ width: `${64 + (i % 3) * 20}px` }}
+            style={{ width: `${76 + (i % 3) * 20}px` }}
           />
         ))}
       </div>

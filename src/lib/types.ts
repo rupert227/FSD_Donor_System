@@ -1,5 +1,7 @@
 export type none = null | undefined;
 
+type numArray = (number | none)[] | none;
+
 export namespace Primitives {
   export interface ChartOption<K = string, L = string, V = number> {
     key: K;
@@ -19,39 +21,38 @@ export namespace Leads {
     fiscalYear?: string | none;
     donorType?: string | none;
     pipelineStage?: string | none;
-    weightedForecast?: number | none;
-    leadConversionRate?: number | none;
-    totalPipelineValue?: number | none;
-    averageProbability?: number | none;
     fiscalYearOptions?: Primitives.DropdownOption[] | none;
     donorTypeOptions?: Primitives.DropdownOption[] | none;
     pipelineStageOptions?: Primitives.DropdownOption[] | none;
-    leadOrigins?: Primitives.ChartOption[] | none;
-    pipelineStages?: Primitives.ChartOption[] | none;
-    quarterNewLeads?: Primitives.ChartOption[] | none;
-    quarterlySummary?:
-      | {
-          pipelineValue?: {
-            totalEstimatedValue?: (number | none)[] | none;
-            probabilityAdjustedValue?: (number | none)[] | none;
-            securedValue?: (number | none)[] | none;
-            unsecuredBalance?: (number | none)[] | none;
-          };
-          conversion?: {
-            leadConversionRate?: (number | none)[] | none;
-            valueRealizationRate?: (number | none)[] | none;
-          };
-          leadsOrigin?: {
-            referral?: (number | none)[] | none;
-            research?: (number | none)[] | none;
-            booths?: (number | none)[] | none;
-            directCall?: (number | none)[] | none;
-            walkIn?: (number | none)[] | none;
-          };
-          totalNewLeads?: (number | none)[] | none;
-        }
-      | null
-      | undefined;
+    quarterlySummary?: {
+      headers?: (string | none)[] | none;
+      coreMonetaryValue?: {
+        totalEstimatedValuation?: numArray;
+        probabilityAdjustedValue?: numArray;
+        securedValue?: numArray;
+        unsecuredBalance?: numArray;
+      };
+      conversionEfficiencyAndRatios?: {
+        donorConversionRate?: numArray;
+        valueRealizationRate?: numArray;
+      };
+      leadOriginBreakdown?: {
+        referral?: numArray;
+        research?: numArray;
+        booths?: numArray;
+        callOrText?: numArray;
+        walkIn?: numArray;
+        subTotalLeadIntake: numArray;
+      };
+      pipelineStageBreakdown?: {
+        newLead?: numArray;
+        underResearch?: numArray;
+        outreachStarted?: numArray;
+        proposalSent?: numArray;
+        securedDonor?: numArray;
+        subTotalProspectRecords: numArray;
+      };
+    };
   }
 
   export interface ReportFilters {
@@ -65,16 +66,9 @@ export namespace Leads {
     fiscalYear: undefined,
     donorType: undefined,
     pipelineStage: undefined,
-    weightedForecast: undefined,
-    leadConversionRate: undefined,
-    totalPipelineValue: undefined,
-    averageProbability: undefined,
     fiscalYearOptions: undefined,
     donorTypeOptions: undefined,
     pipelineStageOptions: undefined,
-    leadOrigins: undefined,
-    pipelineStages: undefined,
-    quarterNewLeads: undefined,
     quarterlySummary: undefined,
   };
 }

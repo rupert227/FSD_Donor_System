@@ -12,7 +12,7 @@ export default function ReportsPage() {
     <Suspense
       fallback={
         <AppShell navbarPreset={navbarPreset}>
-          <LoadingScreen label={"Loading Reports Page"} />
+          <LoadingScreen label="Loading Reports" />
         </AppShell>
       }
     >

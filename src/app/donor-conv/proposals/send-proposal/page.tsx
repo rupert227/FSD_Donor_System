@@ -10,9 +10,11 @@ import { getNavbarPreset, moduleName } from "@/app/donor-conv/struct";
 import { useDocumentTitle } from "@/components/Navbar";
 import { createClient } from "@/lib/supabase/client";
 import { proposalFileName } from "@/lib/letter";
+import { isValidEmail } from "@/lib/proposals-data";
 import { buildEmailBody, buildEmailSubject } from "@/lib/proposal-email";
 import type { DeliveryPreferenceEnum } from "@/types";
 import { getMailModeForScreen, sendProposal } from "./actions";
+import SendProposalSkeleton from "./skeleton";
 
 const pageName = "Send Proposal";
 
@@ -173,7 +175,8 @@ function SendProposalContent() {
     prospect.prospect_name,
     proposal.letter_date,
   );
-  const hasEmail = Boolean(prospect.email_address?.trim());
+  // Same check the server runs before sending, so the screen never offers a send that will fail.
+  const hasEmail = isValidEmail(prospect.email_address);
   const realDelivery = mailMode === "send";
 
   async function handleSend() {
@@ -286,8 +289,8 @@ function SendProposalContent() {
                         className="mt-0.5 size-4 shrink-0"
                         aria-hidden="true"
                       />
-                      This prospect has no email address. Add one with Edit on
-                      record, or choose another delivery option.
+                      This prospect has no valid email address. Add one with Edit
+                      on record, or choose another delivery option.
                     </p>
                   )}
                   {mailMode && !realDelivery && (
@@ -438,19 +441,20 @@ function SendProposalContent() {
 export default function SendProposalPage() {
   useDocumentTitle(`${moduleName} - ${pageName}`);
   const navbarPreset = getNavbarPreset(1);
-
   return (
     <AppShell navbarPreset={navbarPreset}>
-      <div className="flex items-center gap-3">
-        <div className="bg-surface-soft flex size-10 shrink-0 items-center justify-center rounded-lg">
-          <FileText className="size-5" aria-hidden="true" />
+      <div className="space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="bg-surface-soft flex size-10 shrink-0 items-center justify-center rounded-lg">
+            <FileText className="size-5" aria-hidden="true" />
+          </div>
+          <h1 className="text-[1.375rem] leading-7 font-semibold">Send proposal</h1>
         </div>
-        <h1 className="text-[22px] leading-7 font-semibold">Send proposal</h1>
-      </div>
 
-      <Suspense fallback={<p className="mt-5 text-sm">Loading...</p>}>
-        <SendProposalContent />
-      </Suspense>
+        <Suspense fallback={<SendProposalSkeleton />}>
+          <SendProposalContent />
+        </Suspense>
+      </div>
     </AppShell>
   );
 }

@@ -8,6 +8,7 @@ export type Prospect = Pick<
   | "prospect_name"
   | "primary_contact_person"
   | "title_designation"
+  | "email_address"
   | "street_address"
   | "city_province"
   | "target_campaign"
