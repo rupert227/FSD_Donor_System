@@ -13,6 +13,7 @@ import { proposalFileName } from "@/lib/letter";
 import { buildEmailBody, buildEmailSubject } from "@/lib/proposal-email";
 import type { DeliveryPreferenceEnum } from "@/types";
 import { getMailModeForScreen, sendProposal } from "./actions";
+import SendProposalSkeleton from "./skeleton";
 
 const pageName = "Send Proposal";
 
@@ -438,19 +439,20 @@ function SendProposalContent() {
 export default function SendProposalPage() {
   useDocumentTitle(`${moduleName} - ${pageName}`);
   const navbarPreset = getNavbarPreset(1);
-
   return (
     <AppShell navbarPreset={navbarPreset}>
-      <div className="flex items-center gap-3">
-        <div className="bg-surface-soft flex size-10 shrink-0 items-center justify-center rounded-lg">
-          <FileText className="size-5" aria-hidden="true" />
+      <div className="space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="bg-surface-soft flex size-10 shrink-0 items-center justify-center rounded-lg">
+            <FileText className="size-5" aria-hidden="true" />
+          </div>
+          <h1 className="text-[1.375rem] leading-7 font-semibold">Send proposal</h1>
         </div>
-        <h1 className="text-[22px] leading-7 font-semibold">Send proposal</h1>
-      </div>
 
-      <Suspense fallback={<p className="mt-5 text-sm">Loading...</p>}>
-        <SendProposalContent />
-      </Suspense>
+        <Suspense fallback={<SendProposalSkeleton />}>
+          <SendProposalContent />
+        </Suspense>
+      </div>
     </AppShell>
   );
 }

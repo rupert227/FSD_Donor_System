@@ -2,14 +2,18 @@ import { Suspense } from "react";
 import { FileText } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { ProposalBuilder } from "@/components/proposals/ProposalBuilder";
-import { navbarPreset } from "@/app/donor-conv/struct";
+import { getNavbarPreset, moduleName } from "@/app/donor-conv/struct";
 import { createClient } from "@/lib/supabase/server";
+import ProposalsSkeleton from "./skeleton";
 import type { BuilderProspect, Signatory } from "@/types/proposal";
 import {
   PROPOSAL_STAGES,
   PROSPECT_SELECT,
   toBuilderProspect,
 } from "@/lib/proposals-data";
+
+// Same tab title the other Donor Conversion pages use ("<module> - <page>").
+export const metadata = { title: `${moduleName} - Proposals` };
 
 type SearchParams = Promise<{ prospectId?: string; prospect?: string }>;
 
@@ -77,19 +81,21 @@ export default function ProposalsPage({
   searchParams: SearchParams;
 }) {
   return (
-    // Copy the shared preset and highlight the "Proposals" tab (index 1).
-    <AppShell navbarPreset={{ ...navbarPreset, selectedTabIndex: 1 }}>
-      {/* Page header (not printed): the page title. */}
-      <div className="no-print flex items-center gap-3">
-        <div className="bg-surface-soft flex size-10 shrink-0 items-center justify-center rounded-lg">
-          <FileText className="size-5" aria-hidden="true" />
+    // Highlights the "Proposals" tab (index 1).
+    <AppShell navbarPreset={getNavbarPreset(1)}>
+      <div className="space-y-4">
+        {/* Page header (not printed): the page title. */}
+        <div className="no-print flex items-center gap-3">
+          <div className="bg-surface-soft flex size-10 shrink-0 items-center justify-center rounded-lg">
+            <FileText className="size-5" aria-hidden="true" />
+          </div>
+          <h1 className="text-[1.375rem] leading-7 font-semibold">New proposal</h1>
         </div>
-        <h1 className="text-[22px] leading-7 font-semibold">New proposal</h1>
-      </div>
 
-      <Suspense fallback={<p className="mt-5 text-sm">Loading prospects...</p>}>
-        <ProposalBuilderLoader searchParams={searchParams} />
-      </Suspense>
+        <Suspense fallback={<ProposalsSkeleton />}>
+          <ProposalBuilderLoader searchParams={searchParams} />
+        </Suspense>
+      </div>
     </AppShell>
   );
 }

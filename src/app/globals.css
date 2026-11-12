@@ -5,8 +5,9 @@
 @theme inline {
   --color-border-soft: var(--border-soft);
   --color-border-strong: var(--border-strong);
-  --color-brand-50: var(--brand-50);
+  --color-border-warning: var(--border-warning);
   --color-brand-100: var(--brand-100);
+  --color-brand-50: var(--brand-50);
   --color-brand-danger: var(--brand-danger);
   --color-brand-primary: var(--brand-primary);
   --color-button-stroke: var(--button-stroke);
@@ -14,20 +15,23 @@
   --color-dropdown-stroke: var(--dropdown-stroke);
   --color-graph-bar-primary: var(--graph-bar-primary);
   --color-graph-bar-secondary: var(--graph-bar-secondary);
-  --color-primary-scrollbar: var(--scrollbar-primary);
-  --color-border-warning: var(--border-warning);
   --color-icon-warning: var(--icon-warning);
+  --color-primary-scrollbar: var(--scrollbar-primary);
+  --color-report-footer-background: var(--report-footer-background);
+  --color-report-header-background: var(--report-header-background);
+  --color-report-row-background: var(--report-row-bg);
+  --color-report-section-background: var(--report-section-background);
   --color-skeleton-primary: var(--skeleton-primary);
   --color-skeleton-secondary: var(--skeleton-secondary);
   --color-surface-amber: var(--surface-amber);
-  --color-surface-warning-strong: var(--surface-warning-strong);
-  --color-text-warning: var(--text-warning);
   --color-surface-soft-hover: var(--surface-soft-hover);
   --color-surface-soft: var(--surface-soft);
+  --color-surface-warning-strong: var(--surface-warning-strong);
   --color-surface-white: var(--surface-white);
   --color-text-muted: var(--text-muted);
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
+  --color-text-warning: var(--text-warning);
   --font-sans: var(--font-ibm-plex-sans), sans-serif;
   --opacity-button-disabled: var(--button-disabled);
   --radius-button: var(--button-radius);
@@ -39,7 +43,6 @@
 }
 
 @layer utilities {
-
   .scrollbar-primary {
     scrollbar-color: var(--scrollbar-primary) transparent;
     scrollbar-width: thin;
@@ -55,12 +58,20 @@
   }
 
   @keyframes modalBackdropFadeIn {
-    0% { opacity: 0; }
-    100% { opacity: 1; }
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
   }
   @keyframes modalBackdropFadeOut {
-    0% { opacity: 1; }
-    100% { opacity: 0; }
+    0% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
   }
   @keyframes modalContentFadeIn {
     0% {
@@ -104,6 +115,41 @@
     }
   }
 
+  @keyframes toastFadeIn {
+    0% {
+      opacity: 0;
+      transform: translateY(16px) scale(0.96);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes toastFadeOut {
+    0% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(12px) scale(0.96);
+    }
+  }
+
+  .toast-in,
+  .toast-animate-in {
+    animation: toastFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    will-change: transform, opacity;
+  }
+
+  .toast-out,
+  .toast-animate-out {
+    animation: toastFadeOut 0.22s cubic-bezier(0.4, 0, 1, 1) forwards;
+    pointer-events: none;
+    will-change: transform, opacity;
+  }
+
   .modal-backdrop-in {
     animation: modalBackdropFadeIn 0.2s ease-out forwards;
   }
@@ -130,7 +176,8 @@
 }
 
 @media print {
-  html, body {
+  html,
+  body {
     overflow: visible !important;
     min-width: 0 !important;
     width: 100% !important;
@@ -196,55 +243,58 @@
   --accent-foreground: oklch(0.205 0 0);
   --accent: oklch(0.97 0 0);
   --background: oklch(1 0 0);
-  --border: oklch(0.922 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --content-padding: 2.5rem;
-  --destructive: oklch(0.577 0.245 27.325);
-  --foreground: oklch(0.145 0 0);
-  --input: oklch(0.922 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --muted: oklch(0.97 0 0);
-  --navbar-height: 6.25rem;
-  --popover-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.205 0 0);
-  --radius: 0.625rem;
-  --ring: oklch(0.708 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.97 0 0);
-
   --border-soft: #e3dfdf;
   --border-strong: #d1d5db;
-  --brand-50: #fce8e6;
+  --border-warning: #fde68a;
+  --border: oklch(0.922 0 0);
   --brand-100: #fdf2f0;
+  --brand-50: #fce8e6;
   --brand-danger: #fa4454;
   --brand-primary: #6b0f0f;
   --button-disabled: 75%;
   --button-radius: 5px;
   --button-stroke: #8a8484;
+  --card-foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
   --content-background: #f7f6f6;
+  --content-padding: 2.5rem;
+  --destructive: oklch(0.577 0.245 27.325);
   --dropdown-radius: 6px;
   --dropdown-stroke: #8a8484;
+  --foreground: oklch(0.145 0 0);
   --graph-bar-primary: #1f4e79;
   --graph-bar-secondary: #4a90d9;
-  --panel-radius: 10px;
-  --scrollbar-primary: #cacaca;
-  --shadow-soft: 0 1px 2px rgba(15, 23, 42, 0.04);
-  --border-warning: #fde68a;
   --icon-warning: #d97706;
+  --input: oklch(0.922 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --muted: oklch(0.97 0 0);
+  --navbar-height: 6.25rem;
+  --panel-radius: 10px;
+  --popover-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.205 0 0);
+  --radius: 0.625rem;
+  --report-footer-background: #efefef;
+  --report-header-background: #414140;
+  --report-row-background: #efece6;
+  --report-section-background: #f4f1ea;
+  --ring: oklch(0.708 0 0);
+  --scrollbar-primary: #cacaca;
+  --secondary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.97 0 0);
+  --shadow-soft: 0 1px 2px rgba(15, 23, 42, 0.04);
   --skeleton-primary: #d1d5db;
   --skeleton-secondary: #e5e7eb;
   --surface-amber: #fff7ed;
-  --surface-warning-strong: #fef3c7;
-  --text-warning: #78350f;
   --surface-soft-hover: #eceae8;
   --surface-soft: #f3f2f1;
+  --surface-warning-strong: #fef3c7;
   --surface-white: #ffffff;
   --text-muted: #9ca3af;
   --text-primary: #1c1a1a;
   --text-secondary: #5c5757;
+  --text-warning: #78350f;
 }
 
 /* Put on a wrapper: every button, link and field inside gets one shared maroon
@@ -278,6 +328,7 @@
 html,
 body {
   font-family: var(--font-ibm-plex-sans), sans-serif;
+  background-color: var(--content-background);
   overflow-x: auto;
   min-width: 48rem;
 }
