@@ -104,6 +104,8 @@ Stores active donor records, contact details, and historical loyalty metrics.
   - *`New Renewal`*
 - **`assigned_officer`** (`VARCHAR(100)`, `NOT NULL`)  
   Staff member assigned to donor account.
+- **`converted_from_lead_id`** (`INTEGER`, `FK`, `NULLABLE`)  
+  Foreign key reference back to the original prospect in `lead_prospects` if this donor was converted from a lead.
 - **`last_contact_date`** (`DATE`, `NULLABLE`)  
   Date of most recent outreach touchpoint.
 - **`target_followup_date`** (`DATE`, `NULLABLE`)  
@@ -257,3 +259,49 @@ Stores staff details used in letters, kept separate from the sign-in credentials
   Officer job title as printed in letters.
 - **`phone_number`** (`VARCHAR(50)`, `NULLABLE`)  
   Officer contact number as printed in letters.
+
+## 8. `lead_outreach_activities`
+
+Stores the chronological outreach history, call notes, status transitions, and follow-up plans for prospects.
+
+- **`id`** (`INTEGER`, `PK`, `AUTO_INCREMENT`, `UNIQUE`)  
+  Unique outreach activity record identifier.
+- **`prospect_id`** (`INTEGER`, `FK`, `NOT NULL`)  
+  Foreign key reference to `lead_prospects`.
+- **`status`** (`ENUM`, `NOT NULL`)  
+  Pipeline status at the time of outreach touchpoint.
+- **`followup_date`** (`DATE`, `NULLABLE`)  
+  Target date set for the subsequent outreach action.
+- **`notes`** (`TEXT`, `NOT NULL`)  
+  Detailed notes, summary of discussion, or action plan from the touchpoint.
+- **`recorded_by`** (`INTEGER`, `FK`, `NULLABLE`)  
+  Foreign key reference to `user_accounts` for the officer who logged the outreach.
+- **`created_at`** (`TIMESTAMPTZ`, `NOT NULL`, `DEFAULT NOW()`)  
+  Timestamp when the outreach entry was recorded.
+
+## 9. `notifications`
+
+Stores persistent system notifications, reminders, and cross-module workflow alerts (such as notices sent to Donor Care when a prospect is secured).
+
+- **`id`** (`INTEGER`, `PK`, `AUTO_INCREMENT`, `UNIQUE`)  
+  Unique notification identifier.
+- **`title`** (`VARCHAR(150)`, `NOT NULL`)  
+  Short headline of the notification.
+- **`message`** (`TEXT`, `NOT NULL`)  
+  Full descriptive message body.
+- **`module`** (`VARCHAR(50)`, `NOT NULL`)  
+  Module context: `Donor Conversion`, `Donor Retention`, or `Donor Care`.
+- **`type`** (`VARCHAR(50)`, `NOT NULL`)  
+  Notification category: `prospect`, `proposal`, `recommitted`, `care_notice`, `receipt`, `followup_due`, or `overdue`.
+- **`is_alert`** (`BOOLEAN`, `DEFAULT FALSE`)  
+  Flag indicating high priority or urgency.
+- **`is_read`** (`BOOLEAN`, `DEFAULT FALSE`)  
+  Status tracking whether the notification has been marked read by the recipient.
+- **`assigned_officer`** (`VARCHAR(100)`, `NULLABLE`)  
+  Target officer recipient (or `NULL` if broadcast to all module users).
+- **`link_url`** (`TEXT`, `NULLABLE`)  
+  In-app route link associated with the alert action.
+- **`user_id`** (`INTEGER`, `FK`, `NULLABLE`)  
+  Foreign key reference to `user_accounts` if targeted to a specific user.
+- **`created_at`** (`TIMESTAMPTZ`, `NOT NULL`, `DEFAULT NOW()`)  
+  Creation timestamp.
