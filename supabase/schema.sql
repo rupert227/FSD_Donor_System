@@ -207,6 +207,7 @@ CREATE TABLE IF NOT EXISTS donor_profiles (
   engagement_status engagement_status_enum NOT NULL DEFAULT 'Uncontacted',
   donor_tenure donor_tenure_enum NOT NULL DEFAULT 'New Renewal',
   assigned_officer VARCHAR(100) NOT NULL,
+  converted_from_lead_id BIGINT REFERENCES lead_prospects(id) ON DELETE SET NULL,
   last_contact_date DATE,
   target_followup_date DATE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -302,6 +303,34 @@ ALTER TABLE lead_prospects
   ADD COLUMN IF NOT EXISTS assigned_officer_id BIGINT
   REFERENCES officer_profiles(id) ON DELETE SET NULL;
 
+-- 3.8 lead_outreach_activities (Multi-touch outreach history and action plans)
+CREATE TABLE IF NOT EXISTS lead_outreach_activities (
+  id BIGSERIAL PRIMARY KEY,
+  prospect_id BIGINT NOT NULL REFERENCES lead_prospects(id) ON DELETE CASCADE,
+  status pipeline_status_enum NOT NULL,
+  followup_date DATE,
+  notes TEXT NOT NULL,
+  recorded_by BIGINT REFERENCES user_accounts(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 3.9 notifications (System notifications, cross-module workflow alerts, reminders)
+CREATE TABLE IF NOT EXISTS notifications (
+  id BIGSERIAL PRIMARY KEY,
+  title VARCHAR(150) NOT NULL,
+  message TEXT NOT NULL,
+  module VARCHAR(50) NOT NULL,
+  type VARCHAR(50) NOT NULL,
+  is_alert BOOLEAN NOT NULL DEFAULT FALSE,
+  is_read BOOLEAN NOT NULL DEFAULT FALSE,
+  assigned_officer VARCHAR(100),
+  link_url TEXT,
+  user_id BIGINT REFERENCES user_accounts(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- ==============================================================================
 -- 4. PERFORMANCE INDEXES
 -- ==============================================================================
@@ -319,6 +348,12 @@ CREATE INDEX IF NOT EXISTS idx_cod_donor_id ON certificate_of_donation(donor_id)
 CREATE INDEX IF NOT EXISTS idx_user_accounts_email ON user_accounts(email_address);
 CREATE INDEX IF NOT EXISTS idx_proposals_prospect_id ON proposals(prospect_id);
 CREATE INDEX IF NOT EXISTS idx_lead_prospects_assigned_officer_id ON lead_prospects(assigned_officer_id);
+CREATE INDEX IF NOT EXISTS idx_donor_profiles_converted_from ON donor_profiles(converted_from_lead_id);
+CREATE INDEX IF NOT EXISTS idx_lead_outreach_prospect_id ON lead_outreach_activities(prospect_id);
+CREATE INDEX IF NOT EXISTS idx_lead_outreach_created_at ON lead_outreach_activities(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_notifications_module ON notifications(module);
+CREATE INDEX IF NOT EXISTS idx_notifications_assigned_officer ON notifications(assigned_officer);
+CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read);
 
 -- ==============================================================================
 -- 5. UPDATED_AT TRIGGERS
@@ -359,6 +394,16 @@ CREATE TRIGGER trigger_update_officer_profiles
   BEFORE UPDATE ON officer_profiles
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS trigger_update_lead_outreach_activities ON lead_outreach_activities;
+CREATE TRIGGER trigger_update_lead_outreach_activities
+  BEFORE UPDATE ON lead_outreach_activities
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS trigger_update_notifications ON notifications;
+CREATE TRIGGER trigger_update_notifications
+  BEFORE UPDATE ON notifications
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 -- ==============================================================================
 -- 6. ROW LEVEL SECURITY (RLS) POLICIES
 -- ==============================================================================
@@ -370,6 +415,8 @@ ALTER TABLE certificate_of_donation ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_accounts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE proposals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE officer_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE lead_outreach_activities ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 
 -- Allow authenticated service operations / staff by default:
 CREATE POLICY "Allow authenticated users full access to lead_prospects"
@@ -465,3 +512,9 @@ GRANT EXECUTE ON FUNCTION public.send_proposal(BIGINT, delivery_preference_enum)
 
 CREATE POLICY "Allow authenticated users full access to officer_profiles"
   ON officer_profiles FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+CREATE POLICY "Allow authenticated users full access to lead_outreach_activities"
+  ON lead_outreach_activities FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+CREATE POLICY "Allow authenticated users full access to notifications"
+  ON notifications FOR ALL TO authenticated USING (true) WITH CHECK (true);

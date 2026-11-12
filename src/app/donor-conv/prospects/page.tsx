@@ -25,11 +25,13 @@ import { cn } from "cn";
 import { AppShell } from "@/components/AppShell";
 import { getNavbarPreset, moduleName } from "@/app/donor-conv/struct";
 
-import { SAMPLE_LEADS, type LeadDetail } from "@supabase/seeds/prospects-seed";
+import type { LeadDetail } from "@supabase/seeds/prospects-seed";
 import type { PipelineStatusEnum } from "@/types";
 import { ProspectSelectMenu, ProspectsTableSkeleton } from "./_components";
+import { getProspects } from "@/lib/prospects/actions";
 
 import { useDocumentTitle } from "@/components/Navbar";
+import { useUserRole } from "@/lib/use-user-role";
 
 const pageName = "Prospects";
 const PAGE_SIZE = 10;
@@ -214,8 +216,17 @@ function matchesFilters(
   }
 
   // Quick officer shortcut
-  if (quickOfficer && l.assigned_officer !== quickOfficer) {
-    return false;
+  if (quickOfficer) {
+    const target = quickOfficer.toLowerCase();
+    const leadOfficer = (l.assigned_officer || "").toLowerCase();
+    const matches =
+      leadOfficer === target ||
+      leadOfficer.includes(target) ||
+      target.includes(leadOfficer) ||
+      (target.includes("reyes") && leadOfficer.includes("reyes")) ||
+      (target.includes("tan") && leadOfficer.includes("tan")) ||
+      (target.includes("cruz") && leadOfficer.includes("cruz"));
+    if (!matches) return false;
   }
 
   // Quick date shortcut
@@ -257,23 +268,27 @@ function matchesFilters(
     return false;
   }
 
-  // Target Amount based on project feasibility tiers (0-50k, 50k-250k, 250k-1m, >1m)
+  // Target Amount based on slider (>= threshold) or project feasibility tiers
   if (f.amountRange !== "all") {
     const amt = l.target_amount;
-    if (f.amountRange === "0-50k" && amt > 50000) return false;
-    if (
+    const numAmt = Number(f.amountRange);
+    if (!isNaN(numAmt) && numAmt > 0) {
+      if (amt < numAmt) return false;
+    } else if (f.amountRange === "0-50k" && amt > 50000) {
+      return false;
+    } else if (
       f.amountRange === "50000-250000" &&
       (amt <= 50000 || amt > 250000)
     ) {
       return false;
-    }
-    if (
+    } else if (
       f.amountRange === "250000-1000000" &&
       (amt <= 250000 || amt > 1000000)
     ) {
       return false;
+    } else if (f.amountRange === "over1m" && amt <= 1000000) {
+      return false;
     }
-    if (f.amountRange === "over1m" && amt <= 1000000) return false;
   }
 
   return true;
@@ -282,12 +297,32 @@ function matchesFilters(
 export default function ProspectsPage() {
   useDocumentTitle(`${moduleName} - ${pageName}`);
   const navbarPreset = getNavbarPreset(0);
+  const { role, officerName, canWriteModule } = useUserRole();
+  const canWrite = canWriteModule("donor-conv");
+  const isConversionOfficer = role === "Conversion Officer";
+  const myOfficerFilterName = officerName || CURRENT_OFFICER;
 
   const router = useRouter();
   const today = useToday();
 
+  // Full screen vs window resized layout handling
+  const [fixedWidth, setFixedWidth] = useState<number | null>(null);
+  const [isFullScreen, setIsFullScreen] = useState(true);
+
+  useEffect(() => {
+    function updateLayoutMode() {
+      const isMax = window.outerWidth >= window.screen.availWidth - 32;
+      setIsFullScreen(isMax);
+      const base90 = Math.round(window.screen.availWidth * 0.9);
+      setFixedWidth(base90);
+    }
+    updateLayoutMode();
+    window.addEventListener("resize", updateLayoutMode);
+    return () => window.removeEventListener("resize", updateLayoutMode);
+  }, []);
+
   const [search, setSearch] = useState("");
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(true);
   // Committed applied filters (controls table data)
   const [applied, setApplied] = useState<ProspectFilters>(DEFAULT_FILTERS);
   // Draft filters (holds selections in popup until "Apply" is clicked)
@@ -327,9 +362,33 @@ export default function ProspectsPage() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [filterOpen, applied]);
 
+  const [leads, setLeads] = useState<LeadDetail[]>([]);
+
+  useEffect(() => {
+    let isCancelled = false;
+    async function loadDbProspects() {
+      try {
+        const dbData = await getProspects();
+        if (!isCancelled) {
+          setLeads(dbData ?? []);
+        }
+      } catch (err) {
+        console.error("Failed to load prospects from DB:", err);
+      } finally {
+        if (!isCancelled) {
+          setIsRefreshing(false);
+        }
+      }
+    }
+    loadDbProspects();
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
   const allRows = useMemo(
-    () => SAMPLE_LEADS.slice().sort(byFollowUpDate),
-    [],
+    () => leads.slice().sort(byFollowUpDate),
+    [leads],
   );
 
   const filtered = useMemo(
@@ -383,8 +442,7 @@ export default function ProspectsPage() {
     let count = 0;
     if (applied.status !== "all") count++;
     if (applied.campaign !== "all") count++;
-    if (applied.amountRange !== "all") count++;
-    if (applied.assignedOfficer !== "all") count++;
+    if (applied.amountRange !== "all" && applied.amountRange !== "0") count++;
     if (applied.donorType !== "all") count++;
     if (applied.leadSource !== "all") count++;
     return count;
@@ -420,9 +478,20 @@ export default function ProspectsPage() {
       overdue: allRows.filter((l) =>
         matchesFilters(l, DEFAULT_FILTERS, today, "", null, "overdue", null),
       ).length,
-      mine: allRows.filter((l) =>
-        matchesFilters(l, DEFAULT_FILTERS, today, "", CURRENT_OFFICER, null, null),
-      ).length,
+      mine: isConversionOfficer
+        ? allRows.filter((l) => {
+            const target = myOfficerFilterName.toLowerCase();
+            const leadOfficer = (l.assigned_officer || "").toLowerCase();
+            return (
+              leadOfficer === target ||
+              leadOfficer.includes(target) ||
+              target.includes(leadOfficer) ||
+              (target.includes("reyes") && leadOfficer.includes("reyes")) ||
+              (target.includes("tan") && leadOfficer.includes("tan")) ||
+              (target.includes("cruz") && leadOfficer.includes("cruz"))
+            );
+          }).length
+        : 0,
       "proposal-sent": allRows.filter((l) =>
         matchesFilters(
           l,
@@ -435,13 +504,13 @@ export default function ProspectsPage() {
         ),
       ).length,
     }),
-    [allRows, today],
+    [allRows, today, isConversionOfficer, myOfficerFilterName],
   );
 
   const isAllView = !quickDate && !quickOfficer && !quickStage;
   const isDueTodayView = quickDate === "today";
   const isOverdueView = quickDate === "overdue";
-  const isMineView = quickOfficer === CURRENT_OFFICER;
+  const isMineView = isConversionOfficer && quickOfficer === myOfficerFilterName;
   const isProposalSentView = quickStage === "Proposal Sent";
 
   function exportCsv() {
@@ -483,10 +552,16 @@ export default function ProspectsPage() {
 
   return (
     <AppShell navbarPreset={navbarPreset}>
+      <style dangerouslySetInnerHTML={{ __html: `
+        html, body {
+          background-color: var(--content-background) !important;
+        }
+      `}} />
+
       {isRefreshing ? (
-        <ProspectsTableSkeleton />
+        <ProspectsTableSkeleton isConversionOfficer={isConversionOfficer} />
       ) : (
-        <div className="w-[90%] max-w-full min-w-0 mx-auto space-y-4 animate-in fade-in duration-300">
+        <div className="w-full max-w-full min-w-0 mx-auto space-y-4">
         {/* Title row without icon beside All Prospects */}
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -524,13 +599,19 @@ export default function ProspectsPage() {
               Export CSV
             </button>
 
-            <Link
-              href="/donor-conv/prospects/add-prospect"
-              className="flex h-9 items-center gap-2 rounded-button bg-brand-primary px-4 text-[0.8125rem] font-semibold text-white hover:opacity-90"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              New prospect
-            </Link>
+            {canWrite ? (
+              <Link
+                href="/donor-conv/prospects/add-prospect?from=table"
+                className="flex h-9 items-center gap-2 rounded-button bg-brand-primary px-4 text-[0.8125rem] font-semibold text-white hover:opacity-90"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                New prospect
+              </Link>
+            ) : (
+              <span className="flex h-9 items-center gap-1.5 rounded-button bg-gray-100 px-3 text-[0.8125rem] font-medium text-gray-500 border border-gray-200 select-none">
+                View only
+              </span>
+            )}
           </div>
         </div>
 
@@ -620,35 +701,37 @@ export default function ProspectsPage() {
             </span>
           </button>
 
-          <button
-            type="button"
-            onClick={() => {
-              setQuickOfficer((prev) =>
-                prev === CURRENT_OFFICER ? null : CURRENT_OFFICER,
-              );
-              setQuickDate(null);
-              setQuickStage(null);
-              setPage(1);
-            }}
-            className={cn(
-              "flex h-9 items-center gap-2 rounded-full border px-4 text-[0.8125rem] font-medium transition-colors cursor-pointer",
-              isMineView
-                ? "bg-text-primary text-white border-text-primary"
-                : "border-border-strong bg-white text-text-primary hover:bg-surface-soft-hover",
-            )}
-          >
-            My prospects
-            <span
+          {isConversionOfficer && (
+            <button
+              type="button"
+              onClick={() => {
+                setQuickOfficer((prev) =>
+                  prev === myOfficerFilterName ? null : myOfficerFilterName,
+                );
+                setQuickDate(null);
+                setQuickStage(null);
+                setPage(1);
+              }}
               className={cn(
-                "rounded-full px-1.5 text-[0.6875rem] font-semibold",
+                "flex h-9 items-center gap-2 rounded-full border px-4 text-[0.8125rem] font-medium transition-colors cursor-pointer",
                 isMineView
-                  ? "bg-white/20 text-white"
-                  : "bg-surface-soft text-text-secondary",
+                  ? "bg-text-primary text-white border-text-primary"
+                  : "border-border-strong bg-white text-text-primary hover:bg-surface-soft-hover",
               )}
             >
-              {chipCounts.mine}
-            </span>
-          </button>
+              My prospects
+              <span
+                className={cn(
+                  "rounded-full px-1.5 text-[0.6875rem] font-semibold",
+                  isMineView
+                    ? "bg-white/20 text-white"
+                    : "bg-surface-soft text-text-secondary",
+                )}
+              >
+                {chipCounts.mine}
+              </span>
+            </button>
+          )}
 
           <button
             type="button"
@@ -827,7 +910,7 @@ export default function ProspectsPage() {
                         />
                       </div>
 
-                      {/* 6. Lead Source */}
+                      {/* 4. Lead Source */}
                       <div>
                         <label className="block text-[0.6875rem] font-medium text-[#5c5757] mb-1.5">
                           Lead Source
@@ -840,9 +923,69 @@ export default function ProspectsPage() {
                           options={LEAD_SOURCE_FILTER_OPTIONS}
                         />
                       </div>
+
+                      {/* 5. Target Amount Slider */}
+                      <div className="col-span-2">
+                        {(() => {
+                          const amtVal =
+                            draft.amountRange === "all" || !draft.amountRange
+                              ? 0
+                              : Number(draft.amountRange) || 0;
+                          const pct = Math.min(100, Math.max(0, (amtVal / 2500000) * 100));
+                          return (
+                            <>
+                              <div className="flex items-center justify-between mb-1.5">
+                                <label className="block text-[11px] font-medium text-[#5c5757]">
+                                  Target Amount
+                                </label>
+                                <span
+                                  className={cn(
+                                    "text-[10.5px] px-1.5 py-0.5 rounded transition-colors",
+                                    amtVal > 0
+                                      ? "bg-[#f0eeee] text-[#3c3838] border border-[#d6d2d2] font-semibold"
+                                      : "text-text-muted font-normal",
+                                  )}
+                                >
+                                  {amtVal === 0 ? "All (Any Amount)" : `≥ ${peso.format(amtVal)}`}
+                                </span>
+                              </div>
+
+                              <div className="h-[30px] flex flex-col justify-center px-0.5">
+                                <input
+                                  type="range"
+                                  min={0}
+                                  max={2500000}
+                                  step={50000}
+                                  value={amtVal}
+                                  onChange={(e) => {
+                                    const val = Number(e.target.value);
+                                    setDraft((prev) => ({
+                                      ...prev,
+                                      amountRange: val === 0 ? "all" : String(val),
+                                    }));
+                                  }}
+                                  aria-label="Filter by minimum target amount"
+                                  className="w-full h-1.5 cursor-pointer appearance-none rounded-lg bg-[#e5e7eb] accent-[#757070] outline-none"
+                                  style={{
+                                    background: `linear-gradient(to right, #757070 0%, #757070 ${pct}%, #e5e7eb ${pct}%, #e5e7eb 100%)`,
+                                  }}
+                                />
+                                <div className="flex justify-between px-0.5 mt-1 text-[9px] font-medium text-[#8a8484] select-none">
+                                  <span>₱0</span>
+                                  <span>₱500k</span>
+                                  <span>₱1M</span>
+                                  <span>₱1.5M</span>
+                                  <span>₱2M</span>
+                                  <span>₱2.5M</span>
+                                </div>
+                              </div>
+                            </>
+                          );
+                        })()}
+                      </div>
                     </div>
 
-                    {/* Popup Footer with subdued dark neutral Apply button */}
+                    {/* Popup Footer with Caritas brand red Apply button matching edit prospect */}
                     <div className="mt-5 flex items-center justify-between border-t border-[#e3dfdf] pt-3">
                       <button
                         type="button"
@@ -855,7 +998,7 @@ export default function ProspectsPage() {
                       <button
                         type="button"
                         onClick={applyDraft}
-                        className="rounded-md bg-[#221f1f] hover:bg-[#110f0f] px-4 py-1.5 text-xs font-semibold text-white transition-colors cursor-pointer"
+                        className="rounded-md bg-[#6b0f0f] hover:bg-[#520b0b] px-4 py-1.5 text-xs font-semibold text-white transition-colors cursor-pointer shadow-xs"
                       >
                         Apply
                       </button>
@@ -890,22 +1033,22 @@ export default function ProspectsPage() {
             <table className="w-full text-center text-[0.75rem]">
               <thead className="bg-surface-soft text-text-secondary">
                 <tr className="border-y border-border-soft">
-                  <th className="px-3 py-2.5 font-medium text-center text-[0.75rem]">
+                  <th className="px-3 py-2.5 font-medium text-center text-[0.75rem] whitespace-nowrap">
                     Prospect
                   </th>
-                  <th className="px-3 py-2.5 font-medium text-center text-[0.75rem]">
+                  <th className="px-3 py-2.5 font-medium text-center text-[0.75rem] whitespace-nowrap">
                     Primary contact
                   </th>
-                  <th className="px-3 py-2.5 font-medium text-center text-[0.75rem]">
+                  <th className="px-3 py-2.5 font-medium text-center text-[0.75rem] whitespace-nowrap">
                     Phone Number
                   </th>
-                  <th className="px-3 py-2.5 font-medium text-center text-[0.75rem]">
+                  <th className="px-3 py-2.5 font-medium text-center text-[0.75rem] whitespace-nowrap">
                     Follow-up date
                   </th>
-                  <th className="px-3 py-2.5 font-medium text-center text-[0.75rem]">
+                  <th className="px-3 py-2.5 font-medium text-center text-[0.75rem] whitespace-nowrap">
                     Target amount
                   </th>
-                  <th className="px-3 py-2.5 font-medium text-center text-[0.75rem]">
+                  <th className="px-3 py-2.5 font-medium text-center text-[0.75rem] whitespace-nowrap">
                     Pipeline status
                   </th>
                 </tr>
@@ -937,7 +1080,7 @@ export default function ProspectsPage() {
                   <>
                     {pageRows.map((r) => {
                       const style = STAGE_STYLES[r.pipeline_status];
-                      const href = `/donor-conv/prospects/edit-prospect?id=${r.id}`;
+                      const href = `/donor-conv/prospects/edit-prospect?id=${r.id}&from=table`;
                       return (
                         <tr
                           key={r.id}
@@ -949,10 +1092,10 @@ export default function ProspectsPage() {
                           }}
                           className="cursor-pointer border-b border-border-soft text-text-primary hover:bg-surface-soft focus:bg-surface-soft focus:outline-none h-[39px]"
                         >
-                          <td className="px-3 py-2.5 font-semibold text-center text-[0.75rem]">
+                          <td className="px-3 py-2.5 font-semibold text-center text-[0.75rem] whitespace-nowrap">
                             {r.prospect_name}
                           </td>
-                          <td className="px-3 py-2.5 text-center text-[0.75rem]">
+                          <td className="px-3 py-2.5 text-center text-[0.75rem] whitespace-nowrap">
                             {r.primary_contact_person}
                           </td>
                           <td className="px-3 py-2.5 whitespace-nowrap text-center text-[0.75rem]">

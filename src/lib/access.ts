@@ -28,11 +28,12 @@ const MODULE_HOME: Record<ModuleKey, string> = {
 
 const ALL_MODULES: ModuleKey[] = ["dashboard", "donor-conv", "donor-retn", "donor-care"];
 
-// Which modules each role can open, and which one it lands on after signing in.
+// Which modules each role can open (Read / View access), and which one it lands on after signing in.
+// All roles have cross-unit read access, while landing on their designated home module.
 const ROLE_ACCESS: Record<UserRole, { modules: ModuleKey[]; home: ModuleKey }> = {
-  "Conversion Officer": { modules: ["donor-conv"], home: "donor-conv" },
-  "Retention Officer": { modules: ["donor-retn"], home: "donor-retn" },
-  "Donor Care Officer": { modules: ["donor-care"], home: "donor-care" },
+  "Conversion Officer": { modules: ALL_MODULES, home: "donor-conv" },
+  "Retention Officer": { modules: ALL_MODULES, home: "donor-retn" },
+  "Donor Care Officer": { modules: ALL_MODULES, home: "donor-care" },
   "Division Head": { modules: ALL_MODULES, home: "dashboard" },
   "System Administrator": { modules: ALL_MODULES, home: "dashboard" },
 };
@@ -50,6 +51,24 @@ export function allowedModules(role: UserRole): ModuleKey[] {
 
 export function canAccess(role: UserRole, module: ModuleKey): boolean {
   return ROLE_ACCESS[role].modules.includes(module);
+}
+
+// Who has write access (create, edit, delete, actions) in each module:
+// - System Administrator & Donor Care Officer (CRM / DB Admin) have write access across all units.
+// - Unit officers have write access strictly within their own unit.
+// - Division Head has high-level executive review (read-only in day-to-day modules).
+export function canWrite(role: UserRole | null | undefined, module: ModuleKey): boolean {
+  if (!role) return true;
+  if (role === "System Administrator" || role === "Donor Care Officer") {
+    return true;
+  }
+  if (role === "Conversion Officer" && module === "donor-conv") {
+    return true;
+  }
+  if (role === "Retention Officer" && module === "donor-retn") {
+    return true;
+  }
+  return false;
 }
 
 export function homePathFor(role: UserRole): string {

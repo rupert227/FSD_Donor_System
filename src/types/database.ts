@@ -131,6 +131,7 @@ export interface DonorProfile {
   engagement_status: EngagementStatusEnum
   donor_tenure: DonorTenureEnum
   assigned_officer: string
+  converted_from_lead_id: number | null
   last_contact_date: string | null
   target_followup_date: string | null
   created_at: string
@@ -213,6 +214,42 @@ export interface OfficerProfile {
   job_title: string | null
   phone_number: string | null
   is_signatory: boolean // true = appears in the letter Signatory dropdown
+  created_at: string
+  updated_at: string
+}
+
+// 8. lead_outreach_activities
+export interface LeadOutreachActivity {
+  id: number
+  prospect_id: number
+  status: PipelineStatusEnum
+  followup_date: string | null
+  notes: string
+  recorded_by: number | null
+  created_at: string
+  updated_at: string
+}
+
+// 9. notifications
+export interface SystemNotificationRecord {
+  id: number
+  title: string
+  message: string
+  module: 'Donor Conversion' | 'Donor Retention' | 'Donor Care' | string
+  type:
+    | 'prospect'
+    | 'proposal'
+    | 'recommitted'
+    | 'care_notice'
+    | 'receipt'
+    | 'followup_due'
+    | 'overdue'
+    | string
+  is_alert: boolean
+  is_read: boolean
+  assigned_officer: string | null
+  link_url: string | null
+  user_id: number | null
   created_at: string
   updated_at: string
 }

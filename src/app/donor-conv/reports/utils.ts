@@ -1,8 +1,9 @@
 import { Leads, none } from "@/lib/types";
-import { formatNumber, formatPercent } from "@/lib/utils";
+import { formatCurrency, formatNumber, formatPercent } from "@/lib/utils";
 
-type SummaryRow = {
-  type: "header" | "row" | "section";
+interface SummaryRow {
+  type: "header" | "row" | "section" | "total";
+  valType?: "currency" | "number" | "percent";
   label: string;
   values: (number | none)[] | none;
 };
@@ -11,70 +12,119 @@ export function generateSummaryRows(report: Leads.Report): SummaryRow[] {
   return [
     {
       type: "section",
-      label: "Pipeline value (₱)",
+      label: "CORE MONETARY VALUATION",
       values: [0, 0, 0, 0, 0],
     },
     {
       type: "row",
-      label: "Total estimated value",
-      values: report.quarterlySummary?.pipelineValue?.totalEstimatedValue,
+      valType: "currency",
+      label: "Total Estimated valuation",
+      values: report.quarterlySummary?.coreMonetaryValue?.totalEstimatedValuation,
     },
     {
       type: "row",
-      label: "Probability-adjusted value",
-      values: report.quarterlySummary?.pipelineValue?.probabilityAdjustedValue,
+      valType: "currency",
+      label: "Probability-Adjusted Value",
+      values: report.quarterlySummary?.coreMonetaryValue?.probabilityAdjustedValue,
     },
     {
       type: "row",
-      label: "Secured value",
-      values: report.quarterlySummary?.pipelineValue?.securedValue,
+      valType: "currency",
+      label: "Secured Value",
+      values: report.quarterlySummary?.coreMonetaryValue?.securedValue,
     },
     {
       type: "row",
-      label: "Unsecured balance",
-      values: report.quarterlySummary?.pipelineValue?.unsecuredBalance,
-    },
-    { type: "section", label: "Conversion", values: [0, 0, 0, 0, 0] },
-    {
-      type: "row",
-      label: "Lead conversion rate",
-      values: report.quarterlySummary?.conversion?.leadConversionRate,
+      valType: "currency",
+      label: "Unsecured Balance",
+      values: report.quarterlySummary?.coreMonetaryValue?.unsecuredBalance,
     },
     {
-      type: "row",
-      label: "Value realization rate",
-      values: report.quarterlySummary?.conversion?.valueRealizationRate,
+      type: "section",
+      label: "CONVERSION EFFICIENCY & RATIOS",
+      values: [0, 0, 0, 0, 0],
     },
-    { type: "section", label: "Leads Origin", values: [0, 0, 0, 0, 0] },
+    {
+      type: "row",
+      valType: "percent",
+      label: "Donor Conversion Rate",
+      values: report.quarterlySummary?.conversionEfficiencyAndRatios?.donorConversionRate,
+    },
+    {
+      type: "row",
+      valType: "percent",
+      label: "Value Realization Rate",
+      values: report.quarterlySummary?.conversionEfficiencyAndRatios?.valueRealizationRate,
+    },
+    {
+      type: "section",
+      label: "LEAD ORIGIN BREAKDOWN",
+      values: [0, 0, 0, 0, 0],
+    },
     {
       type: "row",
       label: "Referral",
-      values: report.quarterlySummary?.leadsOrigin?.referral,
+      values: report.quarterlySummary?.leadOriginBreakdown?.referral,
     },
     {
       type: "row",
       label: "Research",
-      values: report.quarterlySummary?.leadsOrigin?.research,
+      values: report.quarterlySummary?.leadOriginBreakdown?.research,
     },
     {
       type: "row",
       label: "Booths",
-      values: report.quarterlySummary?.leadsOrigin?.booths,
+      values: report.quarterlySummary?.leadOriginBreakdown?.booths,
     },
     {
       type: "row",
-      label: "Direct Call",
-      values: report.quarterlySummary?.leadsOrigin?.directCall,
+      label: "Call / Text",
+      values: report.quarterlySummary?.leadOriginBreakdown?.callOrText,
     },
     {
       type: "row",
       label: "Walk-in",
-      values: report.quarterlySummary?.leadsOrigin?.walkIn,
+      values: report.quarterlySummary?.leadOriginBreakdown?.walkIn,
+    },
+    {
+      type: "total",
+      label: "Sub-Total Lead Intake",
+      values: report.quarterlySummary?.leadOriginBreakdown?.subTotalLeadIntake,
+    },
+    {
+      type: "section",
+      label: "PIPELINE STAGE BREAKDOWN",
+      values: [0, 0, 0, 0, 0],
     },
     {
       type: "row",
-      label: "Total new leads",
-      values: report.quarterlySummary?.totalNewLeads,
+      label: "New Lead",
+      values: report.quarterlySummary?.pipelineStageBreakdown?.newLead,
+    },
+    {
+      type: "row",
+      label: "Under Research",
+      values: report.quarterlySummary?.pipelineStageBreakdown?.underResearch,
+    },
+    {
+      type: "row",
+      label: "Outreach Started",
+      values: report.quarterlySummary?.pipelineStageBreakdown?.outreachStarted,
+    },
+    {
+      type: "row",
+      label: "Proposal Sent",
+      values: report.quarterlySummary?.pipelineStageBreakdown?.proposalSent,
+    },
+    {
+      type: "row",
+      label: "Secured Donor",
+      values: report.quarterlySummary?.pipelineStageBreakdown?.securedDonor,
+    },
+    {
+      type: "total",
+      label: "Sub-Total Prospect Records",
+      values: report.quarterlySummary?.pipelineStageBreakdown?.subTotalProspectRecords,
     },
   ];
 }
@@ -85,12 +135,9 @@ export function renderSummaryValue(
 ): string {
   if (row.type === "section") return "";
 
-  if (
-    row.label === "Lead conversion rate" ||
-    row.label === "Value realization rate"
-  ) {
-    return formatPercent(value);
+  switch(row.valType) {
+    case "percent": return formatPercent(value);
+    case "currency": return formatCurrency(value);
+    case "number": default: return formatNumber(value);
   }
-
-  return formatNumber(value);
 }

@@ -22,6 +22,7 @@ import { sampleTemplates } from "@/lib/sample-data";
 import { createClient } from "@/lib/supabase/client";
 import { PROSPECT_SELECT, toBuilderProspect } from "@/lib/proposals-data";
 import type { BuilderProspect, Signatory } from "@/types/proposal";
+import { showToast } from "@/lib/toast";
 import {
   buildLetterText,
   findLeftoverPrompts,
@@ -213,16 +214,20 @@ function ProposalBuilderForm({
   const officer = prospect.officer;
 
   // Derived from the choices above on every render (not stored in state).
-  const generatedText = buildLetterText(
-    prospect,
-    template,
-    signatory,
-    officer,
-    // An empty date (cleared by the officer) shows as a prompt to fill in.
-    (date && formatLetterDate(date)) || "[date]",
-  );
+  const generatedText = prospect
+    ? buildLetterText(
+        prospect,
+        template,
+        signatory,
+        officer,
+        // An empty date (cleared by the officer) shows as a prompt to fill in.
+        (date && formatLetterDate(date)) || "[date]",
+      )
+    : "";
   // Shown in the preview toolbar, like "Proposal_Ayala_Foundation_2026.pdf".
-  const fileName = proposalFileName(prospect.prospect_name, date);
+  const fileName = prospect
+    ? proposalFileName(prospect.prospect_name, date)
+    : "Proposal.pdf";
 
   // The browser suggests the page title as the name when saving a PDF, so use
   // the proposal's file name while printing (also for Ctrl+P), then put the
@@ -292,9 +297,19 @@ function ProposalBuilderForm({
     setSaving(false);
     if (error) {
       setSaveError(`The proposal was not saved: ${error.message}`);
+      showToast({
+        title: "Save Failed",
+        message: error.message || "Could not save proposal document.",
+        type: "error",
+      });
       return;
     }
     setSavedProposalId(data.id);
+    showToast({
+      title: "Proposal Generated",
+      message: `Proposal saved with status 'Generated' for ${prospect.prospect_name}.`,
+      type: "success",
+    });
   }
 
   // With warnings, show them first and let the officer decide.

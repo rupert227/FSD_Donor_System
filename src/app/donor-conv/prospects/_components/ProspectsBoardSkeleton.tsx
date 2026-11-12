@@ -2,9 +2,15 @@
 
 import React from "react";
 
-export function ProspectsBoardSkeleton() {
+export function ProspectsBoardSkeleton({
+  isConversionOfficer = false,
+}: {
+  isConversionOfficer?: boolean;
+} = {}) {
+  const chipCount = isConversionOfficer ? 5 : 4;
+
   return (
-    <div className="w-[90%] max-w-full min-w-0 mx-auto space-y-4 animate-in fade-in duration-300">
+    <div className="w-full max-w-full min-w-0 mx-auto space-y-4">
       {/* Title row matching prospects board */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -22,6 +28,17 @@ export function ProspectsBoardSkeleton() {
         </div>
       </div>
 
+      {/* Quick views chips */}
+      <div className="flex flex-wrap gap-2">
+        {Array.from({ length: chipCount }).map((_, i) => (
+          <div
+            key={i}
+            className="h-9 bg-gray-200/80 rounded-full animate-pulse"
+            style={{ width: `${76 + (i % 3) * 20}px` }}
+          />
+        ))}
+      </div>
+
       {/* Search + Filter row */}
       <div className="flex items-center gap-3">
         <div className="h-9 w-64 bg-gray-100 rounded-button border border-gray-200/80 animate-pulse" />
@@ -30,7 +47,7 @@ export function ProspectsBoardSkeleton() {
       </div>
 
       {/* 5 Equal Kanban Columns Grid */}
-      <div className="grid grid-cols-5 items-start gap-3 w-full min-w-0">
+      <div className="grid grid-cols-5 items-start gap-2.5 w-full min-w-0">
         {Array.from({ length: 5 }).map((_, c) => (
           <section
             key={c}
