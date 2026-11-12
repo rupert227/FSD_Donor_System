@@ -331,7 +331,12 @@ function EditProspectForm() {
               dateTime: a.dateTime,
               status: a.status,
               followupDate: a.followupDate,
-              notes: a.notes,
+              notes:
+                a.notes &&
+                !a.notes.startsWith("Stage transitioned") &&
+                !a.notes.startsWith("Pipeline stage transitioned")
+                  ? a.notes
+                  : "",
               authorOfficer: dbLead?.assigned_officer || undefined,
             }))
           );
@@ -368,7 +373,7 @@ function EditProspectForm() {
               dateTime: intakeDateStr,
               status: "New Lead",
               followupDate: currentStageIndex === 0 ? dbLead.target_followup_date || undefined : undefined,
-              notes: currentStageIndex === 0 && dbLead.action_plan ? dbLead.action_plan : "",
+              notes: "",
               authorOfficer: dbLead.assigned_officer || "Intake Officer",
             },
           ];
@@ -406,7 +411,7 @@ function EditProspectForm() {
                 }) + ", 02:30 PM",
               status: "Outreach Started",
               followupDate: currentStageIndex === 2 ? dbLead.target_followup_date || undefined : undefined,
-              notes: currentStageIndex === 2 && dbLead.action_plan ? dbLead.action_plan : "",
+              notes: "",
               authorOfficer: dbLead.assigned_officer || "Officer J. Reyes",
             });
           }
@@ -685,11 +690,10 @@ function EditProspectForm() {
 
       {/* COLLABORATIVE EDITING NOTICE */}
       {isPeerCollaborator && (
-        <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50/70 px-4 py-2 text-[0.71875rem] text-amber-900 shadow-2xs">
-          <Users className="h-4 w-4 shrink-0 text-amber-700" />
-          <span>
-            <strong>Collaborative Editing:</strong> This prospect is assigned to{" "}
-            <strong>{formData.assignedOfficer}</strong>. As a unit teammate, you can update notes, touchpoints, and contact details. All outreach activity will be attributed to you ({officerName || "Current Officer"}).
+        <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50/70 px-3.5 py-1.5 text-[0.6875rem] text-amber-900 shadow-2xs">
+          <Users className="h-3.5 w-3.5 shrink-0 text-amber-700" />
+          <span className="truncate">
+            Prospect owner is <strong>{formData.assignedOfficer}</strong>. As a unit teammate, updates and outreach activity will be attributed to you ({officerName || "Current Officer"}).
           </span>
         </div>
       )}
@@ -731,7 +735,7 @@ function EditProspectForm() {
                   Mark as secured
                 </button>
                 <Link
-                  href={`/donor-conv/proposals?id=${prospectId}`}
+                  href={`/donor-conv/proposals?prospectId=${prospectId}&id=${prospectId}&prospect=${encodeURIComponent(formData.prospectName)}`}
                   className="flex-1 min-[1100px]:flex-initial h-[26px] sm:h-[30px] px-2 sm:px-3 inline-flex items-center justify-center text-[0.59375rem] sm:text-[0.6875rem] font-medium text-[#6b0f0f] bg-white border border-[#6b0f0f] rounded-md hover:bg-[#fdf1f1] transition shadow-xs cursor-pointer whitespace-nowrap min-w-0"
                 >
                   Generate proposal
@@ -1242,7 +1246,7 @@ function EditProspectForm() {
                   </td>
                   <td className="px-3.5 py-2 text-right whitespace-nowrap">
                     <Link
-                      href={`/donor-conv/proposals?id=${prospectId}&prospect=${encodeURIComponent(formData.prospectName)}`}
+                      href={`/donor-conv/proposals?prospectId=${prospectId}&id=${prospectId}&prospect=${encodeURIComponent(formData.prospectName)}`}
                       className="text-[0.65625rem] font-medium text-[#6b0f0f] hover:underline inline-flex items-center gap-1"
                     >
                       <span>{proposalStatus === "Draft" ? "Generate Proposal" : "View Document"}</span>
@@ -1269,28 +1273,33 @@ function EditProspectForm() {
         </div>
 
         <div className="rounded-md border border-[#e3dfdf] overflow-x-auto bg-white shadow-2xs">
-          <table className="w-full min-w-[500px] text-left border-collapse">
+          <table className="w-full min-w-[650px] text-left border-collapse table-fixed">
+            <colgroup>
+              <col style={{ width: "18%" }} />
+              <col style={{ width: "17%" }} />
+              <col style={{ width: "20%" }} />
+              <col style={{ width: "17%" }} />
+              <col style={{ width: "28%" }} />
+            </colgroup>
             <thead>
               <tr className="bg-[#f7f6f6] border-b border-[#e3dfdf] text-[0.59375rem] uppercase font-semibold text-[#5c5757]">
-                <th className="px-4 py-2.5">Date & Time</th>
-                <th className="px-4 py-2.5 text-center">Interval</th>
-                <th className="px-4 py-2.5">Logged By</th>
-                <th className="px-4 py-2.5 text-center">Follow-up Date</th>
-                <th className="px-4 py-2.5 text-center">Pipeline Status</th>
+                <th className="px-3.5 py-2 text-left">Date & Time</th>
+                <th className="px-3.5 py-2 text-center">Interval</th>
+                <th className="px-3.5 py-2 text-center">Logged By</th>
+                <th className="px-3.5 py-2 text-center">Pipeline Status</th>
+                <th className="px-3.5 py-2 text-left pl-6 sm:pl-8">Notes</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#f0eeee] text-[0.6875rem]">
               {historyRecords.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-6 text-center text-[0.6875rem] text-[#5c5757]">
+                  <td colSpan={5} className="px-3.5 py-6 text-center text-[0.6875rem] text-[#5c5757]">
                     No activity records logged yet.
                   </td>
                 </tr>
               ) : (
                 historyRecords.map((record, index) => {
                   const intervalLabel = getRecordInterval(index, historyRecords);
-                  const rawFollowup = record.followupDate || (index === 0 ? formData.followupDate : undefined);
-                  const displayFollowup = formatFollowupDisplay(rawFollowup);
 
                   return (
                     <tr
@@ -1299,17 +1308,17 @@ function EditProspectForm() {
                       className="hover:bg-[#fbf9f9] transition-colors align-middle cursor-pointer group h-[39px]"
                       title="Click to view full activity details"
                     >
-                      <td className="px-4 py-2.5 text-[#5c5757] whitespace-nowrap text-[0.65625rem]">
+                      <td className="px-3.5 py-2 text-left text-[#5c5757] whitespace-nowrap text-[0.65625rem] truncate">
                         {record.dateTime}
                       </td>
-                      <td className="px-4 py-2.5 text-center whitespace-nowrap">
+                      <td className="px-3.5 py-2 text-center whitespace-nowrap">
                         <span className="inline-flex items-center justify-center font-mono text-[0.625rem] font-medium text-[#5c5757] bg-[#f7f6f6] border border-[#e3dfdf] px-2 py-0.5 rounded-[4px]">
                           {intervalLabel}
                         </span>
                       </td>
-                      <td className="px-4 py-2.5 text-[#1c1a1a] font-medium whitespace-nowrap text-[0.65625rem]">
+                      <td className="px-3.5 py-2 text-center whitespace-nowrap text-[0.65625rem]">
                         {record.authorOfficer ? (
-                          <span className="inline-flex items-center gap-1">
+                          <span className="inline-flex items-center justify-center gap-1 font-medium text-[#1c1a1a]">
                             <span>{record.authorOfficer}</span>
                             {record.authorOfficer !== formData.assignedOfficer && (
                               <span className="rounded bg-sky-50/70 px-1 py-0.2 text-[0.59375rem] font-normal text-[#2c5270] border border-[#cbdce9]">
@@ -1318,13 +1327,10 @@ function EditProspectForm() {
                             )}
                           </span>
                         ) : (
-                          <span>{formData.assignedOfficer || "Assigned Officer"}</span>
+                          <span className="text-[#1c1a1a] font-medium">{formData.assignedOfficer || "Assigned Officer"}</span>
                         )}
                       </td>
-                      <td className="px-4 py-2.5 text-center whitespace-nowrap text-[0.65625rem] text-[#5c5757]">
-                        {displayFollowup}
-                      </td>
-                      <td className="px-4 py-2.5 text-center whitespace-nowrap">
+                      <td className="px-3.5 py-2 text-center whitespace-nowrap">
                         <span
                           className={cn(
                             "inline-flex items-center justify-center rounded-[4px] px-2.5 py-0.5 text-[0.6875rem] font-medium whitespace-nowrap",
@@ -1333,6 +1339,9 @@ function EditProspectForm() {
                         >
                           {record.status}
                         </span>
+                      </td>
+                      <td className="px-3.5 py-2 text-left pl-6 sm:pl-8 text-[#5c5757] whitespace-nowrap text-[0.65625rem]">
+                        -
                       </td>
                     </tr>
                   );
@@ -1544,7 +1553,7 @@ function EditProspectForm() {
                   Full Notes & Action Plan
                 </label>
                 <div className="w-full min-h-[90px] max-h-[260px] overflow-y-auto p-3.5 text-[0.6875rem] font-normal leading-relaxed rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] whitespace-pre-wrap">
-                  {selectedActivity.notes || "No notes recorded for this activity."}
+                  {selectedActivity.notes?.trim() || "No notes recorded for this activity."}
                 </div>
               </div>
 

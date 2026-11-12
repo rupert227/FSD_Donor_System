@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { connection } from "next/server";
 import { FileText } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { ProposalBuilder } from "@/components/proposals/ProposalBuilder";
@@ -7,7 +8,6 @@ import { createClient } from "@/lib/supabase/server";
 import ProposalsSkeleton from "./skeleton";
 import type { BuilderProspect, Signatory } from "@/types/proposal";
 import {
-  PROPOSAL_STAGES,
   PROSPECT_SELECT,
   toBuilderProspect,
 } from "@/lib/proposals-data";
@@ -15,7 +15,11 @@ import {
 // Same tab title the other Donor Conversion pages use ("<module> - <page>").
 export const metadata = { title: `${moduleName} - Proposals` };
 
-type SearchParams = Promise<{ prospectId?: string; prospect?: string }>;
+type SearchParams = Promise<{
+  prospectId?: string;
+  id?: string;
+  prospect?: string;
+}>;
 
 // Reads the data at request time. It sits inside <Suspense> on the page below,
 // because this app uses cacheComponents: anything that reads cookies or the URL
@@ -25,14 +29,15 @@ async function ProposalBuilderLoader({
 }: {
   searchParams: SearchParams;
 }) {
-  const { prospectId, prospect: prospectName } = await searchParams;
+  await connection();
+  const { prospectId, id, prospect: prospectName } = await searchParams;
+  const targetId = prospectId ?? id;
   const supabase = await createClient();
 
   const [prospectsResult, signatoriesResult] = await Promise.all([
     supabase
       .from("lead_prospects")
       .select(PROSPECT_SELECT)
-      .in("pipeline_status", PROPOSAL_STAGES)
       .order("prospect_name"),
     supabase
       .from("officer_profiles")
@@ -53,9 +58,9 @@ async function ProposalBuilderLoader({
     title: s.job_title ?? "",
   }));
 
-  // Pre-select from ?prospectId= (pipeline board) or ?prospect=<name> (edit page).
+  // Pre-select from ?prospectId=, ?id= (edit page / board), or ?prospect=<name>.
   const initialProspectId =
-    prospects.find((p) => String(p.id) === prospectId)?.id ??
+    prospects.find((p) => String(p.id) === targetId)?.id ??
     prospects.find((p) => p.prospect_name === prospectName)?.id;
 
   if (loadError) {

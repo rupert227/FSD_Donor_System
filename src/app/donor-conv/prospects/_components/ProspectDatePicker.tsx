@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { cn } from "cn";
 
 interface ProspectDatePickerProps {
   value: string; // "YYYY-MM-DD" or empty
@@ -9,7 +10,9 @@ interface ProspectDatePickerProps {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  triggerClassName?: string;
   direction?: "up" | "down" | "auto";
+  align?: "left" | "right";
 }
 
 const MONTH_NAMES = [
@@ -53,7 +56,9 @@ export function ProspectDatePicker({
   placeholder = "Select follow-up date",
   disabled = false,
   className = "",
+  triggerClassName = "",
   direction = "up",
+  align = "left",
 }: ProspectDatePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [autoUpwards, setAutoUpwards] = useState(false);
@@ -188,11 +193,13 @@ export function ProspectDatePicker({
         type="button"
         disabled={disabled}
         onClick={handleToggle}
-        className={`w-full h-[30px] px-2.5 flex items-center justify-between text-[0.6875rem] font-medium rounded-md border border-[#e3dfdf] bg-white transition cursor-pointer text-left ${
+        className={cn(
+          "w-full h-[30px] px-2.5 flex items-center justify-between text-[0.6875rem] font-medium rounded-md border border-[#e3dfdf] bg-white transition cursor-pointer text-left",
           disabled
             ? "bg-[#f7f6f6] text-[#757070] cursor-not-allowed border-[#cfcaca]"
-            : "text-[#1c1a1a] hover:border-[#8a8484] focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f]"
-        }`}
+            : "text-[#1c1a1a] hover:border-[#8a8484] focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f]",
+          triggerClassName
+        )}
         aria-expanded={isOpen}
       >
         <span className={value ? "text-[#1c1a1a]" : "text-[#9ca3af]"}>
@@ -221,7 +228,7 @@ export function ProspectDatePicker({
         <div
           className={`absolute ${
             isUpwards ? "bottom-[calc(100%+4px)]" : "top-[calc(100%+4px)]"
-          } left-0 z-50 w-[256px] rounded-md border border-[#e3dfdf] bg-white shadow-xl p-2.5 space-y-1.5`}
+          } ${align === "right" ? "right-0" : "left-0"} z-50 w-[256px] rounded-md border border-[#e3dfdf] bg-white shadow-xl p-2.5 space-y-1.5`}
         >
           {/* Month & Year header */}
           <div className="flex items-center justify-between px-0.5">
