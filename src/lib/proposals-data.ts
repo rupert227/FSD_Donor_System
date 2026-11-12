@@ -12,7 +12,7 @@ export const PROPOSAL_STAGES = [
 // assigned_officer_id (and that officer's email and role from their account).
 // Shared by the builder page (server) and the builder's refresh (browser).
 export const PROSPECT_SELECT = `id, prospect_name, primary_contact_person, title_designation,
-  street_address, city_province, target_campaign, target_amount,
+  email_address, street_address, city_province, target_campaign, target_amount,
   assigned_officer,
   officer_profiles ( id, full_name, job_title, phone_number,
     user_accounts ( email_address, user_role ) )`;
@@ -44,4 +44,10 @@ export function toBuilderProspect(raw: unknown): BuilderProspect {
         (o.user_accounts?.user_role as UserAccount["user_role"]) ?? null,
     },
   };
+}
+
+// True for an address that looks like name@domain.tld. Used to warn before an
+// "Email PDF (Softcopy)" dispatch: a prospect without one cannot be emailed.
+export function isValidEmail(value: string | null | undefined): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((value ?? "").trim());
 }

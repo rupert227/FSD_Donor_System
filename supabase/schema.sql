@@ -434,10 +434,17 @@ CREATE POLICY "Allow authenticated users full access to certificate_of_donation"
 CREATE POLICY "Allow authenticated users full access to user_accounts"
   ON user_accounts FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
--- proposals: only the Conversion module's roles. The role comes from the token (set at sign-in).
+-- proposals: only the Conversion module's roles. The role comes from the token (set at sign-in);
+-- if the token has none, fall back to the role in user_accounts (Active accounts only).
 CREATE OR REPLACE FUNCTION public.jwt_user_role()
-RETURNS TEXT LANGUAGE sql STABLE SET search_path = public
-AS $$ SELECT auth.jwt() -> 'app_metadata' ->> 'user_role' $$;
+RETURNS TEXT LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
+AS $$
+  SELECT COALESCE(
+    auth.jwt() -> 'app_metadata' ->> 'user_role',
+    (SELECT ua.user_role::text FROM user_accounts ua
+      WHERE ua.auth_user_id = auth.uid() AND ua.account_status = 'Active')
+  )
+$$;
 
 -- created_by is set by the database from the signed-in user, so the browser cannot fake it.
 CREATE OR REPLACE FUNCTION public.set_proposal_created_by()

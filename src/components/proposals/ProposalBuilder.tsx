@@ -20,7 +20,11 @@ import {
 import { cn } from "cn";
 import { sampleTemplates } from "@/lib/sample-data";
 import { createClient } from "@/lib/supabase/client";
-import { PROSPECT_SELECT, toBuilderProspect } from "@/lib/proposals-data";
+import {
+  isValidEmail,
+  PROSPECT_SELECT,
+  toBuilderProspect,
+} from "@/lib/proposals-data";
 import type { BuilderProspect, Signatory } from "@/types/proposal";
 import { showToast } from "@/lib/toast";
 import {
@@ -270,6 +274,10 @@ function ProposalBuilderForm({
     leftoverPrompts.length === 0
       ? "None left"
       : `${leftoverPrompts.length} left to fill`;
+
+  // A prospect without a usable email cannot receive the PDF by email. This only
+  // flags it: Postal Mail and Hand Delivered still work, so Generate stays enabled.
+  const hasEmail = isValidEmail(prospect.email_address);
 
   // Saves the letter as a new "Generated" proposal. The pipeline status does
   // not change here: it moves to "Proposal Sent" when the letter is sent.
@@ -534,6 +542,24 @@ function ProposalBuilderForm({
                 label="Length"
                 value={lengthValue}
               />
+              <ChecklistRow
+                status={hasEmail ? "ok" : "warn"}
+                label="Email"
+                value={hasEmail ? prospect.email_address! : "None on file"}
+              >
+                {!hasEmail && (
+                  <p className="mt-1 text-xs leading-relaxed">
+                    The PDF cannot be emailed to this prospect.{" "}
+                    <Link
+                      href={`/donor-conv/prospects/edit-prospect?id=${prospect.id}`}
+                      className="cursor-pointer underline"
+                    >
+                      Add an email on the record
+                    </Link>{" "}
+                    or send it by post or by hand.
+                  </p>
+                )}
+              </ChecklistRow>
               <ChecklistRow
                 status={promptStatus}
                 label="Prompts"
