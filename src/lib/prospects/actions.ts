@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient as createServerSupabase } from "@/lib/supabase/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import { SAMPLE_LEADS, type LeadDetail } from "@supabase/seeds/prospects-seed";
+import type { LeadDetail } from "@supabase/seeds/prospects-seed";
 import type { PipelineStatusEnum } from "@/types";
 
 /**
@@ -64,7 +64,7 @@ function mapDbToLeadDetail(row: Record<string, any>): LeadDetail {
 
 /**
  * Fetch all prospects from Supabase `lead_prospects`.
- * Falls back to canonical SAMPLE_LEADS if the query fails.
+ * Returns an empty array if no records exist or query fails.
  */
 export async function getProspects(): Promise<LeadDetail[]> {
   try {
@@ -74,23 +74,25 @@ export async function getProspects(): Promise<LeadDetail[]> {
       .select("*")
       .order("id", { ascending: true });
 
-    if (error || !data || data.length === 0) {
-      console.warn("Falling back to SAMPLE_LEADS due to:", error?.message || "empty data");
-      return SAMPLE_LEADS;
+    if (error || !data) {
+      console.warn("Failed to fetch lead_prospects from Supabase:", error?.message);
+      return [];
     }
 
     return data.map(mapDbToLeadDetail);
   } catch (err) {
     console.error("Error fetching prospects:", err);
-    return SAMPLE_LEADS;
+    return [];
   }
 }
 
 /**
- * Fetch a single prospect by ID.
+ * Fetch a single prospect by ID from Supabase `lead_prospects`.
+ * Returns null if not found or query fails.
  */
 export async function getProspectById(id: number | string): Promise<LeadDetail | null> {
   const numericId = Number(id);
+  if (isNaN(numericId)) return null;
   try {
     const supabase = await getSupabase();
     const { data, error } = await supabase
@@ -100,15 +102,13 @@ export async function getProspectById(id: number | string): Promise<LeadDetail |
       .maybeSingle();
 
     if (error || !data) {
-      const fallback = SAMPLE_LEADS.find((l) => l.id === numericId);
-      return fallback ?? null;
+      return null;
     }
 
     return mapDbToLeadDetail(data);
   } catch (err) {
     console.error("Error fetching prospect by ID:", err);
-    const fallback = SAMPLE_LEADS.find((l) => l.id === numericId);
-    return fallback ?? null;
+    return null;
   }
 }
 
@@ -241,6 +241,13 @@ export async function updateProspect(
       next_step_action_plan: input.actionPlan?.trim() || null,
     };
 
+    // Fetch current state to check if stage or action plan changed
+    const { data: existingLead } = await supabase
+      .from("lead_prospects")
+      .select("pipeline_status, next_step_action_plan, target_followup_date")
+      .eq("id", numericId)
+      .maybeSingle();
+
     const { error } = await supabase
       .from("lead_prospects")
       .update(payload)
@@ -249,6 +256,16 @@ export async function updateProspect(
     if (error) {
       console.error("Error updating prospect:", error);
       return { success: false, error: error.message };
+    }
+
+    // Auto-record in lead_outreach_activities when status changes or new action plan is set
+    if (existingLead && existingLead.pipeline_status !== input.pipelineStatus) {
+      await supabase.from("lead_outreach_activities").insert({
+        prospect_id: numericId,
+        status: input.pipelineStatus,
+        followup_date: input.followupDate || null,
+        notes: input.actionPlan?.trim() || `Pipeline stage transitioned to "${input.pipelineStatus}".`,
+      });
     }
 
     revalidatePath("/donor-conv/prospects");
@@ -281,6 +298,13 @@ export async function updateProspectStage(
       console.error("Error updating prospect stage:", error);
       return { success: false, error: error.message };
     }
+
+    // Auto-log stage transition in lead_outreach_activities
+    await supabase.from("lead_outreach_activities").insert({
+      prospect_id: numericId,
+      status: targetStage,
+      notes: `Stage transitioned to "${targetStage}" via Pipeline Board.`,
+    });
 
     revalidatePath("/donor-conv/prospects");
     revalidatePath("/donor-conv/prospects/pipeline-board");
@@ -442,6 +466,21 @@ export async function notifyDonorCareSecured(
   }
 }
 
+export interface ProposalRecord {
+  id: number;
+  prospect_id: number;
+  template_id: string;
+  letter_date: string;
+  signatory_name: string;
+  signatory_title: string | null;
+  letter_text: string;
+  status: "Generated" | "Sent";
+  delivery_preference: string | null;
+  dispatched_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 /**
  * Fetch prospect IDs that have an existing proposal in `proposals`.
  */
@@ -453,13 +492,103 @@ export async function getBuiltProposalProspectIds(): Promise<number[]> {
       .select("prospect_id");
 
     if (error || !data) {
-      return [1, 4]; // Default fallback
+      return [];
     }
 
     return Array.from(new Set(data.map((r) => Number(r.prospect_id)).filter(Boolean)));
   } catch (err) {
     console.error("Error fetching proposals:", err);
-    return [1, 4];
+    return [];
+  }
+}
+
+/**
+ * Fetch the latest proposal record for a prospect.
+ */
+export async function getProposalForProspect(
+  prospectId: number | string
+): Promise<ProposalRecord | null> {
+  const numericId = Number(prospectId);
+  if (isNaN(numericId)) return null;
+  try {
+    const supabase = await getSupabase();
+    const { data, error } = await supabase
+      .from("proposals")
+      .select("*")
+      .eq("prospect_id", numericId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error || !data) return null;
+    return data as ProposalRecord;
+  } catch (err) {
+    console.error("Error fetching proposal for prospect:", err);
+    return null;
+  }
+}
+
+/**
+ * Save or update a proposal in `proposals` with status 'Generated'.
+ */
+export async function saveGeneratedProposal(input: {
+  prospectId: number | string;
+  templateId: string;
+  letterDate: string;
+  signatoryName: string;
+  signatoryTitle?: string | null;
+  letterText: string;
+}): Promise<{ success: boolean; data?: ProposalRecord; error?: string }> {
+  const numericId = Number(input.prospectId);
+  try {
+    const supabase = await getSupabase();
+    const payload = {
+      prospect_id: numericId,
+      template_id: input.templateId,
+      letter_date: input.letterDate,
+      signatory_name: input.signatoryName,
+      signatory_title: input.signatoryTitle || null,
+      letter_text: input.letterText,
+      status: "Generated" as const,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data: existing } = await supabase
+      .from("proposals")
+      .select("id")
+      .eq("prospect_id", numericId)
+      .maybeSingle();
+
+    let result;
+    if (existing?.id) {
+      result = await supabase
+        .from("proposals")
+        .update(payload)
+        .eq("id", existing.id)
+        .select()
+        .single();
+    } else {
+      result = await supabase
+        .from("proposals")
+        .insert(payload)
+        .select()
+        .single();
+    }
+
+    if (result.error) {
+      console.error("Error saving proposal:", result.error);
+      return { success: false, error: result.error.message };
+    }
+
+    revalidatePath("/donor-conv/proposals");
+    revalidatePath("/donor-conv/prospects");
+    revalidatePath("/donor-conv/prospects/pipeline-board");
+    revalidatePath("/donor-conv/prospects/edit-prospect");
+
+    return { success: true, data: result.data as ProposalRecord };
+  } catch (err: any) {
+    console.error("Error saving generated proposal:", err);
+    return { success: false, error: err.message };
   }
 }
 

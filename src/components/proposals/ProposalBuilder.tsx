@@ -25,7 +25,10 @@ import {
   sampleSignatories,
   findSampleOfficer,
 } from "@/lib/sample-data";
-import { SAMPLE_LEADS } from "@supabase/seeds/prospects-seed";
+import type { LeadDetail } from "@supabase/seeds/prospects-seed";
+import { getProspects, saveGeneratedProposal } from "@/lib/prospects/actions";
+import { showToast } from "@/lib/toast";
+import ProposalsSkeleton from "@/app/donor-conv/proposals/skeleton";
 import {
   buildLetterText,
   findLeftoverPrompts,
@@ -50,9 +53,6 @@ const STAGE_ORDER: PipelineStatusEnum[] = [
   "Secured Donor",
 ];
 const FIRST_PROPOSAL_STAGE = STAGE_ORDER.indexOf("Outreach Started");
-const eligibleProspects = SAMPLE_LEADS.filter(
-  (p) => STAGE_ORDER.indexOf(p.pipeline_status) >= FIRST_PROPOSAL_STAGE,
-);
 
 // Nothing to subscribe to: today's date only needs reading once in the browser.
 const subscribeToNothing = () => () => {};
@@ -133,8 +133,39 @@ export function ProposalBuilder() {
   const queryId = searchParams.get("id") ?? searchParams.get("prospectId");
   const queryProspect = searchParams.get("prospect");
 
+  const [prospects, setProspects] = useState<LeadDetail[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let isCancelled = false;
+    async function loadProspects() {
+      try {
+        const data = await getProspects();
+        if (!isCancelled && data) {
+          setProspects(data);
+        }
+      } catch (err) {
+        console.error("Failed to load prospects for proposal builder:", err);
+      } finally {
+        if (!isCancelled) {
+          setIsLoading(false);
+        }
+      }
+    }
+    loadProspects();
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
+  const eligibleProspects = useMemo(() => {
+    return prospects.filter(
+      (p) => STAGE_ORDER.indexOf(p.pipeline_status) >= FIRST_PROPOSAL_STAGE,
+    );
+  }, [prospects]);
+
   const requestedProspect = useMemo(() => {
-    return SAMPLE_LEADS.find((p) => {
+    return prospects.find((p) => {
       if (queryId && String(p.id) === queryId) return true;
       if (
         queryProspect &&
@@ -143,7 +174,7 @@ export function ProposalBuilder() {
         return true;
       return false;
     });
-  }, [queryId, queryProspect]);
+  }, [prospects, queryId, queryProspect]);
 
   const availableProspects = useMemo(() => {
     if (
@@ -152,20 +183,25 @@ export function ProposalBuilder() {
     ) {
       return [requestedProspect, ...eligibleProspects];
     }
-    return eligibleProspects;
-  }, [requestedProspect]);
+    return eligibleProspects.length > 0 ? eligibleProspects : prospects;
+  }, [requestedProspect, eligibleProspects, prospects]);
 
   const defaultProspectId = requestedProspect
     ? requestedProspect.id
-    : availableProspects[0]?.id ?? eligibleProspects[0].id;
+    : availableProspects[0]?.id ?? prospects[0]?.id ?? 1;
 
   const [prospectId, setProspectId] = useState(defaultProspectId);
 
   useEffect(() => {
     if (requestedProspect) {
       setProspectId(requestedProspect.id);
+    } else if (
+      availableProspects.length > 0 &&
+      !availableProspects.some((p) => p.id === prospectId)
+    ) {
+      setProspectId(availableProspects[0].id);
     }
-  }, [requestedProspect]);
+  }, [requestedProspect, availableProspects, prospectId]);
 
   const [templateId, setTemplateId] = useState(sampleTemplates[0].id);
   const [signatoryId, setSignatoryId] = useState(sampleSignatories[0].id);
@@ -199,26 +235,32 @@ export function ProposalBuilder() {
   const prospect =
     availableProspects.find((p) => p.id === prospectId) ??
     eligibleProspects.find((p) => p.id === prospectId) ??
-    eligibleProspects[0];
+    availableProspects[0] ??
+    eligibleProspects[0] ??
+    prospects[0];
   const template =
     sampleTemplates.find((t) => t.id === templateId) ?? sampleTemplates[0];
   const signatory =
     sampleSignatories.find((s) => s.id === signatoryId) ?? sampleSignatories[0];
 
   // The officer assigned to this prospect (their title and email go in the letter).
-  const officer = findSampleOfficer(prospect.assigned_officer);
+  const officer = prospect ? findSampleOfficer(prospect.assigned_officer) : null;
 
   // Derived from the choices above on every render (not stored in state).
-  const generatedText = buildLetterText(
-    prospect,
-    template,
-    signatory,
-    officer,
-    // An empty date (cleared by the officer) shows as a prompt to fill in.
-    (date && formatLetterDate(date)) || "[date]",
-  );
+  const generatedText = prospect
+    ? buildLetterText(
+        prospect,
+        template,
+        signatory,
+        officer,
+        // An empty date (cleared by the officer) shows as a prompt to fill in.
+        (date && formatLetterDate(date)) || "[date]",
+      )
+    : "";
   // Shown in the preview toolbar, like "Proposal_Ayala_Foundation_2026.pdf".
-  const fileName = proposalFileName(prospect.prospect_name, date);
+  const fileName = prospect
+    ? proposalFileName(prospect.prospect_name, date)
+    : "Proposal.pdf";
 
   // The browser suggests the page title as the name when saving a PDF, so use
   // the proposal's file name while printing (also for Ctrl+P), then put the
@@ -262,9 +304,44 @@ export function ProposalBuilder() {
       ? "None left"
       : `${leftoverPrompts.length} left to fill`;
 
-  function generate() {
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  async function generate() {
     setShowWarning(false);
-    console.log("Generate proposal (not wired yet)");
+    if (!prospect) return;
+    setIsGenerating(true);
+    try {
+      const res = await saveGeneratedProposal({
+        prospectId: prospect.id,
+        templateId: template.id,
+        letterDate: date,
+        signatoryName: signatory.name,
+        signatoryTitle: signatory.title,
+        letterText,
+      });
+      if (res.success) {
+        showToast({
+          title: "Proposal Generated",
+          message: `Official proposal document saved with status 'Generated' for ${prospect.prospect_name}.`,
+          type: "success",
+        });
+      } else {
+        showToast({
+          title: "Save Failed",
+          message: res.error || "Could not save proposal document.",
+          type: "error",
+        });
+      }
+    } catch (err: any) {
+      console.error("Error generating proposal:", err);
+      showToast({
+        title: "Error",
+        message: err?.message || "Failed to generate proposal.",
+        type: "error",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   }
 
   // With warnings, show them first and let the officer decide.
@@ -291,6 +368,27 @@ export function ProposalBuilder() {
       return;
     }
     applyChoice(apply);
+  }
+
+  if (isLoading) {
+    return <ProposalsSkeleton />;
+  }
+
+  if (!prospect) {
+    return (
+      <div className="rounded-panel border border-border-soft bg-white p-8 text-center text-text-secondary mt-5">
+        <p className="text-base font-semibold text-text-primary">No Eligible Prospects</p>
+        <p className="text-sm mt-1">
+          There are no prospects currently available in the database.
+        </p>
+        <Link
+          href="/donor-conv/prospects"
+          className="inline-flex mt-4 h-9 items-center justify-center rounded-button bg-brand-primary px-4 text-sm font-semibold text-white cursor-pointer hover:opacity-90 transition-opacity"
+        >
+          Go to Prospects
+        </Link>
+      </div>
+    );
   }
 
   return (
@@ -630,11 +728,12 @@ export function ProposalBuilder() {
             </Link>
             <button
               type="button"
+              disabled={isGenerating}
               onClick={handleGenerate}
-              className="bg-brand-primary text-surface-white inline-flex h-8 cursor-pointer items-center gap-2 rounded-[6px] px-3 text-[13px] font-medium hover:opacity-90"
+              className="bg-brand-primary text-surface-white inline-flex h-8 cursor-pointer items-center gap-2 rounded-[6px] px-3 text-[13px] font-medium hover:opacity-90 disabled:opacity-50"
             >
               <FileText className="size-4" aria-hidden="true" />
-              Generate proposal
+              {isGenerating ? "Generating..." : "Generate proposal"}
             </button>
           </div>
         </div>
