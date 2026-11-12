@@ -237,7 +237,7 @@ test.describe("DTI0-35 send proposal", () => {
 
     await signInUi(page, CONVERSION);
     await page.goto(`/donor-conv/proposals/send-proposal?proposalId=${id}`);
-    await expect(page.getByText(/has no email address/)).toBeVisible({
+    await expect(page.getByText(/no valid email address/)).toBeVisible({
       timeout: 15000,
     });
     await expect(
@@ -249,6 +249,49 @@ test.describe("DTI0-35 send proposal", () => {
     await expect(
       page.getByRole("button", { name: "Send proposal" }),
     ).toBeEnabled();
+  });
+
+  test("a badly formed email is refused on screen and by the database", async ({
+    page,
+  }) => {
+    const id = await newProposal(spare);
+    await api.patch(`lead_prospects?id=eq.${spare.id}`, {
+      email_address: "a@b",
+    });
+    restore.push(() =>
+      api.patch(`lead_prospects?id=eq.${spare.id}`, {
+        email_address: spare.email_address,
+      }),
+    );
+
+    await signInUi(page, CONVERSION);
+    await page.goto(`/donor-conv/proposals/send-proposal?proposalId=${id}`);
+    await expect(page.getByText(/no valid email address/)).toBeVisible({
+      timeout: 15000,
+    });
+    await expect(
+      page.getByRole("button", { name: "Send proposal" }),
+    ).toBeDisabled();
+
+    // Calling send_proposal directly (skipping the screen) is refused too, and
+    // nothing changes: the proposal is still Generated.
+    const direct = await api.post("rpc/send_proposal", {
+      p_proposal_id: id,
+      p_delivery: "Email PDF (Softcopy)",
+    });
+    expect(direct.status()).toBe(400);
+    expect(await direct.text()).toMatch(/no valid email address/);
+    const [row] = await (
+      await api.get(`proposals?select=status&id=eq.${id}`)
+    ).json();
+    expect(row.status).toBe("Generated");
+
+    // Postal Mail does not need an email, so the database allows it.
+    const post = await api.post("rpc/send_proposal", {
+      p_proposal_id: id,
+      p_delivery: "Postal Mail",
+    });
+    expect(post.ok(), await post.text()).toBe(true);
   });
 
   test("a proposal that was already sent is shown read-only, with what was sent", async ({
