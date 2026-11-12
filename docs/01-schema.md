@@ -236,6 +236,10 @@ Stores generated proposal letters as saved text, and records their dispatch to t
   *Permitted values: `Email PDF (Softcopy)`, `Postal Mail`, `Hand Delivered`*
 - **`dispatched_at`** (`TIMESTAMPTZ`, `NULLABLE`)  
   Date and time the letter was dispatched. Empty until the letter is sent.
+- **`email_subject`** (`VARCHAR(200)`, `NULLABLE`)  
+  Subject of the email sent with the PDF. Empty for Postal Mail and Hand Delivered.
+- **`email_body`** (`TEXT`, `NULLABLE`)  
+  Message of the email sent with the PDF, including any edits by the officer. Empty for Postal Mail and Hand Delivered.
 - **`created_by`** (`INTEGER`, `FK`, `NULLABLE`)  
   Foreign key reference to the user account that generated the letter. Set by the database from the signed-in user.
 - **`file_path`** (`TEXT`, `NULLABLE`)  

@@ -199,6 +199,8 @@ export interface Proposal {
   status: ProposalStatusEnum
   delivery_preference: DeliveryPreferenceEnum | null
   dispatched_at: string | null
+  email_subject: string | null
+  email_body: string | null
   created_by: number | null
   file_path: string | null
   created_at: string

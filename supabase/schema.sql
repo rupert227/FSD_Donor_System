@@ -275,6 +275,9 @@ CREATE TABLE IF NOT EXISTS proposals (
   status proposal_status_enum NOT NULL DEFAULT 'Generated',
   delivery_preference delivery_preference_enum,
   dispatched_at TIMESTAMPTZ,
+  -- The email sent with the PDF (empty for Postal Mail and Hand Delivered).
+  email_subject VARCHAR(200),
+  email_body TEXT,
   created_by BIGINT REFERENCES user_accounts(id) ON DELETE SET NULL,
   file_path TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -432,7 +435,9 @@ CREATE POLICY "Conversion roles can update proposals"
 -- Runs as the caller, so the policies above decide who may use it.
 CREATE OR REPLACE FUNCTION public.send_proposal(
   p_proposal_id BIGINT,
-  p_delivery delivery_preference_enum
+  p_delivery delivery_preference_enum,
+  p_email_subject TEXT DEFAULT NULL,
+  p_email_body TEXT DEFAULT NULL
 )
 RETURNS proposals
 LANGUAGE plpgsql
@@ -442,7 +447,11 @@ DECLARE
   sent proposals;
 BEGIN
   UPDATE proposals
-  SET status = 'Sent', delivery_preference = p_delivery, dispatched_at = NOW()
+  SET status = 'Sent',
+      delivery_preference = p_delivery,
+      dispatched_at = NOW(),
+      email_subject = p_email_subject,
+      email_body = p_email_body
   WHERE id = p_proposal_id AND status = 'Generated'
   RETURNING * INTO sent;
 
@@ -460,8 +469,8 @@ BEGIN
 END;
 $$;
 
-REVOKE EXECUTE ON FUNCTION public.send_proposal(BIGINT, delivery_preference_enum) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.send_proposal(BIGINT, delivery_preference_enum) TO authenticated;
+REVOKE EXECUTE ON FUNCTION public.send_proposal(BIGINT, delivery_preference_enum, TEXT, TEXT) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.send_proposal(BIGINT, delivery_preference_enum, TEXT, TEXT) TO authenticated;
 
 CREATE POLICY "Allow authenticated users full access to officer_profiles"
   ON officer_profiles FOR ALL TO authenticated USING (true) WITH CHECK (true);
