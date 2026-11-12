@@ -80,38 +80,44 @@ test.describe("DTI0-20 proposal backend", () => {
 
   test("builder page lists real prospects and signatories (no sample data)", async ({ page }) => {
     await signInUi(page, CONVERSION);
-    await page.goto("/donor-conv/proposals");
-    await expect(page.locator("#prospect option").first()).toBeAttached({ timeout: 15000 });
-    expect(await page.locator("#prospect option").count()).toBeGreaterThan(1);
+    await page.goto(`/donor-conv/proposals?prospectId=${prospect.id}`);
+    // The prospect picker is a search box. Opening it lists the real prospects.
+    const box = page.getByPlaceholder("Search prospect by name or campaign...");
+    await expect(box).toHaveValue(prospect.prospect_name, { timeout: 15000 });
+    await box.click();
+    await expect(page.locator("div.absolute.z-50 button").nth(1)).toBeVisible();
 
-    const signatories = await page.locator("#signatory option").allInnerTexts();
-    expect(signatories).toContain("Rupert Tabilin");
-    expect(signatories).toContain("Fr. Anton C.T. Pascual");
-    expect(signatories).not.toContain("Sample Signatory A");
+    // No sample data. (The signatory is no longer a dropdown: the builder picks it from the
+    // real signatory profiles, which the first test checks.)
+    await expect(page.getByText("Sample Signatory A")).toHaveCount(0);
   });
 
   test("?prospectId= preselects that prospect", async ({ page }) => {
     await signInUi(page, CONVERSION);
     await page.goto(`/donor-conv/proposals?prospectId=${prospect.id}`);
-    await expect(page.locator("#prospect")).toHaveValue(String(prospect.id), { timeout: 15000 });
+    await expect(page.getByPlaceholder("Search prospect by name or campaign...")).toHaveValue(prospect.prospect_name, { timeout: 15000 });
   });
 
   test("Generate saves a proposal and does not change the pipeline stage", async ({ page, request }) => {
     await signInUi(page, CONVERSION);
     await page.goto(`/donor-conv/proposals?prospectId=${prospect.id}`);
-    await expect(page.locator("#prospect")).toHaveValue(String(prospect.id), { timeout: 15000 });
+    await expect(page.getByPlaceholder("Search prospect by name or campaign...")).toHaveValue(prospect.prospect_name, { timeout: 15000 });
 
+    // The builder loads the prospect's latest saved letter (if any) after the page appears.
+    // Wait for that to finish, or the letter changes under the click.
+    await page.waitForLoadState("networkidle");
     await page.getByRole("button", { name: "Generate proposal" }).click();
-    // The default template still has a [prompt] left, so the warning shows first.
+    // A letter with a [prompt] left shows a warning first. One loaded from an earlier
+    // proposal usually has none and saves straight away, so wait for whichever comes.
     const proceed = page.getByRole("button", { name: "Continue anyway" });
-    if (await proceed.isVisible().catch(() => false)) await proceed.click();
-
     const saved = page.getByText(/Proposal saved \(no\. \d+\)/);
+    await expect(saved.or(proceed)).toBeVisible({ timeout: 15000 });
+    if (await proceed.isVisible()) await proceed.click();
     await expect(saved).toBeVisible({ timeout: 15000 });
     uiProposalId = Number(/no\. (\d+)/.exec(await saved.innerText())![1]);
 
     // The next step is offered: a link to the Send screen carrying the saved proposal's id.
-    await expect(page.getByRole("link", { name: "Send proposal" })).toHaveAttribute(
+    await expect(page.getByRole("link", { name: "Send proposal" }).first()).toHaveAttribute(
       "href",
       `/donor-conv/proposals/send-proposal?proposalId=${uiProposalId}`,
     );
@@ -255,7 +261,7 @@ test.describe("DTI0-20 proposal backend", () => {
     try {
       await signInUi(page, CONVERSION);
       await page.goto(`/donor-conv/proposals?prospectId=${prospect.id}`);
-      await expect(page.locator("#prospect")).toHaveValue(String(prospect.id), { timeout: 15000 });
+      await expect(page.getByPlaceholder("Search prospect by name or campaign...")).toHaveValue(prospect.prospect_name, { timeout: 15000 });
 
       // Fix the record somewhere else (like the edit page in another tab), then come back.
       await api.patch(`lead_prospects?id=eq.${prospect.id}`, { title_designation: newTitle });
