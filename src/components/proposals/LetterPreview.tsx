@@ -305,7 +305,7 @@ export function LetterPreview({
                     onChange={(e) => onTextChange(e.target.value)}
                     className="ring-brand-primary/30 focus:ring-brand-primary/60 -m-2 block w-[calc(100%+1rem)] resize-none overflow-hidden rounded-[4px] bg-transparent p-2 ring-1 outline-none focus:ring-2"
                   />
-                ) : (
+                ) : text.trim() ? (
                   paragraphs.map((paragraph, index) => (
                     // whitespace-pre-line keeps single line breaks (like the address lines).
                     <p
@@ -319,6 +319,12 @@ export function LetterPreview({
                       {renderMarkup(paragraph)}
                     </p>
                   ))
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-28 text-center text-gray-400 select-none">
+                    <p className="text-sm font-medium text-[#757070]">
+                      Search and select a prospect on the left to preview their proposal letter.
+                    </p>
+                  </div>
                 )}
               </div>
 

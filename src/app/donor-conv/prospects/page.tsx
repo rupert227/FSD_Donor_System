@@ -868,35 +868,7 @@ export default function ProspectsPage() {
                         />
                       </div>
 
-                      {/* 3. Target Amount */}
-                      <div>
-                        <label className="block text-[0.6875rem] font-medium text-[#5c5757] mb-1.5">
-                          Target Amount
-                        </label>
-                        <ProspectSelectMenu
-                          value={draft.amountRange}
-                          onChange={(val) =>
-                            setDraft((prev) => ({ ...prev, amountRange: val }))
-                          }
-                          options={AMOUNT_FILTER_OPTIONS}
-                        />
-                      </div>
-
-                      {/* 4. Assigned Officer */}
-                      <div>
-                        <label className="block text-[0.6875rem] font-medium text-[#5c5757] mb-1.5">
-                          Assigned Officer
-                        </label>
-                        <ProspectSelectMenu
-                          value={draft.assignedOfficer}
-                          onChange={(val) =>
-                            setDraft((prev) => ({ ...prev, assignedOfficer: val }))
-                          }
-                          options={OFFICER_FILTER_OPTIONS}
-                        />
-                      </div>
-
-                      {/* 5. Donor Type */}
+                      {/* 3. Donor Type */}
                       <div>
                         <label className="block text-[0.6875rem] font-medium text-[#5c5757] mb-1.5">
                           Donor Type
