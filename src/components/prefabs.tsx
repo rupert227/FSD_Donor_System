@@ -49,7 +49,7 @@ export function DropdownList({
   }, [isOpen]);
 
   const selectedOption =
-    options?.find((option) => option.key === selectedKey) ?? null;
+    options?.find((option) => option.key === selectedKey) ?? undefined;
 
   return (
     <div ref={dropdownRef} className="relative flex">
@@ -97,7 +97,7 @@ export function DropdownList({
                       setIsOpen(false);
                     }}
                     className={cn(
-                      "text-text-muted first:rounded-t-dropdown last:rounded-b-dropdown flex h-7.5 w-full cursor-pointer items-center gap-2 px-3",
+                      "text-text-muted first:rounded-t-dropdown last:rounded-b-dropdown hover:bg-surface-soft-hover flex h-7.5 w-full cursor-pointer items-center gap-2 px-3",
                     )}
                   >
                     <p className="text-[0.8rem] whitespace-nowrap">

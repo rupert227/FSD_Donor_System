@@ -83,9 +83,23 @@ export async function GET(request: Request) {
 
     const report = data as Leads.Report;
 
-    report.fiscalYear = fiscalYear;
-    report.donorType = donorType;
-    report.pipelineStage = pipelineStage;
+    report.donorType = report.donorTypeOptions?.some(
+      (option) => option.key === donorType,
+    )
+      ? donorType
+      : undefined;
+
+    report.fiscalYear = report.fiscalYearOptions?.some(
+      (option) => option.key === fiscalYear,
+    )
+      ? fiscalYear
+      : undefined;
+
+    report.pipelineStage = report.pipelineStageOptions?.some(
+      (option) => option.key === pipelineStage,
+    )
+      ? pipelineStage
+      : undefined;
 
     if (report.quarterlySummary?.headers) {
       report.quarterlySummary.headers[
