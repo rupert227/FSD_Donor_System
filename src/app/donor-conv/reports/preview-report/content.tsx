@@ -46,16 +46,16 @@ export default function PreviewReportPageContent() {
 
   const donorTypeLabel =
     report.donorTypeOptions?.find((option) => option.key == report.donorType)
-      ?.label ?? "—";
+      ?.label ?? "All";
 
   const fiscalYearLabel =
     report.fiscalYearOptions?.find((option) => option.key == report.fiscalYear)
-      ?.label ?? "—";
+      ?.label ?? "All";
 
   const pipelineStageLabel =
     report.pipelineStageOptions?.find(
       (option) => option.key == report.pipelineStage,
-    )?.label ?? "—";
+    )?.label ?? "All";
 
   const summaryRows = generateSummaryRows(report);
 
@@ -71,7 +71,7 @@ export default function PreviewReportPageContent() {
 
   return (
     <AppShell navbarPreset={navbarPreset}>
-      <div className="flex w-full flex-1 flex-col">
+      <div className="animate-in fade-in flex w-full flex-1 flex-col duration-300">
         <div className="no-print flex justify-end">
           <div className="align-end flex items-center gap-3">
             {!canReturnToReports && (
@@ -145,7 +145,7 @@ export default function PreviewReportPageContent() {
                           </p>
                         </div>
                         <p className="text-text-secondary">•</p>
-                        <div className="flex gap-4">
+                        <div className="flex gap-2">
                           <p className="text-brand-primary font-bold">
                             DONOR TYPE:
                           </p>
@@ -154,7 +154,7 @@ export default function PreviewReportPageContent() {
                           </p>
                         </div>
                         <p className="text-text-secondary">•</p>
-                        <div className="flex gap-4">
+                        <div className="flex gap-2">
                           <p className="text-brand-primary font-bold">
                             PIPELINE STAGE:
                           </p>

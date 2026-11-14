@@ -4,13 +4,13 @@ type numArray = (number | none)[] | none;
 
 export namespace Primitives {
   export interface ChartOption<K = string, L = string, V = number> {
-    key: K;
+    key: K | none;
     label: L | none;
     value: V | none;
   }
 
   export interface DropdownOption<K = string, V = string> {
-    key: K;
+    key: K | none;
     label: V | none;
   }
 }
