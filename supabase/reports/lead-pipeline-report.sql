@@ -47,7 +47,10 @@ quarterly AS (
         COALESCE(SUM(target_amount), 0) AS valuation,
 
         COALESCE(
-            SUM(target_amount * probability_score / 100.0),
+            SUM(target_amount * probability_score / 100.0)
+                FILTER (
+                    WHERE probability_score >= 60
+                ),
             0
         ) AS probability_value,
 

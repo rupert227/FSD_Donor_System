@@ -3,7 +3,7 @@
 import ReportsSkeleton from "@/app/donor-conv/reports/skeleton";
 
 import { AppShell } from "@/components/AppShell";
-import { BarChart3, Check, Eye, Loader, RotateCcw } from "lucide-react";
+import { BarChart3, Check, Eye, Info, Loader, RotateCcw } from "lucide-react";
 import { DropdownList, type DropdownOption } from "@/components/prefabs";
 import { Leads } from "@/lib/types";
 import { cn } from "cn";
@@ -224,7 +224,7 @@ export default function ReportsPageContent() {
               <DropdownList
                 label="Select fiscal year"
                 selectedKey={fiscalYear?.key}
-                deselectOption={{key: undefined, label: "- Deselect -"}}
+                deselectOption={{ key: undefined, label: "- Deselect -" }}
                 options={report.fiscalYearOptions}
                 onChange={(option) => {
                   selectedFilters.current.fiscalYear = option.key;
@@ -240,7 +240,7 @@ export default function ReportsPageContent() {
               <DropdownList
                 label="Select donor type"
                 selectedKey={donorType?.key}
-                deselectOption={{key: undefined, label: "- Deselect -"}}
+                deselectOption={{ key: undefined, label: "- Deselect -" }}
                 options={report.donorTypeOptions}
                 onChange={(option) => {
                   selectedFilters.current.donorType = option.key;
@@ -256,7 +256,7 @@ export default function ReportsPageContent() {
               <DropdownList
                 label="Select pipeline stage"
                 selectedKey={pipelineStage?.key}
-                deselectOption={{key: undefined, label: "- Deselect -"}}
+                deselectOption={{ key: undefined, label: "- Deselect -" }}
                 options={report.pipelineStageOptions}
                 onChange={(option) => {
                   selectedFilters.current.pipelineStage = option.key;
@@ -294,8 +294,8 @@ export default function ReportsPageContent() {
               )}
             </div>
           </div>
-          <div className="border-border-soft bg-surface-white rounded-panel flex flex-col overflow-hidden border break-all shadow-sm">
-            <div className="border-border-soft bg-surface-white border-b px-4 py-3">
+          <div className="border-border-soft bg-surface-white rounded-panel flex flex-col border break-all shadow-sm">
+            <div className="border-border-soft bg-surface-white rounded-t-panel border-b px-4 py-3">
               <p className="text-text-primary text-[1.0rem] font-semibold tracking-[0.1em]">
                 QUARTERLY SUMMARY
               </p>
@@ -336,13 +336,21 @@ export default function ReportsPageContent() {
                       >
                         <td
                           className={cn(
-                            "px-3 py-3",
+                            "flex items-center gap-1.25 px-3 py-3",
                             !isTotal
                               ? ""
                               : "bg-report-footer-background font-medium",
                           )}
                         >
                           {row.label}
+                          {row.tooltip && (
+                            <div className="group relative inline-block">
+                              <Info className="text-text-muted h-3 w-3 shrink-0" />
+                              <p className="border-border-soft rounded-button bg-surface-white text-text-primary invisible absolute bottom-full left-1/2 mb-2 w-max max-w-60 -translate-x-1/2 border px-3 py-1.5 text-[0.75rem] font-normal break-normal whitespace-normal opacity-0 shadow-lg transition-opacity duration-300 group-hover:visible group-hover:opacity-100">
+                                {row.tooltip}
+                              </p>
+                            </div>
+                          )}
                         </td>
                         {Array.from({ length: columnCount }).map(
                           (_, colIndex) => {

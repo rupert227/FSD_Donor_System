@@ -169,8 +169,8 @@ export default function PreviewReportPageContent() {
                     </p>
                   </div>
                 </div>
-                <div className="border-border-soft bg-surface-white rounded-panel flex flex-col overflow-hidden border break-all shadow-sm">
-                  <div className="border-border-soft bg-surface-white border-b px-4 py-3">
+                <div className="border-border-soft bg-surface-white rounded-panel flex flex-col border break-all shadow-sm">
+                  <div className="border-border-soft bg-surface-white rounded-t-panel border-b px-4 py-3">
                     <p className="text-text-primary text-[1.0rem] font-semibold tracking-[0.1em]">
                       QUARTERLY SUMMARY
                     </p>

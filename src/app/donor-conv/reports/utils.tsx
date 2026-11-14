@@ -5,8 +5,9 @@ interface SummaryRow {
   type: "header" | "row" | "section" | "total";
   valType?: "currency" | "number" | "percent";
   label: string;
+  tooltip?: React.ReactNode;
   values: (number | none)[] | none;
-};
+}
 
 export function generateSummaryRows(report: Leads.Report): SummaryRow[] {
   return [
@@ -19,24 +20,53 @@ export function generateSummaryRows(report: Leads.Report): SummaryRow[] {
       type: "row",
       valType: "currency",
       label: "Total Estimated Valuation",
-      values: report.quarterlySummary?.coreMonetaryValue?.totalEstimatedValuation,
+      tooltip: (
+        <>
+          The sum of the target donation amounts of all matching prospect
+          records.
+        </>
+      ),
+      values:
+        report.quarterlySummary?.coreMonetaryValue?.totalEstimatedValuation,
     },
     {
       type: "row",
       valType: "currency",
       label: "Probability-Adjusted Value",
-      values: report.quarterlySummary?.coreMonetaryValue?.probabilityAdjustedValue,
+      tooltip: (
+        <>
+          The estimated donation value adjusted by each prospect&apos;s
+          probability score. Only prospects with a probability score of{" "}
+          <span className="font-semibold">60% or higher</span> are included.
+        </>
+      ),
+      values:
+        report.quarterlySummary?.coreMonetaryValue?.probabilityAdjustedValue,
     },
     {
       type: "row",
       valType: "currency",
       label: "Secured Value",
+      tooltip: (
+        <>
+          The sum of the target donation amounts of prospects currently in the{" "}
+          <span className="font-semibold">Secured Donor</span> stage.
+        </>
+      ),
       values: report.quarterlySummary?.coreMonetaryValue?.securedValue,
     },
     {
       type: "row",
       valType: "currency",
       label: "Unsecured Balance",
+      tooltip: (
+        <>
+          The remaining estimated donation value that has not been secured,
+          calculated by subtracting the{" "}
+          <span className="font-semibold">Secured Value</span> from the{" "}
+          <span className="font-semibold">Total Estimated Valuation</span>.
+        </>
+      ),
       values: report.quarterlySummary?.coreMonetaryValue?.unsecuredBalance,
     },
     {
@@ -48,13 +78,33 @@ export function generateSummaryRows(report: Leads.Report): SummaryRow[] {
       type: "row",
       valType: "percent",
       label: "Donor Conversion Rate",
-      values: report.quarterlySummary?.conversionEfficiencyAndRatios?.donorConversionRate,
+      tooltip: (
+        <>
+          The proportion of prospect records currently in the{" "}
+          <span className="font-semibold">Secured Donor</span> stage relative to
+          the total number of prospect records.
+        </>
+      ),
+      values:
+        report.quarterlySummary?.conversionEfficiencyAndRatios
+          ?.donorConversionRate,
     },
     {
       type: "row",
       valType: "percent",
       label: "Value Realization Rate",
-      values: report.quarterlySummary?.conversionEfficiencyAndRatios?.valueRealizationRate,
+      tooltip: (
+        <>
+          The proportion of the{" "}
+          <span className="font-semibold">Total Estimated Valuation</span> that
+          has been secured, calculated by dividing the{" "}
+          <span className="font-semibold">Secured Value</span> by the{" "}
+          <span className="font-semibold">Total Estimated Valuation</span>.
+        </>
+      ),
+      values:
+        report.quarterlySummary?.conversionEfficiencyAndRatios
+          ?.valueRealizationRate,
     },
     {
       type: "section",
@@ -124,7 +174,9 @@ export function generateSummaryRows(report: Leads.Report): SummaryRow[] {
     {
       type: "total",
       label: "Sub-Total Prospect Records",
-      values: report.quarterlySummary?.pipelineStageBreakdown?.subTotalProspectRecords,
+      values:
+        report.quarterlySummary?.pipelineStageBreakdown
+          ?.subTotalProspectRecords,
     },
   ];
 }
@@ -135,9 +187,13 @@ export function renderSummaryValue(
 ): string {
   if (row.type === "section") return "";
 
-  switch(row.valType) {
-    case "percent": return formatPercent(value);
-    case "currency": return formatCurrency(value);
-    case "number": default: return formatNumber(value);
+  switch (row.valType) {
+    case "percent":
+      return formatPercent(value);
+    case "currency":
+      return formatCurrency(value);
+    case "number":
+    default:
+      return formatNumber(value);
   }
 }
