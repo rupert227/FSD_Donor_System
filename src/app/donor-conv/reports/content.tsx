@@ -222,8 +222,9 @@ export default function ReportsPageContent() {
                 Fiscal Year
               </label>
               <DropdownList
-                label={"Select fiscal year"}
+                label="Select fiscal year"
                 selectedKey={fiscalYear?.key}
+                deselectOption={{key: null, label: "- Deselect -"}}
                 options={report.fiscalYearOptions}
                 onChange={(option) => {
                   selectedFilters.current.fiscalYear = option.key;
@@ -237,8 +238,9 @@ export default function ReportsPageContent() {
                 Donor Type
               </label>
               <DropdownList
-                label={"Select donor type"}
+                label="Select donor type"
                 selectedKey={donorType?.key}
+                deselectOption={{key: null, label: "- Deselect -"}}
                 options={report.donorTypeOptions}
                 onChange={(option) => {
                   selectedFilters.current.donorType = option.key;
@@ -252,8 +254,9 @@ export default function ReportsPageContent() {
                 Pipeline Stage
               </label>
               <DropdownList
-                label={"Select pipeline stage"}
+                label="Select pipeline stage"
                 selectedKey={pipelineStage?.key}
+                deselectOption={{key: null, label: "- Deselect -"}}
                 options={report.pipelineStageOptions}
                 onChange={(option) => {
                   selectedFilters.current.pipelineStage = option.key;

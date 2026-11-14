@@ -15,6 +15,7 @@ export type DropdownOption = Primitives.DropdownOption;
 export function DropdownList({
   label,
   selectedKey,
+  deselectOption,
   options,
   onChange,
   width = 12,
@@ -22,6 +23,7 @@ export function DropdownList({
 }: {
   label?: string | null | undefined;
   selectedKey?: string | null | undefined;
+  deselectOption?: DropdownOption | null | undefined;
   options?: DropdownOption[] | null | undefined;
   onChange?: (option: DropdownOption) => void | null | undefined;
   width?: number;
@@ -72,7 +74,6 @@ export function DropdownList({
           )}
         />
       </button>
-
       {isOpen && (options?.length ?? 0) > 0 && (
         <div
           style={{
@@ -84,8 +85,30 @@ export function DropdownList({
           className="bg-surface-white border-border-soft scrollbar-primary rounded-dropdown absolute top-[calc(100%+1px)] left-0 z-20 w-full overflow-auto border p-1 shadow-lg"
         >
           <div className="w-max min-w-full">
+            {deselectOption &&
+              (() => {
+                const isSelected = deselectOption.key == selectedOption?.key;
+
+                return (
+                  <div
+                    key={deselectOption.key}
+                    onClick={() => {
+                      if (!isSelected) onChange?.(deselectOption);
+                      setIsOpen(false);
+                    }}
+                    className={cn(
+                      "text-text-muted first:rounded-t-dropdown last:rounded-b-dropdown flex h-7.5 w-full cursor-pointer items-center gap-2 px-3",
+                    )}
+                  >
+                    <p className="text-[0.8rem] whitespace-nowrap">
+                      {deselectOption.label}
+                    </p>
+                  </div>
+                );
+              })()}
             {options?.map((option) => {
               const isSelected = option.key === selectedOption?.key;
+
               return (
                 <div
                   key={option.key}
