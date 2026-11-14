@@ -18,7 +18,7 @@ export function generateSummaryRows(report: Leads.Report): SummaryRow[] {
     {
       type: "row",
       valType: "currency",
-      label: "Total Estimated valuation",
+      label: "Total Estimated Valuation",
       values: report.quarterlySummary?.coreMonetaryValue?.totalEstimatedValuation,
     },
     {
