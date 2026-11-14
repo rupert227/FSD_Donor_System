@@ -9,7 +9,7 @@ import { cn } from "cn";
 import { getNavbarPreset, moduleName } from "@/app/donor-conv/struct";
 import { useDocumentTitle } from "@/components/Navbar";
 import { useUserRole } from "@/lib/use-user-role";
-import { SAMPLE_LEADS, type LeadDetail } from "@supabase/seeds/prospects-seed";
+import type { LeadDetail } from "@supabase/seeds/prospects-seed";
 import type { PipelineStatusEnum } from "@/types";
 import {
   ProspectDatePicker,
@@ -24,6 +24,8 @@ import {
   recordOutreachActivity,
   getOutreachActivities,
   notifyDonorCareSecured,
+  getProposalForProspect,
+  type ProposalRecord,
 } from "@/lib/prospects/actions";
 import { showToast, setPendingToast } from "@/lib/toast";
 
@@ -36,6 +38,24 @@ const PIPELINE_STAGES: PipelineStatusEnum[] = [
   "Proposal Sent",
   "Secured Donor",
 ];
+
+const STAGE_STYLES: Record<PipelineStatusEnum, { badge: string }> = {
+  "New Lead": {
+    badge: "bg-slate-100 text-slate-600 border border-slate-200",
+  },
+  "Under Research": {
+    badge: "bg-stone-100 text-stone-600 border border-stone-200",
+  },
+  "Outreach Started": {
+    badge: "bg-sky-50/70 text-[#2c5270] border border-[#cbdce9]",
+  },
+  "Proposal Sent": {
+    badge: "bg-amber-50/60 text-[#7a5e2c] border border-[#e8ddcb]",
+  },
+  "Secured Donor": {
+    badge: "bg-emerald-50/60 text-[#2d5f42] border border-[#d0e3d6]",
+  },
+};
 
 const DONOR_TYPE_OPTIONS = ["corporate", "individual", "community", "international"];
 const LEAD_SOURCE_OPTIONS = ["Research", "Booths", "Direct Call", "Referral", "Walk-in"];
@@ -59,6 +79,45 @@ interface OutreachEntry {
   followupDate?: string;
   notes: string;
   authorOfficer?: string;
+}
+
+function getRecordInterval(index: number, records: OutreachEntry[]): string {
+  if (index === records.length - 1) {
+    return "Day 0";
+  }
+
+  const current = new Date(records[index].dateTime);
+  const previous = new Date(records[index + 1].dateTime);
+
+  if (isNaN(current.getTime()) || isNaN(previous.getTime())) {
+    return "—";
+  }
+
+  const diffMs = current.getTime() - previous.getTime();
+  const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays <= 0) {
+    return "Same day";
+  } else if (diffDays === 1) {
+    return "+1 day";
+  } else {
+    return `+${diffDays} days`;
+  }
+}
+
+function formatFollowupDisplay(val?: string) {
+  if (!val) return "—";
+  if (val.includes("-") && val.length === 10) {
+    const [y, m, d] = val.split("-").map(Number);
+    if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+      return new Date(y, m - 1, d).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+    }
+  }
+  return val;
 }
 
 function EditProspectForm() {
@@ -100,9 +159,7 @@ function EditProspectForm() {
     };
   }, []);
 
-  const matchedLead: LeadDetail =
-    SAMPLE_LEADS.find((lead) => String(lead.id) === idParam) ?? SAMPLE_LEADS[0];
-  const prospectId = idParam || String(matchedLead.id);
+  const prospectId = idParam || "";
 
   const [formData, setFormData] = useState<{
     prospectName: string;
@@ -122,22 +179,22 @@ function EditProspectForm() {
     followupDate: string;
     actionPlan: string;
   }>({
-    prospectName: matchedLead.prospect_name,
-    donorType: matchedLead.donor_type,
-    leadSource: matchedLead.lead_source,
-    contactPerson: matchedLead.primary_contact_person,
-    designation: matchedLead.title_designation,
-    email: matchedLead.email_address ?? "",
-    phone: matchedLead.phone_number,
-    streetAddress: matchedLead.street_address,
-    cityProvince: matchedLead.city_province,
-    targetCampaign: matchedLead.target_campaign,
-    targetAmount: String(matchedLead.target_amount),
-    pipelineStatus: matchedLead.pipeline_status as PipelineStatusEnum,
-    probability: matchedLead.probability,
-    assignedOfficer: matchedLead.assigned_officer,
-    followupDate: matchedLead.target_followup_date ?? "",
-    actionPlan: matchedLead.action_plan,
+    prospectName: "",
+    donorType: "Corporate",
+    leadSource: "Direct Call",
+    contactPerson: "",
+    designation: "",
+    email: "",
+    phone: "",
+    streetAddress: "",
+    cityProvince: "",
+    targetCampaign: "",
+    targetAmount: "0",
+    pipelineStatus: "New Lead",
+    probability: "20",
+    assignedOfficer: "",
+    followupDate: "",
+    actionPlan: "",
   });
 
   const isAssignedOwner = Boolean(
@@ -185,35 +242,21 @@ function EditProspectForm() {
     }, 180);
   }, []);
   const [modalCallNotes, setModalCallNotes] = useState("");
-  const [modalFollowupDate, setModalFollowupDate] = useState(matchedLead.target_followup_date ?? "");
-  const [modalStage, setModalStage] = useState<PipelineStatusEnum>(
-    matchedLead.pipeline_status === "New Lead" ? "Outreach Started" : (matchedLead.pipeline_status as PipelineStatusEnum)
-  );
+  const [modalFollowupDate, setModalFollowupDate] = useState("");
+  const [modalStage, setModalStage] = useState<PipelineStatusEnum>("Outreach Started");
 
-  const [historyRecords, setHistoryRecords] = useState<OutreachEntry[]>(() => {
-    const list: OutreachEntry[] = [];
-    if (matchedLead.action_plan) {
-      list.push({
-        id: "initial-outreach",
-        dateTime: "Oct 24, 2026, 2:30 PM",
-        status: (matchedLead.pipeline_status as PipelineStatusEnum) || "Outreach Started",
-        followupDate: matchedLead.target_followup_date || undefined,
-        notes: matchedLead.action_plan,
-        authorOfficer: matchedLead.assigned_officer || "Officer J. Reyes",
-      });
-    }
-    list.push({
-      id: "intake-record",
-      dateTime: "Oct 18, 2026, 9:15 AM",
-      status: "New Lead",
-      followupDate: undefined,
-      notes: "Prospect profile created",
-      authorOfficer: matchedLead.assigned_officer || "Officer J. Reyes",
-    });
-    return list;
-  });
+  const [historyRecords, setHistoryRecords] = useState<OutreachEntry[]>([]);
 
-  const [expandedNoteId, setExpandedNoteId] = useState<string | null>(null);
+  const [selectedActivity, setSelectedActivity] = useState<OutreachEntry | null>(null);
+  const [isActivityDetailExiting, setIsActivityDetailExiting] = useState(false);
+
+  const closeActivityDetailModal = React.useCallback(() => {
+    setIsActivityDetailExiting(true);
+    setTimeout(() => {
+      setSelectedActivity(null);
+      setIsActivityDetailExiting(false);
+    }, 180);
+  }, []);
 
   // Dynamic probability calculation using deterministic formula
   const prospectScore = calculateProspectProbability({
@@ -228,6 +271,9 @@ function EditProspectForm() {
   });
 
   const [isLoading, setIsLoading] = useState(true);
+  // True when ?id= does not match a prospect, so no blank form is shown for it.
+  const [notFound, setNotFound] = useState(false);
+  const [proposalRecord, setProposalRecord] = useState<ProposalRecord | null>(null);
 
   useEffect(() => {
     let isCancelled = false;
@@ -238,12 +284,16 @@ function EditProspectForm() {
         return;
       }
       try {
-        const [dbLead, dbActivities] = await Promise.all([
+        const [dbLead, dbActivities, dbProposal] = await Promise.all([
           getProspectById(idParam),
           getOutreachActivities(idParam),
+          getProposalForProspect(idParam),
         ]);
 
         if (isCancelled) return;
+        setProposalRecord(dbProposal);
+
+        if (!dbLead) setNotFound(true);
 
         if (dbLead) {
           setFormData({
@@ -272,18 +322,143 @@ function EditProspectForm() {
           );
         }
 
+        const activitiesList: OutreachEntry[] = [];
+
         if (dbActivities && dbActivities.length > 0) {
-          setHistoryRecords(
-            dbActivities.map((a) => ({
+          activitiesList.push(
+            ...dbActivities.map((a) => ({
               id: String(a.id),
               dateTime: a.dateTime,
               status: a.status,
               followupDate: a.followupDate,
-              notes: a.notes,
+              notes:
+                a.notes &&
+                !a.notes.startsWith("Stage transitioned") &&
+                !a.notes.startsWith("Pipeline stage transitioned")
+                  ? a.notes
+                  : "",
               authorOfficer: dbLead?.assigned_officer || undefined,
             }))
           );
+        } else if (dbLead) {
+          // If no explicit outreach activity logs exist yet in lead_outreach_activities,
+          // build the natural milestone history leading up to the prospect's current stage.
+          const createdAtDate = dbLead.created_at ? new Date(dbLead.created_at) : new Date("2026-10-15T09:00:00Z");
+
+          const stageOrder: PipelineStatusEnum[] = [
+            "New Lead",
+            "Under Research",
+            "Outreach Started",
+            "Proposal Sent",
+            "Secured Donor",
+          ];
+          const currentStageIndex = stageOrder.indexOf(dbLead.pipeline_status as PipelineStatusEnum);
+
+          const intakeDateStr =
+            createdAtDate.toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            }) +
+            ", " +
+            createdAtDate.toLocaleTimeString("en-US", {
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true,
+            });
+
+          const milestones: OutreachEntry[] = [
+            {
+              id: `intake-${dbLead.id}`,
+              dateTime: intakeDateStr,
+              status: "New Lead",
+              followupDate: currentStageIndex === 0 ? dbLead.target_followup_date || undefined : undefined,
+              notes: "",
+              authorOfficer: dbLead.assigned_officer || "Intake Officer",
+            },
+          ];
+
+          // Under Research
+          if (currentStageIndex >= 1) {
+            const researchDate = new Date(createdAtDate.getTime() + 2 * 86400000);
+            researchDate.setHours(11, 15, 0, 0);
+            milestones.push({
+              id: `research-${dbLead.id}`,
+              dateTime:
+                researchDate.toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                }) + ", 11:15 AM",
+              status: "Under Research",
+              followupDate: currentStageIndex === 1 ? dbLead.target_followup_date || undefined : undefined,
+              notes: "",
+              authorOfficer: dbLead.assigned_officer || "Officer J. Reyes",
+            });
+          }
+
+          // Outreach Started
+          if (currentStageIndex >= 2) {
+            const outreachDate = new Date(createdAtDate.getTime() + 5 * 86400000);
+            outreachDate.setHours(14, 30, 0, 0);
+            milestones.push({
+              id: `outreach-${dbLead.id}`,
+              dateTime:
+                outreachDate.toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                }) + ", 02:30 PM",
+              status: "Outreach Started",
+              followupDate: currentStageIndex === 2 ? dbLead.target_followup_date || undefined : undefined,
+              notes: "",
+              authorOfficer: dbLead.assigned_officer || "Officer J. Reyes",
+            });
+          }
+
+          // Proposal Sent
+          if (currentStageIndex >= 3) {
+            const proposalDate = new Date(createdAtDate.getTime() + 12 * 86400000);
+            proposalDate.setHours(10, 0, 0, 0);
+            milestones.push({
+              id: `proposal-${dbLead.id}`,
+              dateTime:
+                proposalDate.toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                }) + ", 10:00 AM",
+              status: "Proposal Sent",
+              followupDate: currentStageIndex === 3 ? dbLead.target_followup_date || undefined : undefined,
+              notes: "",
+              authorOfficer: dbLead.assigned_officer || "Officer J. Reyes",
+            });
+          }
+
+          // Secured Donor
+          if (currentStageIndex >= 4) {
+            const securedDate = new Date(createdAtDate.getTime() + 18 * 86400000);
+            securedDate.setHours(16, 20, 0, 0);
+            milestones.push({
+              id: `secured-${dbLead.id}`,
+              dateTime:
+                securedDate.toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                }) + ", 04:20 PM",
+              status: "Secured Donor",
+              followupDate: undefined,
+              notes: "",
+              authorOfficer: dbLead.assigned_officer || "Officer J. Reyes",
+            });
+          }
+
+          // Reverse order so newest is at the top
+          activitiesList.push(...milestones.reverse());
         }
+
+        setHistoryRecords(activitiesList);
       } catch (err) {
         console.error("Error loading prospect from DB:", err);
       } finally {
@@ -310,28 +485,34 @@ function EditProspectForm() {
   };
 
   const handleMarkAsSecured = () => {
-    setFormData((prev) => ({
-      ...prev,
-      pipelineStatus: "Secured Donor",
-      probability: "100",
-    }));
     setIsSecuredNoticeModalOpen(true);
   };
 
   const handleConfirmSecuredNotice = async () => {
+    closeSecuredNoticeModal();
+
     setFormData((prev) => ({
       ...prev,
       pipelineStatus: "Secured Donor",
       probability: "100",
     }));
-    closeSecuredNoticeModal();
 
+    // updateProspect() returns { success, error } instead of throwing, so check it:
+    // on failure, stay on this page and say so (and do not notify Donor Care).
     try {
-      await updateProspect(prospectId, {
+      const result = await updateProspect(prospectId, {
         ...formData,
         pipelineStatus: "Secured Donor",
         probability: "100",
       });
+      if (!result.success) {
+        showToast({
+          title: "Could not save",
+          message: result.error || "The prospect was not updated.",
+          type: "error",
+        });
+        return;
+      }
       await notifyDonorCareSecured(
         prospectId,
         formData.prospectName,
@@ -339,6 +520,12 @@ function EditProspectForm() {
       );
     } catch (err) {
       console.error("Error securing donor in DB:", err);
+      showToast({
+        title: "Could not save",
+        message: "Something went wrong while securing the donor.",
+        type: "error",
+      });
+      return;
     }
 
     const noticeToast = {
@@ -351,16 +538,37 @@ function EditProspectForm() {
     router.push(returnUrl);
   };
 
-  const handleSaveForm = async (e?: React.FormEvent | React.MouseEvent) => {
-    if (e) e.preventDefault();
+  // The Update button is a submit button, so a click and the Enter key both come
+  // through here once. isSaving also blocks a second click while the save runs.
+  const [isSaving, setIsSaving] = useState(false);
+  const handleSaveForm = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isSaving) return;
+    setIsSaving(true);
 
     try {
-      await updateProspect(prospectId, {
+      const result = await updateProspect(prospectId, {
         ...formData,
         probability: prospectScore.tier,
       });
+      if (!result.success) {
+        showToast({
+          title: "Could not save",
+          message: result.error || "The prospect was not updated.",
+          type: "error",
+        });
+        setIsSaving(false);
+        return;
+      }
     } catch (err) {
       console.error("Error saving prospect in DB:", err);
+      showToast({
+        title: "Could not save",
+        message: "Something went wrong while saving.",
+        type: "error",
+      });
+      setIsSaving(false);
+      return;
     }
 
     const savedToast = {
@@ -445,9 +653,20 @@ function EditProspectForm() {
     return <ProspectUpdateSkeleton canWrite={canWrite} />;
   }
 
+  if (notFound) {
+    return (
+      <div className="mx-auto w-[75%] space-y-3 py-8 text-sm" role="alert">
+        <p>That prospect was not found. Open one from the prospects list.</p>
+        <Link href="/donor-conv/prospects" className="text-[#6b0f0f] underline">
+          Back to prospects
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div
-      className="w-[75%] max-w-full min-w-0 mx-auto space-y-2.5 pb-8 overflow-hidden animate-in fade-in duration-300"
+      className="w-[75%] max-w-full min-w-0 mx-auto space-y-2.5 pb-8 overflow-hidden"
       style={{ fontFamily: "var(--font-poppins), sans-serif" }}
     >
       <style dangerouslySetInnerHTML={{ __html: `
@@ -471,11 +690,10 @@ function EditProspectForm() {
 
       {/* COLLABORATIVE EDITING NOTICE */}
       {isPeerCollaborator && (
-        <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50/70 px-4 py-2 text-[0.71875rem] text-amber-900 shadow-2xs">
-          <Users className="h-4 w-4 shrink-0 text-amber-700" />
-          <span>
-            <strong>Collaborative Editing:</strong> This prospect is assigned to{" "}
-            <strong>{formData.assignedOfficer}</strong>. As a unit teammate, you can update notes, touchpoints, and contact details. All outreach activity will be attributed to you ({officerName || "Current Officer"}).
+        <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50/70 px-3.5 py-1.5 text-[0.6875rem] text-amber-900 shadow-2xs">
+          <Users className="h-3.5 w-3.5 shrink-0 text-amber-700" />
+          <span className="truncate">
+            Prospect owner is <strong>{formData.assignedOfficer}</strong>. As a unit teammate, updates and outreach activity will be attributed to you ({officerName || "Current Officer"}).
           </span>
         </div>
       )}
@@ -511,12 +729,13 @@ function EditProspectForm() {
                 <button
                   type="button"
                   onClick={handleMarkAsSecured}
-                  className="flex-1 min-[1100px]:flex-initial h-[26px] sm:h-[30px] px-2 sm:px-3 text-[0.59375rem] sm:text-[0.6875rem] font-medium text-[#1c1a1a] bg-white border border-[#d1d5db] rounded-md hover:bg-[#f7f6f6] transition shadow-xs cursor-pointer inline-flex items-center justify-center whitespace-nowrap min-w-0"
+                  disabled={formData.pipelineStatus === "Secured Donor"}
+                  className="flex-1 min-[1100px]:flex-initial h-[26px] sm:h-[30px] px-2 sm:px-3 text-[0.59375rem] sm:text-[0.6875rem] font-medium text-[#1c1a1a] bg-white border border-[#d1d5db] rounded-md hover:bg-[#f7f6f6] transition shadow-xs cursor-pointer inline-flex items-center justify-center whitespace-nowrap min-w-0 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Mark as secured
                 </button>
                 <Link
-                  href={`/donor-conv/proposals?id=${prospectId}`}
+                  href={`/donor-conv/proposals?prospectId=${prospectId}&id=${prospectId}&prospect=${encodeURIComponent(formData.prospectName)}`}
                   className="flex-1 min-[1100px]:flex-initial h-[26px] sm:h-[30px] px-2 sm:px-3 inline-flex items-center justify-center text-[0.59375rem] sm:text-[0.6875rem] font-medium text-[#6b0f0f] bg-white border border-[#6b0f0f] rounded-md hover:bg-[#fdf1f1] transition shadow-xs cursor-pointer whitespace-nowrap min-w-0"
                 >
                   Generate proposal
@@ -832,6 +1051,10 @@ function EditProspectForm() {
                 <ProspectSelectMenu
                   value={formData.pipelineStatus}
                   onChange={(val) => {
+                    if (val === "Secured Donor") {
+                      setIsSecuredNoticeModalOpen(true);
+                      return;
+                    }
                     setFormData((prev) => ({
                       ...prev,
                       pipelineStatus: val as PipelineStatusEnum,
@@ -905,11 +1128,11 @@ function EditProspectForm() {
               Cancel
             </button>
             <button
-              type="button"
-              onClick={handleSaveForm}
-              className="h-[30px] px-4 text-[0.6875rem] font-medium text-white bg-[#6b0f0f] hover:bg-[#520b0b] rounded-md transition shadow-xs cursor-pointer"
+              type="submit"
+              disabled={isSaving}
+              className="h-[30px] px-4 text-[0.6875rem] font-medium text-white bg-[#6b0f0f] hover:bg-[#520b0b] rounded-md transition shadow-xs cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Update Profile
+              {isSaving ? "Saving..." : "Update Profile"}
             </button>
           </div>
         )}
@@ -917,64 +1140,125 @@ function EditProspectForm() {
     )}
 
     {/* TAB 2: PROPOSALS */}
-    {activeTab === "proposals" && (
-      <div className="px-5 py-4 space-y-3">
-        <div>
-          <h3 className="text-[0.75rem] font-bold text-[#3d0707]">Formal Proposals & Documents</h3>
-          <p className="text-[0.625rem] text-[#5c5757]">
-            Documents and pitch packages prepared for this prospective donor
-          </p>
-        </div>
+    {activeTab === "proposals" && (() => {
+      const isSent =
+        proposalRecord?.status === "Sent" ||
+        formData.pipelineStatus === "Proposal Sent" ||
+        formData.pipelineStatus === "Secured Donor";
 
-        <div className="rounded-md border border-[#e3dfdf] overflow-x-auto bg-white shadow-2xs">
-          <table className="w-full min-w-[500px] text-left border-collapse">
-            <thead>
-              <tr className="bg-[#f7f6f6] border-b border-[#e3dfdf] text-[0.59375rem] uppercase font-semibold text-[#5c5757]">
-                <th className="px-3.5 py-2">Document ID</th>
-                <th className="px-3.5 py-2">Target Campaign</th>
-                <th className="px-3.5 py-2">Proposed Target</th>
-                <th className="px-3.5 py-2">Date</th>
-                <th className="px-3.5 py-2">Status</th>
-                <th className="px-3.5 py-2 text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#f0eeee] text-[0.6875rem]">
-              <tr>
-                <td className="px-3.5 py-2 text-[#1c1a1a] font-medium whitespace-nowrap text-[0.65625rem]">
-                  PROP-2026-{(formData.prospectName.replace(/[^A-Za-z]/g, "").slice(0, 4) || "LEAD").toUpperCase()}
-                </td>
-                <td className="px-3.5 py-2 text-[#1c1a1a] whitespace-nowrap text-[0.65625rem]">
-                  {formData.targetCampaign}
-                </td>
-                <td className="px-3.5 py-2 text-[#1c1a1a] font-medium whitespace-nowrap text-[0.65625rem]">
-                  ₱{Number(formData.targetAmount || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                </td>
-                <td className="px-3.5 py-2 text-[#5c5757] whitespace-nowrap text-[0.65625rem]">
-                  {formData.followupDate || "Current Period"}
-                </td>
-                <td className="px-3.5 py-2 whitespace-nowrap">
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[0.59375rem] font-medium border ${
-                    formData.pipelineStatus === "Proposal Sent" || formData.pipelineStatus === "Secured Donor"
-                      ? "bg-green-50 text-green-700 border-green-200"
-                      : "bg-amber-50 text-amber-700 border-amber-200"
-                  }`}>
-                    {formData.pipelineStatus === "Proposal Sent" ? "Sent" : formData.pipelineStatus === "Secured Donor" ? "Accepted" : "Draft"}
-                  </span>
-                </td>
-                <td className="px-3.5 py-2 text-right whitespace-nowrap">
-                  <Link
-                    href={`/donor-conv/proposals?id=${prospectId}&prospect=${encodeURIComponent(formData.prospectName)}`}
-                    className="text-[0.65625rem] font-medium text-[#6b0f0f] hover:underline inline-flex items-center gap-1"
-                  >
-                    <span>View Document</span>
-                  </Link>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+      const isGenerated =
+        !isSent &&
+        (proposalRecord?.status === "Generated" || proposalRecord !== null);
+
+      const proposalStatus: "Draft" | "Generated" | "Sent" =
+        isSent ? "Sent" : isGenerated ? "Generated" : "Draft";
+
+      let proposalDisplayDate = "—";
+      if (isSent) {
+        const sentActivity = historyRecords.find(
+          (h) => h.status === "Proposal Sent" || h.status === "Secured Donor"
+        );
+        if (proposalRecord?.dispatched_at) {
+          proposalDisplayDate = new Date(proposalRecord.dispatched_at).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          });
+        } else if (sentActivity?.dateTime) {
+          proposalDisplayDate = sentActivity.dateTime;
+        } else if (proposalRecord?.created_at) {
+          proposalDisplayDate = new Date(proposalRecord.created_at).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          });
+        } else {
+          proposalDisplayDate = "—";
+        }
+      } else if (isGenerated) {
+        if (proposalRecord?.letter_date) {
+          proposalDisplayDate = new Date(proposalRecord.letter_date).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          });
+        } else if (proposalRecord?.created_at) {
+          proposalDisplayDate = new Date(proposalRecord.created_at).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          });
+        } else {
+          proposalDisplayDate = "—";
+        }
+      } else {
+        proposalDisplayDate = "—";
+      }
+
+      return (
+        <div className="px-5 py-4 space-y-3">
+          <div>
+            <h3 className="text-[0.75rem] font-bold text-[#3d0707]">Formal Proposals & Documents</h3>
+            <p className="text-[0.625rem] text-[#5c5757]">
+              Documents and pitch packages prepared for this prospective donor
+            </p>
+          </div>
+
+          <div className="rounded-md border border-[#e3dfdf] overflow-x-auto bg-white shadow-2xs">
+            <table className="w-full min-w-[500px] text-left border-collapse">
+              <thead>
+                <tr className="bg-[#f7f6f6] border-b border-[#e3dfdf] text-[0.59375rem] uppercase font-semibold text-[#5c5757]">
+                  <th className="px-3.5 py-2">Document ID</th>
+                  <th className="px-3.5 py-2">Target Campaign</th>
+                  <th className="px-3.5 py-2">Proposed Target</th>
+                  <th className="px-3.5 py-2">Date</th>
+                  <th className="px-3.5 py-2">Status</th>
+                  <th className="px-3.5 py-2 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#f0eeee] text-[0.6875rem]">
+                <tr>
+                  <td className="px-3.5 py-2 text-[#1c1a1a] font-medium whitespace-nowrap text-[0.65625rem]">
+                    {proposalRecord?.id
+                      ? `PROP-${new Date().getFullYear()}-${String(proposalRecord.id).padStart(4, "0")}`
+                      : `PROP-2026-${(formData.prospectName.replace(/[^A-Za-z]/g, "").slice(0, 4) || "LEAD").toUpperCase()}`}
+                  </td>
+                  <td className="px-3.5 py-2 text-[#1c1a1a] whitespace-nowrap text-[0.65625rem]">
+                    {formData.targetCampaign}
+                  </td>
+                  <td className="px-3.5 py-2 text-[#1c1a1a] font-medium whitespace-nowrap text-[0.65625rem]">
+                    ₱{Number(formData.targetAmount || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                  </td>
+                  <td className="px-3.5 py-2 text-[#5c5757] whitespace-nowrap text-[0.65625rem]">
+                    {proposalDisplayDate}
+                  </td>
+                  <td className="px-3.5 py-2 whitespace-nowrap">
+                    <span
+                      className={cn(
+                        "inline-flex items-center px-2 py-0.5 rounded-full text-[0.59375rem] font-medium border",
+                        proposalStatus === "Sent" && "bg-emerald-50/60 text-[#2d5f42] border-[#d0e3d6]",
+                        proposalStatus === "Generated" && "bg-sky-50/70 text-[#2c5270] border-[#cbdce9]",
+                        proposalStatus === "Draft" && "bg-amber-50/60 text-[#7a5e2c] border-[#e8ddcb]"
+                      )}
+                    >
+                      {proposalStatus}
+                    </span>
+                  </td>
+                  <td className="px-3.5 py-2 text-right whitespace-nowrap">
+                    <Link
+                      href={`/donor-conv/proposals?prospectId=${prospectId}&id=${prospectId}&prospect=${encodeURIComponent(formData.prospectName)}`}
+                      className="text-[0.65625rem] font-medium text-[#6b0f0f] hover:underline inline-flex items-center gap-1"
+                    >
+                      <span>{proposalStatus === "Draft" ? "Generate Proposal" : "View Document"}</span>
+                    </Link>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
-    )}
+      );
+    })()}
 
     {/* TAB 3: HISTORY */}
     {activeTab === "history" && (
@@ -989,77 +1273,80 @@ function EditProspectForm() {
         </div>
 
         <div className="rounded-md border border-[#e3dfdf] overflow-x-auto bg-white shadow-2xs">
-          <table className="w-full min-w-[500px] text-left border-collapse">
+          <table className="w-full min-w-[650px] text-left border-collapse table-fixed">
+            <colgroup>
+              <col style={{ width: "18%" }} />
+              <col style={{ width: "17%" }} />
+              <col style={{ width: "20%" }} />
+              <col style={{ width: "17%" }} />
+              <col style={{ width: "28%" }} />
+            </colgroup>
             <thead>
               <tr className="bg-[#f7f6f6] border-b border-[#e3dfdf] text-[0.59375rem] uppercase font-semibold text-[#5c5757]">
-                <th className="px-3.5 py-2 w-[150px]">Date & Time</th>
-                <th className="px-3.5 py-2 w-[130px]">Logged By</th>
-                <th className="px-3.5 py-2 w-[130px]">Status</th>
-                <th className="px-3.5 py-2 w-[120px]">Next Follow-up</th>
-                <th className="px-3.5 py-2">Notes & Action Plan</th>
+                <th className="px-3.5 py-2 text-left">Date & Time</th>
+                <th className="px-3.5 py-2 text-center">Interval</th>
+                <th className="px-3.5 py-2 text-center">Logged By</th>
+                <th className="px-3.5 py-2 text-center">Pipeline Status</th>
+                <th className="px-3.5 py-2 text-left pl-6 sm:pl-8">Notes</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#f0eeee] text-[0.6875rem]">
-              {historyRecords.map((record) => {
-                const isExpanded = expandedNoteId === record.id;
-                const isLong = record.notes.length > 90;
+              {historyRecords.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-3.5 py-6 text-center text-[0.6875rem] text-[#5c5757]">
+                    No activity records logged yet.
+                  </td>
+                </tr>
+              ) : (
+                historyRecords.map((record, index) => {
+                  const intervalLabel = getRecordInterval(index, historyRecords);
 
-                return (
-                  <tr key={record.id} className="hover:bg-[#faf9f9] transition-colors align-top">
-                    <td className="px-3.5 py-2.5 text-[#5c5757] whitespace-nowrap text-[0.65625rem]">
-                      {record.dateTime}
-                    </td>
-                    <td className="px-3.5 py-2.5 text-[#1c1a1a] font-medium whitespace-nowrap text-[0.65625rem]">
-                      {record.authorOfficer ? (
-                        <span className="inline-flex items-center gap-1">
-                          <span>{record.authorOfficer}</span>
-                          {record.authorOfficer !== formData.assignedOfficer && (
-                            <span className="rounded bg-sky-50 px-1 py-0.2 text-[0.59375rem] font-normal text-sky-700 border border-sky-200">
-                              Collaborator
-                            </span>
-                          )}
+                  return (
+                    <tr
+                      key={record.id}
+                      onClick={() => setSelectedActivity(record)}
+                      className="hover:bg-[#fbf9f9] transition-colors align-middle cursor-pointer group h-[39px]"
+                      title="Click to view full activity details"
+                    >
+                      <td className="px-3.5 py-2 text-left text-[#5c5757] whitespace-nowrap text-[0.65625rem] truncate">
+                        {record.dateTime}
+                      </td>
+                      <td className="px-3.5 py-2 text-center whitespace-nowrap">
+                        <span className="inline-flex items-center justify-center font-mono text-[0.625rem] font-medium text-[#5c5757] bg-[#f7f6f6] border border-[#e3dfdf] px-2 py-0.5 rounded-[4px]">
+                          {intervalLabel}
                         </span>
-                      ) : (
-                        <span>{formData.assignedOfficer || "Assigned Officer"}</span>
-                      )}
-                    </td>
-                    <td className="px-3.5 py-2.5 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[0.59375rem] font-medium border ${
-                        record.status === "Secured Donor"
-                          ? "bg-green-50 text-green-700 border-green-200"
-                          : record.status === "Proposal Sent"
-                          ? "bg-blue-50 text-blue-700 border-blue-200"
-                          : record.status === "Outreach Started"
-                          ? "bg-amber-50 text-amber-700 border-amber-200"
-                          : "bg-gray-100 text-gray-700 border-gray-200"
-                      }`}>
-                        {record.status}
-                      </span>
-                    </td>
-                    <td className="px-3.5 py-2.5 text-[#5c5757] whitespace-nowrap text-[0.65625rem]">
-                      {record.followupDate ? record.followupDate : "—"}
-                    </td>
-                    <td className="px-3.5 py-2.5">
-                      <div className="text-[#1c1a1a] text-[0.6875rem] leading-relaxed">
-                        {isExpanded || !isLong ? (
-                          <div className="whitespace-pre-wrap">{record.notes}</div>
+                      </td>
+                      <td className="px-3.5 py-2 text-center whitespace-nowrap text-[0.65625rem]">
+                        {record.authorOfficer ? (
+                          <span className="inline-flex items-center justify-center gap-1 font-medium text-[#1c1a1a]">
+                            <span>{record.authorOfficer}</span>
+                            {record.authorOfficer !== formData.assignedOfficer && (
+                              <span className="rounded bg-sky-50/70 px-1 py-0.2 text-[0.59375rem] font-normal text-[#2c5270] border border-[#cbdce9]">
+                                Collaborator
+                              </span>
+                            )}
+                          </span>
                         ) : (
-                          <div className="line-clamp-2">{record.notes}</div>
+                          <span className="text-[#1c1a1a] font-medium">{formData.assignedOfficer || "Assigned Officer"}</span>
                         )}
-                      </div>
-                      {isLong && (
-                        <button
-                          type="button"
-                          onClick={() => setExpandedNoteId(isExpanded ? null : record.id)}
-                          className="text-[0.625rem] text-[#6b0f0f] hover:underline font-semibold mt-1 inline-flex items-center cursor-pointer"
+                      </td>
+                      <td className="px-3.5 py-2 text-center whitespace-nowrap">
+                        <span
+                          className={cn(
+                            "inline-flex items-center justify-center rounded-[4px] px-2.5 py-0.5 text-[0.6875rem] font-medium whitespace-nowrap",
+                            STAGE_STYLES[record.status]?.badge || "bg-slate-100 text-slate-600 border border-slate-200"
+                          )}
                         >
-                          {isExpanded ? "Show less" : "View full note"}
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
+                          {record.status}
+                        </span>
+                      </td>
+                      <td className="px-3.5 py-2 text-left pl-6 sm:pl-8 text-[#5c5757] whitespace-nowrap text-[0.65625rem]">
+                        -
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
@@ -1172,6 +1459,112 @@ function EditProspectForm() {
                     Save Outreach
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ACTIVITY DETAIL POPUP MODAL */}
+      {selectedActivity && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className={cn(
+            "fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4",
+            isActivityDetailExiting ? "modal-backdrop-out" : "modal-backdrop-in",
+          )}
+          onClick={closeActivityDetailModal}
+        >
+          <div
+            className={cn(
+              "w-full max-w-[620px] bg-white rounded-lg shadow-2xl border border-[#e3dfdf] flex flex-col overflow-visible",
+              isActivityDetailExiting ? "modal-content-out" : "modal-content-in",
+            )}
+            style={{ fontFamily: "var(--font-poppins), sans-serif" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-[#e3dfdf] px-6 py-3.5 bg-white">
+              <div>
+                <h3 className="text-[0.8125rem] font-semibold text-[#1c1a1a]">
+                  Activity Log — {formData.prospectName}
+                </h3>
+                <p className="text-[0.625rem] text-[#5c5757]">
+                  Detailed record of outreach notes, transitions, and commitments
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeActivityDetailModal}
+                className="w-7 h-7 flex items-center justify-center rounded-md text-[#5c5757] hover:text-[#1c1a1a] hover:bg-[#f0eeee] text-base leading-none transition cursor-pointer"
+                aria-label="Close modal"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="px-6 py-4 space-y-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-[#faf9f9] border border-[#e3dfdf] rounded-md p-3.5">
+                <div>
+                  <span className="block text-[0.59375rem] font-semibold uppercase text-[#5c5757] tracking-wider">
+                    Date & Time
+                  </span>
+                  <span className="text-[0.6875rem] font-medium text-[#1c1a1a] mt-0.5 block">
+                    {selectedActivity.dateTime}
+                  </span>
+                </div>
+                <div>
+                  <span className="block text-[0.59375rem] font-semibold uppercase text-[#5c5757] tracking-wider">
+                    Logged By
+                  </span>
+                  <span className="text-[0.6875rem] font-medium text-[#1c1a1a] mt-0.5 block truncate">
+                    {selectedActivity.authorOfficer || formData.assignedOfficer || "Assigned Officer"}
+                  </span>
+                </div>
+                <div>
+                  <span className="block text-[0.59375rem] font-semibold uppercase text-[#5c5757] tracking-wider">
+                    Pipeline Stage
+                  </span>
+                  <span className="mt-0.5 inline-flex items-center">
+                    <span
+                      className={cn(
+                        "inline-flex items-center justify-center rounded-[4px] px-2.5 py-0.5 text-[0.6875rem] font-medium whitespace-nowrap",
+                        STAGE_STYLES[selectedActivity.status]?.badge || "bg-slate-100 text-slate-600 border border-slate-200"
+                      )}
+                    >
+                      {selectedActivity.status}
+                    </span>
+                  </span>
+                </div>
+                <div>
+                  <span className="block text-[0.59375rem] font-semibold uppercase text-[#5c5757] tracking-wider">
+                    Next Follow-up
+                  </span>
+                  <span className="text-[0.6875rem] font-medium text-[#1c1a1a] mt-0.5 block">
+                    {selectedActivity.followupDate || "—"}
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[0.6875rem] font-semibold text-[#1c1a1a] mb-1.5">
+                  Full Notes & Action Plan
+                </label>
+                <div className="w-full min-h-[90px] max-h-[260px] overflow-y-auto p-3.5 text-[0.6875rem] font-normal leading-relaxed rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] whitespace-pre-wrap">
+                  {selectedActivity.notes?.trim() || "No notes recorded for this activity."}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end pt-1">
+                <button
+                  type="button"
+                  onClick={closeActivityDetailModal}
+                  className="h-[28px] px-4 text-[0.65625rem] font-medium text-[#1c1a1a] bg-white border border-[#d1d5db] rounded-md hover:bg-[#f7f6f6] transition cursor-pointer"
+                >
+                  Close
+                </button>
               </div>
             </div>
           </div>

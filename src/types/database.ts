@@ -200,6 +200,8 @@ export interface Proposal {
   status: ProposalStatusEnum
   delivery_preference: DeliveryPreferenceEnum | null
   dispatched_at: string | null
+  email_subject: string | null
+  email_body: string | null
   created_by: number | null
   file_path: string | null
   created_at: string
@@ -209,10 +211,11 @@ export interface Proposal {
 // 7. officer_profiles
 export interface OfficerProfile {
   id: number
-  user_id: number
+  user_id: number | null // null = a person with no sign-in account
   full_name: string
   job_title: string | null
   phone_number: string | null
+  is_signatory: boolean // true = appears in the letter Signatory dropdown
   created_at: string
   updated_at: string
 }

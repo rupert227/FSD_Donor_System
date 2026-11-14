@@ -30,7 +30,7 @@ import { AppShell } from "@/components/AppShell";
 import { moduleName, navbarPreset } from "@/app/donor-conv/struct";
 import { ProspectSelectMenu, ProspectsBoardSkeleton } from "../_components";
 
-import { SAMPLE_LEADS, type LeadDetail } from "@supabase/seeds/prospects-seed";
+import type { LeadDetail } from "@supabase/seeds/prospects-seed";
 import type { PipelineStatusEnum } from "@/types";
 import {
   getProspects,
@@ -53,9 +53,11 @@ const STAGES: PipelineStatusEnum[] = [
   "Secured Donor",
 ];
 
-const OWNERS = Array.from(
-  new Set(SAMPLE_LEADS.map((l) => l.assigned_officer)),
-).sort();
+const DEFAULT_OWNERS = [
+  "Officer A. Tan",
+  "Officer J. Reyes",
+  "Officer M. Cruz",
+];
 
 const CAMPAIGN_OPTIONS = [
   { label: "All Campaigns", value: "all" },
@@ -228,7 +230,7 @@ export default function PipelineBoardPage() {
 
   const today = useToday();
 
-  const [leads, setLeads] = useState<LeadDetail[]>(() => [...SAMPLE_LEADS]);
+  const [leads, setLeads] = useState<LeadDetail[]>([]);
   const [search, setSearch] = useState("");
 
   // Quick view filter pills (matching prospects table exactly)
@@ -243,7 +245,7 @@ export default function PipelineBoardPage() {
   const isProposalSentView = quickStage === "Proposal Sent";
 
   // Track which prospects have official proposals generated in system
-  const [proposalsBuilt, setProposalsBuilt] = useState<Set<number>>(() => new Set([1, 4]));
+  const [proposalsBuilt, setProposalsBuilt] = useState<Set<number>>(() => new Set());
 
   useEffect(() => {
     let isCancelled = false;
@@ -254,7 +256,7 @@ export default function PipelineBoardPage() {
           getBuiltProposalProspectIds(),
         ]);
         if (!isCancelled) {
-          if (dbLeads && dbLeads.length > 0) setLeads(dbLeads);
+          setLeads(dbLeads ?? []);
           if (dbProposals && dbProposals.length > 0) setProposalsBuilt(new Set(dbProposals));
         }
       } catch (err) {
@@ -486,24 +488,39 @@ export default function PipelineBoardPage() {
   );
   const openTotal = openCards.reduce((sum, l) => sum + l.target_amount, 0);
 
-  function handleRefresh() {
+  const availableOwners = useMemo(() => {
+    const fromLeads = Array.from(
+      new Set(leads.map((l) => l.assigned_officer).filter(Boolean)),
+    ).sort();
+    return fromLeads.length > 0 ? fromLeads : DEFAULT_OWNERS;
+  }, [leads]);
+
+  async function handleRefresh() {
     setIsRefreshing(true);
-    setTimeout(() => {
-      setLeads([...SAMPLE_LEADS]);
+    try {
+      const [dbLeads, dbProposals] = await Promise.all([
+        getProspects(),
+        getBuiltProposalProspectIds(),
+      ]);
+      setLeads(dbLeads ?? []);
+      if (dbProposals && dbProposals.length > 0) setProposalsBuilt(new Set(dbProposals));
       setAppliedFilters(DEFAULT_FILTERS);
       setDraftFilters(DEFAULT_FILTERS);
       setQuickOfficer(null);
       setQuickDate(null);
       setQuickStage(null);
       setSearch("");
-      setIsRefreshing(false);
       triggerToast({
         id: String(Date.now()),
         type: "success",
         title: "Board Refreshed",
-        message: "Pipeline board restored to initial seed state.",
+        message: "Pipeline board updated with latest database records.",
       });
-    }, 450);
+    } catch (err) {
+      console.error("Failed to refresh board from DB:", err);
+    } finally {
+      setIsRefreshing(false);
+    }
   }
 
   function handleStageUpdate(leadId: number, nextStage: PipelineStatusEnum) {
@@ -821,7 +838,7 @@ export default function PipelineBoardPage() {
       {isRefreshing ? (
         <ProspectsBoardSkeleton isConversionOfficer={isConversionOfficer} />
       ) : (
-        <div className="w-full max-w-full min-w-0 mx-auto space-y-4 animate-in fade-in duration-300">
+        <div className="w-full max-w-full min-w-0 mx-auto space-y-4">
         {/* Title row matching prospects table exactly */}
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -1100,19 +1117,6 @@ export default function PipelineBoardPage() {
                       />
                     </div>
 
-                    {/* Assigned Officer */}
-                    <div>
-                      <label className="block text-[0.75rem] font-medium text-[#5c5757] mb-1.5">
-                        Assigned Officer
-                      </label>
-                      <ProspectSelectMenu
-                        value={draftFilters.officer}
-                        onChange={(val) =>
-                          setDraftFilters((prev) => ({ ...prev, officer: val }))
-                        }
-                        options={[{ label: "All assigned officers", value: "all" }, ...OWNERS.map((o) => ({ label: o, value: o }))]}
-                      />
-                    </div>
                     {/* Target Amount */}
                     <div>
                       <label className="block text-[0.75rem] font-medium text-[#5c5757] mb-1.5">
@@ -1143,7 +1147,7 @@ export default function PipelineBoardPage() {
 
                     {/* Lead Source */}
                     <div>
-                      <label className="block text-[11px] font-medium text-[#5c5757] mb-1.5">
+                      <label className="block text-[0.75rem] font-medium text-[#5c5757] mb-1.5">
                         Lead Source
                       </label>
                       <ProspectSelectMenu
@@ -1212,19 +1216,6 @@ export default function PipelineBoardPage() {
                           </>
                         );
                       })()}
-                    </div>
-                    {/* Lead Source */}
-                    <div>
-                      <label className="block text-[0.75rem] font-medium text-[#5c5757] mb-1.5">
-                        Lead Source
-                      </label>
-                      <ProspectSelectMenu
-                        value={draftFilters.leadSource}
-                        onChange={(val) =>
-                          setDraftFilters((prev) => ({ ...prev, leadSource: val }))
-                        }
-                        options={LEAD_SOURCE_OPTIONS}
-                      />
                     </div>
                   </div>
 

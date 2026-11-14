@@ -71,7 +71,7 @@ export default function PreviewReportPageContent() {
 
   return (
     <AppShell navbarPreset={navbarPreset}>
-      <div className="animate-in fade-in flex w-full flex-1 flex-col duration-300">
+      <div className="flex w-full flex-1 flex-col">
         <div className="no-print flex justify-end">
           <div className="align-end flex items-center gap-3">
             {!canReturnToReports && (

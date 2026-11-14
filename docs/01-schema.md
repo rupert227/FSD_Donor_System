@@ -238,8 +238,12 @@ Stores generated proposal letters as saved text, and records their dispatch to t
   *Permitted values: `Email PDF (Softcopy)`, `Postal Mail`, `Hand Delivered`*
 - **`dispatched_at`** (`TIMESTAMPTZ`, `NULLABLE`)  
   Date and time the letter was dispatched. Empty until the letter is sent.
+- **`email_subject`** (`VARCHAR(200)`, `NULLABLE`)  
+  Subject of the email sent with the PDF. Empty for Postal Mail and Hand Delivered.
+- **`email_body`** (`TEXT`, `NULLABLE`)  
+  Message of the email sent with the PDF, including any edits by the officer. Empty for Postal Mail and Hand Delivered.
 - **`created_by`** (`INTEGER`, `FK`, `NULLABLE`)  
-  Foreign key reference to the user account that generated the letter. Empty until sign-in is available.
+  Foreign key reference to the user account that generated the letter. Set by the database from the signed-in user.
 - **`file_path`** (`TEXT`, `NULLABLE`)  
   Reserved for a stored PDF file. Not used yet.
 
@@ -251,14 +255,16 @@ Stores staff details used in letters, kept separate from the sign-in credentials
 
 - **`id`** (`INTEGER`, `PK`, `AUTO_INCREMENT`, `UNIQUE`)  
   Unique officer profile identifier.
-- **`user_id`** (`INTEGER`, `FK`, `UNIQUE`, `NOT NULL`)  
-  Foreign key reference to the user account. One profile per account.
+- **`user_id`** (`INTEGER`, `FK`, `UNIQUE`, `NULLABLE`)  
+  Foreign key reference to the user account. One profile per account. Empty for a person with no sign-in account (for example a signatory).
 - **`full_name`** (`VARCHAR(100)`, `NOT NULL`)  
   Officer name as printed in letters.
 - **`job_title`** (`VARCHAR(100)`, `NULLABLE`)  
   Officer job title as printed in letters.
 - **`phone_number`** (`VARCHAR(50)`, `NULLABLE`)  
   Officer contact number as printed in letters.
+- **`is_signatory`** (`BOOLEAN`, `NOT NULL`, default `false`)  
+  `true` when this person can sign letters. Only these profiles appear in the Signatory dropdown.
 
 ## 8. `lead_outreach_activities`
 

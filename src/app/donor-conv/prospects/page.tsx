@@ -25,7 +25,7 @@ import { cn } from "cn";
 import { AppShell } from "@/components/AppShell";
 import { getNavbarPreset, moduleName } from "@/app/donor-conv/struct";
 
-import { SAMPLE_LEADS, type LeadDetail } from "@supabase/seeds/prospects-seed";
+import type { LeadDetail } from "@supabase/seeds/prospects-seed";
 import type { PipelineStatusEnum } from "@/types";
 import { ProspectSelectMenu, ProspectsTableSkeleton } from "./_components";
 import { getProspects } from "@/lib/prospects/actions";
@@ -362,15 +362,15 @@ export default function ProspectsPage() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [filterOpen, applied]);
 
-  const [leads, setLeads] = useState<LeadDetail[]>(() => SAMPLE_LEADS);
+  const [leads, setLeads] = useState<LeadDetail[]>([]);
 
   useEffect(() => {
     let isCancelled = false;
     async function loadDbProspects() {
       try {
         const dbData = await getProspects();
-        if (!isCancelled && dbData && dbData.length > 0) {
-          setLeads(dbData);
+        if (!isCancelled) {
+          setLeads(dbData ?? []);
         }
       } catch (err) {
         console.error("Failed to load prospects from DB:", err);
@@ -561,7 +561,7 @@ export default function ProspectsPage() {
       {isRefreshing ? (
         <ProspectsTableSkeleton isConversionOfficer={isConversionOfficer} />
       ) : (
-        <div className="w-full max-w-full min-w-0 mx-auto space-y-4 animate-in fade-in duration-300">
+        <div className="w-full max-w-full min-w-0 mx-auto space-y-4">
         {/* Title row without icon beside All Prospects */}
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -868,35 +868,7 @@ export default function ProspectsPage() {
                         />
                       </div>
 
-                      {/* 3. Target Amount */}
-                      <div>
-                        <label className="block text-[0.6875rem] font-medium text-[#5c5757] mb-1.5">
-                          Target Amount
-                        </label>
-                        <ProspectSelectMenu
-                          value={draft.amountRange}
-                          onChange={(val) =>
-                            setDraft((prev) => ({ ...prev, amountRange: val }))
-                          }
-                          options={AMOUNT_FILTER_OPTIONS}
-                        />
-                      </div>
-
-                      {/* 4. Assigned Officer */}
-                      <div>
-                        <label className="block text-[0.6875rem] font-medium text-[#5c5757] mb-1.5">
-                          Assigned Officer
-                        </label>
-                        <ProspectSelectMenu
-                          value={draft.assignedOfficer}
-                          onChange={(val) =>
-                            setDraft((prev) => ({ ...prev, assignedOfficer: val }))
-                          }
-                          options={OFFICER_FILTER_OPTIONS}
-                        />
-                      </div>
-
-                      {/* 5. Donor Type */}
+                      {/* 3. Donor Type */}
                       <div>
                         <label className="block text-[0.6875rem] font-medium text-[#5c5757] mb-1.5">
                           Donor Type

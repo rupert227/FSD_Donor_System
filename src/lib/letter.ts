@@ -138,7 +138,8 @@ export function buildLetterText(
   // Officer details try each source in turn and only fall back to a [prompt]
   // when none has a value, so the officer knows what to fill in.
   const officerTitle =
-    officer?.job_title || (officer ? roleTitles[officer.user_role] : undefined);
+    officer?.job_title ||
+    (officer?.user_role ? roleTitles[officer.user_role] : undefined);
 
   // Values that replace {placeholders} in the template.
   const values: Record<string, string> = {
