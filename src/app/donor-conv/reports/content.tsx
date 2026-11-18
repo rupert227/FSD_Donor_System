@@ -19,7 +19,7 @@ import {
 } from "@/app/donor-conv/reports/utils";
 
 const pageName = "Reports";
-const reportContentStorageKey = "donor-conv-lead-pipeline-report-content";
+const reportContentStorageKey = "donor-conv-report-content";
 
 export default function ReportsPageContent() {
   useDocumentTitle(`${moduleName} - ${pageName}`);
@@ -51,7 +51,7 @@ export default function ReportsPageContent() {
 
       try {
         const response = await fetch(
-          `/api/lead-pipeline-report?${searchParams.toString()}`,
+          `/api/conversion-report?${searchParams.toString()}`,
           { signal: controller.signal },
         );
         if (!response.ok) throw new Error(`HTTP ${response.status}`);

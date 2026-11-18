@@ -19,7 +19,7 @@ import {
 } from "@/app/donor-conv/reports/utils";
 
 const pageName = "Report Preview";
-const previewStorageKey = "donor-conv-lead-pipeline-report-content";
+const previewStorageKey = "donor-conv-report-content";
 
 export default function PreviewReportPageContent() {
   useDocumentTitle(`${moduleName} - ${pageName}`);
@@ -111,7 +111,7 @@ export default function PreviewReportPageContent() {
           <div className="mt-6">
             <div className="mx-auto max-w-275 break-all">
               <div className="pdf-sheet bg-surface-white mx-auto p-10 shadow-lg">
-                <div className="mb-5">
+                <div className="pb-5">
                   <div className="border-brand-primary mb-5 flex items-center gap-4 border-b-[2.5px] pb-5">
                     <div className="relative min-h-16 min-w-16 overflow-hidden">
                       <Image
@@ -134,6 +134,9 @@ export default function PreviewReportPageContent() {
                     </div>
                   </div>
                   <div className="flex flex-col">
+                    <p className="text-text-primary pb-2 text-[16pt] font-semibold">
+                      LEAD PIPELINE REPORT
+                    </p>
                     <div className="flex text-[12pt]">
                       <div className="flex gap-4">
                         <div className="flex gap-2">

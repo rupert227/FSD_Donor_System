@@ -10,6 +10,12 @@ export const phCurrencyFormat = Intl.NumberFormat("en-PH", {
   maximumFractionDigits: 2,
 });
 
+export const phCurrencyFormatWhole = Intl.NumberFormat("en-PH", {
+  style: "currency",
+  currency: "PHP",
+  maximumFractionDigits: 0,
+});
+
 export const reportDateFormat = new Intl.DateTimeFormat("en-US", {
   dateStyle: "medium",
   timeStyle: "long",
@@ -23,6 +29,12 @@ export function formatCurrency(value: number | null | undefined): string {
   if (!Number.isFinite(value) || value == null) return "—";
 
   return phCurrencyFormat.format(value);
+}
+
+export function formatCurrencyWhole(value: number | null | undefined): string {
+  if (!Number.isFinite(value) || value == null) return "—";
+
+  return phCurrencyFormatWhole.format(value);
 }
 
 export function formatNumber(value: number | null | undefined): string {

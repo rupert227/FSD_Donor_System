@@ -42,7 +42,7 @@ export namespace Leads {
         booths?: numArray;
         callOrText?: numArray;
         walkIn?: numArray;
-        subTotalLeadIntake: numArray;
+        subtotalLeadIntake?: numArray;
       };
       pipelineStageBreakdown?: {
         newLead?: numArray;
@@ -50,7 +50,7 @@ export namespace Leads {
         outreachStarted?: numArray;
         proposalSent?: numArray;
         securedDonor?: numArray;
-        subTotalProspectRecords: numArray;
+        subtotalProspectRecords?: numArray;
       };
     };
   }
@@ -69,6 +69,65 @@ export namespace Leads {
     fiscalYearOptions: undefined,
     donorTypeOptions: undefined,
     pipelineStageOptions: undefined,
+    quarterlySummary: undefined,
+  };
+}
+
+export namespace Retention {
+  export interface Report {
+    timestamp?: string | none;
+    fiscalYear?: string | none;
+    targetCampaign?: string | none;
+    engagementStatus?: string | none;
+    fiscalYearOptions?: Primitives.DropdownOption[] | none;
+    targetCampaignOptions?: Primitives.DropdownOption[] | none;
+    engagementStatusOptions?: Primitives.DropdownOption[] | none;
+
+    quarterlySummary?: {
+      headers?: (string | none)[] | none;
+      renewalValue?: {
+        totalEstimatedRenewalAmount?: numArray;
+        realizedRenewalAmount?: numArray;
+        uncollectedRenewalAmount?: numArray;
+        meanRenewalValue?: numArray;
+      };
+      portfolio?: {
+        activeRetainedDonors?: numArray;
+        donorRetentionRate?: numArray;
+        realizedRenewalValueRate?: numArray;
+      };
+      engagementStatus?: {
+        recommitted?: numArray;
+        renewalStarted?: numArray;
+        followedUp?: numArray;
+        uncontacted?: numArray;
+        lapsedDonor?: numArray;
+        subtotalRetentionAccounts?: numArray;
+      };
+      donorTenure?: {
+        threePlusYearsLoyal?: numArray;
+        twoYearsRetained?: numArray;
+        oneYearRetained?: numArray;
+        newRenewal?: numArray;
+        subtotalLoyaltyAccounts?: numArray;
+      };
+    };
+  }
+
+  export interface ReportFilters {
+    fiscalYear?: string | none;
+    targetCampaign?: string | none;
+    engagementStatus?: string | none;
+  }
+
+  export const emptyReport: Report = {
+    timestamp: undefined,
+    fiscalYear: undefined,
+    targetCampaign: undefined,
+    engagementStatus: undefined,
+    fiscalYearOptions: undefined,
+    targetCampaignOptions: undefined,
+    engagementStatusOptions: undefined,
     quarterlySummary: undefined,
   };
 }

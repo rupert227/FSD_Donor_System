@@ -21,7 +21,7 @@ const mockReport: Leads.Report = {
     { key: "stage-two", label: "Stage Two" },
   ],
   quarterlySummary: {
-    headers: ["Q1", "Q2", "Q3", "Q4", "fy-2025"],
+    headers: ["Q1", "Q2", "Q3", "Q4", "All Years"],
     coreMonetaryValue: {
       totalEstimatedValuation: [0, 0, 0, 0, 0],
       probabilityAdjustedValue: [0, 0, 0, 0, 0],
@@ -38,7 +38,7 @@ const mockReport: Leads.Report = {
       booths: [0, 0, 0, 0, 0],
       callOrText: [0, 0, 0, 0, 0],
       walkIn: [0, 0, 0, 0, 0],
-      subTotalLeadIntake: [0, 0, 0, 0, 0],
+      subtotalLeadIntake: [0, 0, 0, 0, 0],
     },
     pipelineStageBreakdown: {
       newLead: [0, 0, 0, 0, 0],
@@ -46,7 +46,7 @@ const mockReport: Leads.Report = {
       outreachStarted: [0, 0, 0, 0, 0],
       proposalSent: [0, 0, 0, 0, 0],
       securedDonor: [0, 0, 0, 0, 0],
-      subTotalProspectRecords: [0, 0, 0, 0, 0],
+      subtotalProspectRecords: [0, 0, 0, 0, 0],
     },
   },
 };
@@ -73,7 +73,7 @@ export async function GET(request: Request) {
       `[GET] Lead pipeline report filters: ${donorType}, ${fiscalYear}, ${pipelineStage}`,
     );
 
-    const { data, error } = await supabase.rpc("lead_pipeline_report", {
+    const { data, error } = await supabase.rpc("conversion_report", {
       p_donor_type: donorType ?? null,
       p_fiscal_year: fiscalYear ?? null,
       p_pipeline_stage: pipelineStage ?? null,

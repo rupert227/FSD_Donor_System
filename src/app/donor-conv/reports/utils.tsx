@@ -1,5 +1,5 @@
 import { Leads, none } from "@/lib/types";
-import { formatCurrency, formatNumber, formatPercent } from "@/lib/utils";
+import { formatCurrencyWhole, formatNumber, formatPercent } from "@/lib/utils";
 
 interface SummaryRow {
   type: "header" | "row" | "section" | "total";
@@ -138,8 +138,8 @@ export function generateSummaryRows(report: Leads.Report): SummaryRow[] {
     },
     {
       type: "total",
-      label: "Sub-Total Lead Intake",
-      values: report.quarterlySummary?.leadOriginBreakdown?.subTotalLeadIntake,
+      label: "Subtotal Lead Intake",
+      values: report.quarterlySummary?.leadOriginBreakdown?.subtotalLeadIntake,
     },
     {
       type: "section",
@@ -173,10 +173,10 @@ export function generateSummaryRows(report: Leads.Report): SummaryRow[] {
     },
     {
       type: "total",
-      label: "Sub-Total Prospect Records",
+      label: "Subtotal Prospect Records",
       values:
         report.quarterlySummary?.pipelineStageBreakdown
-          ?.subTotalProspectRecords,
+          ?.subtotalProspectRecords,
     },
   ];
 }
@@ -191,7 +191,7 @@ export function renderSummaryValue(
     case "percent":
       return formatPercent(value);
     case "currency":
-      return formatCurrency(value);
+      return formatCurrencyWhole(value);
     case "number":
     default:
       return formatNumber(value);

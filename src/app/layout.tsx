@@ -9,7 +9,7 @@ const ibmPlexSans = IBM_Plex_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Caritas Manila - FSD Donor System",
+  // title: "Caritas Manila - FSD Donor System",
   description: "Caritas Manila Foundation Support Division Donor System",
   icons: {
     icon: [

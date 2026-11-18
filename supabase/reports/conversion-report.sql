@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION public.lead_pipeline_report(
+CREATE OR REPLACE FUNCTION public.conversion_report(
     p_donor_type TEXT DEFAULT NULL,
     p_fiscal_year TEXT DEFAULT NULL,
     p_pipeline_stage TEXT DEFAULT NULL
@@ -333,7 +333,7 @@ SELECT jsonb_build_object(
                 FROM origins
             ),
 
-            'subTotalLeadIntake', (
+            'subtotalLeadIntake', (
                 SELECT jsonb_agg(
                     referral + research + booths +
                     call_or_text + walk_in
@@ -370,7 +370,7 @@ SELECT jsonb_build_object(
                 FROM stages
             ),
 
-            'subTotalProspectRecords', (
+            'subtotalProspectRecords', (
                 SELECT jsonb_agg(
                     new_lead + under_research +
                     outreach_started + proposal_sent +
