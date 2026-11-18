@@ -49,8 +49,12 @@ export function ProspectSelectMenu({
 
   const selectedOption = normalizedOptions.find(
     (opt) =>
-      (opt.value !== "" && opt.value === value) ||
-      (opt.label !== "" && opt.label === value)
+      (opt.value !== "" &&
+        (opt.value === value ||
+          opt.value.toLowerCase() === (value || "").toLowerCase())) ||
+      (opt.label !== "" &&
+        (opt.label === value ||
+          opt.label.toLowerCase() === (value || "").toLowerCase()))
   );
 
   const filteredOptions = normalizedOptions.filter((opt) => {
@@ -184,8 +188,12 @@ export function ProspectSelectMenu({
             {filteredOptions.length > 0 ? (
               filteredOptions.map((opt) => {
                 const isSelected =
-                  (opt.value !== "" && opt.value === value) ||
-                  (opt.label !== "" && opt.label === value);
+                  (opt.value !== "" &&
+                    (opt.value === value ||
+                      opt.value.toLowerCase() === (value || "").toLowerCase())) ||
+                  (opt.label !== "" &&
+                    (opt.label === value ||
+                      opt.label.toLowerCase() === (value || "").toLowerCase()));
 
                 return (
                   <button

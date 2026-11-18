@@ -57,7 +57,12 @@ const STAGE_STYLES: Record<PipelineStatusEnum, { badge: string }> = {
   },
 };
 
-const DONOR_TYPE_OPTIONS = ["corporate", "individual", "community", "international"];
+const DONOR_TYPE_OPTIONS = [
+  { label: "Corporate", value: "corporate" },
+  { label: "Individual", value: "individual" },
+  { label: "Community", value: "community" },
+  { label: "International", value: "international" },
+];
 const LEAD_SOURCE_OPTIONS = ["Research", "Booths", "Direct Call", "Referral", "Walk-in"];
 const TARGET_CAMPAIGN_OPTIONS = [
   "Health and Disaster Relief",
@@ -596,6 +601,7 @@ function EditProspectForm() {
     });
 
     const currentAuthor =
+      (role === "System Administrator" ? "System Admin" : null) ||
       officerName ||
       (role === "Conversion Officer" ? "Officer J. Reyes" : "Officer");
 
@@ -726,20 +732,20 @@ function EditProspectForm() {
                 >
                   Record outreach
                 </button>
+                <Link
+                  href={`/donor-conv/proposals?prospectId=${prospectId}&id=${prospectId}&prospect=${encodeURIComponent(formData.prospectName)}`}
+                  className="flex-1 min-[1100px]:flex-initial h-[26px] sm:h-[30px] px-2 sm:px-3 text-[0.59375rem] sm:text-[0.6875rem] font-medium text-[#1c1a1a] bg-white border border-[#d1d5db] rounded-md hover:bg-[#f7f6f6] transition shadow-xs cursor-pointer inline-flex items-center justify-center whitespace-nowrap min-w-0"
+                >
+                  Generate proposal
+                </Link>
                 <button
                   type="button"
                   onClick={handleMarkAsSecured}
                   disabled={formData.pipelineStatus === "Secured Donor"}
-                  className="flex-1 min-[1100px]:flex-initial h-[26px] sm:h-[30px] px-2 sm:px-3 text-[0.59375rem] sm:text-[0.6875rem] font-medium text-[#1c1a1a] bg-white border border-[#d1d5db] rounded-md hover:bg-[#f7f6f6] transition shadow-xs cursor-pointer inline-flex items-center justify-center whitespace-nowrap min-w-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 min-[1100px]:flex-initial h-[26px] sm:h-[30px] px-2 sm:px-3 inline-flex items-center justify-center text-[0.59375rem] sm:text-[0.6875rem] font-medium text-[#6b0f0f] bg-white border border-[#6b0f0f] rounded-md hover:bg-[#fdf1f1] transition shadow-xs cursor-pointer whitespace-nowrap min-w-0 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Mark as secured
                 </button>
-                <Link
-                  href={`/donor-conv/proposals?prospectId=${prospectId}&id=${prospectId}&prospect=${encodeURIComponent(formData.prospectName)}`}
-                  className="flex-1 min-[1100px]:flex-initial h-[26px] sm:h-[30px] px-2 sm:px-3 inline-flex items-center justify-center text-[0.59375rem] sm:text-[0.6875rem] font-medium text-[#6b0f0f] bg-white border border-[#6b0f0f] rounded-md hover:bg-[#fdf1f1] transition shadow-xs cursor-pointer whitespace-nowrap min-w-0"
-                >
-                  Generate proposal
-                </Link>
               </>
             ) : (
               <span className="h-[26px] sm:h-[30px] px-3 inline-flex items-center justify-center rounded-md bg-gray-100 text-xs font-medium text-gray-500 border border-gray-200 select-none">
@@ -1311,15 +1317,18 @@ function EditProspectForm() {
                       <td className="px-3.5 py-2 text-left text-[#5c5757] whitespace-nowrap text-[0.65625rem] truncate">
                         {record.dateTime}
                       </td>
-                      <td className="px-3.5 py-2 text-center whitespace-nowrap">
-                        <span className="inline-flex items-center justify-center font-mono text-[0.625rem] font-medium text-[#5c5757] bg-[#f7f6f6] border border-[#e3dfdf] px-2 py-0.5 rounded-[4px]">
-                          {intervalLabel}
-                        </span>
+                      <td className="px-3.5 py-2 text-center whitespace-nowrap text-[#5c5757] text-[0.65625rem]">
+                        {intervalLabel}
                       </td>
                       <td className="px-3.5 py-2 text-center whitespace-nowrap text-[0.65625rem]">
                         {record.authorOfficer ? (
                           <span className="inline-flex items-center justify-center gap-1 font-medium text-[#1c1a1a]">
-                            <span>{record.authorOfficer}</span>
+                            <span>
+                              {record.authorOfficer === "System" ||
+                              record.authorOfficer === "System Administrator"
+                                ? "System Admin"
+                                : record.authorOfficer}
+                            </span>
                             {record.authorOfficer !== formData.assignedOfficer && (
                               <span className="rounded bg-sky-50/70 px-1 py-0.2 text-[0.59375rem] font-normal text-[#2c5270] border border-[#cbdce9]">
                                 Collaborator
@@ -1520,7 +1529,12 @@ function EditProspectForm() {
                     Logged By
                   </span>
                   <span className="text-[0.6875rem] font-medium text-[#1c1a1a] mt-0.5 block truncate">
-                    {selectedActivity.authorOfficer || formData.assignedOfficer || "Assigned Officer"}
+                    {selectedActivity.authorOfficer === "System" ||
+                    selectedActivity.authorOfficer === "System Administrator"
+                      ? "System Admin"
+                      : selectedActivity.authorOfficer ||
+                        formData.assignedOfficer ||
+                        "Assigned Officer"}
                   </span>
                 </div>
                 <div>

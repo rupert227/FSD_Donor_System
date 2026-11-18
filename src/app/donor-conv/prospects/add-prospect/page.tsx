@@ -20,7 +20,12 @@ import { calculateProspectProbability } from "../utils/prospect-score";
 import { createProspect } from "@/lib/prospects/actions";
 import { setPendingToast } from "@/lib/toast";
 
-const DONOR_TYPE_OPTIONS = ["corporate", "individual", "community", "international"];
+const DONOR_TYPE_OPTIONS = [
+  { label: "Corporate", value: "corporate" },
+  { label: "Individual", value: "individual" },
+  { label: "Community", value: "community" },
+  { label: "International", value: "international" },
+];
 const LEAD_SOURCE_OPTIONS = ["Research", "Booths", "Direct Call", "Referral", "Walk-in"];
 const TARGET_CAMPAIGN_OPTIONS = [
   "Health and Disaster Relief",

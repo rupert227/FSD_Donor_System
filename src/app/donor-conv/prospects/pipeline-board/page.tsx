@@ -792,12 +792,25 @@ export default function PipelineBoardPage() {
         }
 
         .kanban-cards-container {
-          max-height: min(425px, calc(100vh - 230px));
+          height: 384px;
+          max-height: 384px;
+          overflow-y: auto;
+          scroll-snap-type: y proximity;
         }
 
+        /* Larger display / desktop monitor: fit exactly 5 cards cleanly */
         @media (min-height: 820px) {
           .kanban-cards-container {
-            max-height: min(525px, calc(100vh - 230px));
+            height: 482px;
+            max-height: 482px;
+          }
+        }
+
+        /* Very tall display / 1440p+ monitor: fit exactly 6 cards cleanly */
+        @media (min-height: 1000px) {
+          .kanban-cards-container {
+            height: 580px;
+            max-height: 580px;
           }
         }
 
@@ -1303,8 +1316,8 @@ export default function PipelineBoardPage() {
                   </div>
                 </header>
 
-                {/* Column Scrollable Body: 4 cards + 1/4 on laptop (~425px), 5 cards + 1/4 on big screens (~525px) */}
-                <div className="space-y-2 kanban-cards-container overflow-y-auto pr-0.5 kanban-scroll-stable min-h-[380px]">
+                {/* Column Scrollable Body: dynamically fits exactly 4 cards on laptop (384px), 5 on monitor (482px) */}
+                <div className="space-y-2 kanban-cards-container overflow-y-auto pr-0.5 kanban-scroll-stable">
                   {cards.length === 0 && (
                     <div
                       className={cn(
@@ -1333,9 +1346,9 @@ export default function PipelineBoardPage() {
                       <div
                         key={l.id}
                         onPointerDown={(e) => handleCardPointerDown(e, l)}
-                        style={{ touchAction: "none" }}
+                        style={{ touchAction: "none", scrollSnapAlign: "start" }}
                         className={cn(
-                          "group relative block rounded-[6px] border bg-white p-2 shadow-xs transition-all select-none min-w-0",
+                          "group relative block rounded-[6px] border bg-white p-2 shadow-xs transition-all select-none min-w-0 h-[90px] flex flex-col justify-between shrink-0",
                           canWrite ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
                           isHeld
                             ? "border-dashed border-gray-300 bg-gray-50/70 opacity-30 shadow-none pointer-events-none"
@@ -1360,11 +1373,11 @@ export default function PipelineBoardPage() {
                           </span>
                         </div>
 
-                        <p className="mt-0.5 text-[0.6875rem] text-text-secondary truncate min-w-0 pointer-events-none">
+                        <p className="text-[0.6875rem] text-text-secondary truncate min-w-0 pointer-events-none">
                           {l.primary_contact_person}
                         </p>
 
-                        <div className="mt-1 flex items-center justify-between gap-1 min-w-0 pointer-events-none">
+                        <div className="flex items-center justify-between gap-1 min-w-0 pointer-events-none">
                           <span className="text-[0.75rem] font-semibold text-text-primary whitespace-nowrap shrink-0">
                             {peso.format(l.target_amount)}
                           </span>
@@ -1373,7 +1386,7 @@ export default function PipelineBoardPage() {
                           </span>
                         </div>
 
-                        <div className="mt-1 flex items-center justify-between gap-1 border-t border-gray-100 pt-1 pointer-events-none min-w-0">
+                        <div className="flex items-center justify-between gap-1 border-t border-gray-100 pt-1 pointer-events-none min-w-0">
                           <span
                             className={cn(
                               "flex items-center gap-1 text-[0.6875rem] truncate min-w-0",
