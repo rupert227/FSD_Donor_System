@@ -115,7 +115,7 @@ function AddDonorForm() {
     targetCampaign: "Health and Disaster Relief" as TargetCampaignEnum,
     engagementStatus: "Uncontacted" as EngagementStatusEnum,
     donorTenure: "New Renewal" as DonorTenureEnum,
-    assignedOfficer: "",
+    assignedOfficer: "Officer J. Reyes",
     targetFollowupDate: "",
     lastContactDate: "",
   });
@@ -130,7 +130,7 @@ function AddDonorForm() {
   };
 
   useEffect(() => {
-    if (officerName && !formData.assignedOfficer) {
+    if (officerName) {
       const matched = ASSIGNED_OFFICER_OPTIONS.find(
         (opt) =>
           officerName
@@ -138,13 +138,12 @@ function AddDonorForm() {
             .includes(opt.replace("Officer ", "").toLowerCase()) ||
           opt.toLowerCase().includes(officerName.toLowerCase())
       );
-      if (matched) {
-        setFormData((prev) => ({ ...prev, assignedOfficer: matched }));
-      }
-    } else if (!formData.assignedOfficer) {
-      setFormData((prev) => ({ ...prev, assignedOfficer: "Officer J. Reyes" }));
+      setFormData((prev) => ({
+        ...prev,
+        assignedOfficer: matched || officerName,
+      }));
     }
-  }, [officerName, formData.assignedOfficer]);
+  }, [officerName]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -216,7 +215,7 @@ function AddDonorForm() {
         }}
       />
       <div
-        className="w-[75%] max-w-full min-w-0 mx-auto space-y-2.5 overflow-hidden pb-12"
+        className="w-[75%] max-w-full min-w-0 mx-auto space-y-2.5 overflow-visible pb-12"
         style={{ fontFamily: "var(--font-poppins), sans-serif" }}
       >
         {/* Back Link */}
@@ -488,6 +487,7 @@ function AddDonorForm() {
                     }
                     options={ASSIGNED_OFFICER_OPTIONS}
                     placeholder="Select assigned officer"
+                    direction="up"
                   />
                 </div>
 
@@ -501,7 +501,8 @@ function AddDonorForm() {
                       setFormData((prev) => ({ ...prev, targetFollowupDate: val }))
                     }
                     placeholder="Select follow-up date"
-                    direction="auto"
+                    direction="up"
+                    align="right"
                   />
                 </div>
 
@@ -515,7 +516,8 @@ function AddDonorForm() {
                       setFormData((prev) => ({ ...prev, lastContactDate: val }))
                     }
                     placeholder="Select last contact date"
-                    direction="auto"
+                    direction="up"
+                    align="left"
                   />
                 </div>
               </div>

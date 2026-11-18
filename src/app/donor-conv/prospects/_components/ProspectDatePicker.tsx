@@ -12,7 +12,7 @@ interface ProspectDatePickerProps {
   className?: string;
   triggerClassName?: string;
   direction?: "up" | "down" | "auto";
-  align?: "left" | "right";
+  align?: "left" | "right" | "auto";
 }
 
 const MONTH_NAMES = [
@@ -58,10 +58,11 @@ export function ProspectDatePicker({
   className = "",
   triggerClassName = "",
   direction = "up",
-  align = "left",
+  align = "auto",
 }: ProspectDatePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [autoUpwards, setAutoUpwards] = useState(false);
+  const [autoAlignRight, setAutoAlignRight] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Initialize with stable default to avoid hydration / prerender date mismatch
@@ -92,10 +93,14 @@ export function ProspectDatePicker({
 
   const handleToggle = () => {
     if (disabled) return;
-    if (!isOpen && containerRef.current && direction === "auto") {
+    if (!isOpen && containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
-      const spaceBelow = window.innerHeight - rect.bottom;
-      setAutoUpwards(spaceBelow < 280 && rect.top > spaceBelow);
+      if (direction === "auto") {
+        const spaceBelow = window.innerHeight - rect.bottom;
+        setAutoUpwards(spaceBelow < 320 && rect.top > spaceBelow);
+      }
+      const spaceRight = window.innerWidth - rect.left;
+      setAutoAlignRight(spaceRight < 280);
     }
     setIsOpen((prev) => !prev);
   };
@@ -186,6 +191,8 @@ export function ProspectDatePicker({
 
   const isUpwards =
     direction === "up" ? true : direction === "down" ? false : autoUpwards;
+  const isAlignRight =
+    align === "right" ? true : align === "left" ? false : autoAlignRight;
 
   return (
     <div ref={containerRef} className={`relative w-full ${className}`}>
@@ -228,7 +235,7 @@ export function ProspectDatePicker({
         <div
           className={`absolute ${
             isUpwards ? "bottom-[calc(100%+4px)]" : "top-[calc(100%+4px)]"
-          } ${align === "right" ? "right-0" : "left-0"} z-50 w-[256px] rounded-md border border-[#e3dfdf] bg-white shadow-xl p-2.5 space-y-1.5`}
+          } ${isAlignRight ? "right-0" : "left-0"} z-50 w-[256px] rounded-md border border-[#e3dfdf] bg-white shadow-xl p-2.5 space-y-1.5`}
         >
           {/* Month & Year header */}
           <div className="flex items-center justify-between px-0.5">

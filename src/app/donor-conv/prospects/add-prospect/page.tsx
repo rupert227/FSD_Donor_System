@@ -106,7 +106,7 @@ function AddProspectForm() {
     targetAmount: "",
     pipelineStatus: "New Lead",
     probability: "",
-    assignedOfficer: "",
+    assignedOfficer: "Officer J. Reyes",
     followupDate: "",
     actionPlan: "",
   });
@@ -133,16 +133,14 @@ function AddProspectForm() {
   };
 
   useEffect(() => {
-    if (officerName && !formData.assignedOfficer) {
+    if (officerName) {
       const matched = ASSIGNED_OFFICER_OPTIONS.find((opt) =>
         officerName.toLowerCase().includes(opt.replace("Officer ", "").toLowerCase()) ||
         opt.toLowerCase().includes(officerName.toLowerCase())
       );
-      if (matched) {
-        setFormData((prev) => ({ ...prev, assignedOfficer: matched }));
-      }
+      setFormData((prev) => ({ ...prev, assignedOfficer: matched || officerName }));
     }
-  }, [officerName, formData.assignedOfficer]);
+  }, [officerName]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -203,7 +201,7 @@ function AddProspectForm() {
           width: 100% !important;
         }
       `}} />
-      <div className="w-[75%] max-w-full min-w-0 mx-auto space-y-2.5 overflow-hidden" style={{ fontFamily: "var(--font-poppins), sans-serif" }}>
+      <div className="w-[75%] max-w-full min-w-0 mx-auto space-y-2.5 overflow-visible" style={{ fontFamily: "var(--font-poppins), sans-serif" }}>
         {/* Back Link */}
         <div className="flex items-center text-[0.6875rem] text-[#5c5757]">
           <Link
@@ -465,6 +463,7 @@ function AddProspectForm() {
                     }
                     placeholder="Select target date"
                     direction="up"
+                    align="right"
                   />
                 </div>
               </div>

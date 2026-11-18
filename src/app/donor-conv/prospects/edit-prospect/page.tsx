@@ -538,7 +538,6 @@ function EditProspectForm() {
       message: `Notice sent to Donor Care to process transaction for "${formData.prospectName || "this prospect"}" for ₱${Number(formData.targetAmount || 0).toLocaleString()}.`,
       type: "success" as const,
     };
-    showToast(noticeToast);
     setPendingToast(noticeToast);
     router.push(returnUrl);
   };
@@ -581,7 +580,6 @@ function EditProspectForm() {
       message: `Profile changes for "${formData.prospectName || "this prospect"}" saved successfully!`,
       type: "success" as const,
     };
-    showToast(savedToast);
     setPendingToast(savedToast);
     router.push(returnUrl);
   };
@@ -672,7 +670,7 @@ function EditProspectForm() {
 
   return (
     <div
-      className="w-[75%] max-w-full min-w-0 mx-auto space-y-2.5 pb-8 overflow-hidden"
+      className="w-[75%] max-w-full min-w-0 mx-auto space-y-2.5 pb-8 overflow-visible"
       style={{ fontFamily: "var(--font-poppins), sans-serif" }}
     >
       <style dangerouslySetInnerHTML={{ __html: `
@@ -693,16 +691,6 @@ function EditProspectForm() {
           <span>{returnLabel}</span>
         </Link>
       </div>
-
-      {/* COLLABORATIVE EDITING NOTICE */}
-      {isPeerCollaborator && (
-        <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50/70 px-3.5 py-1.5 text-[0.6875rem] text-amber-900 shadow-2xs">
-          <Users className="h-3.5 w-3.5 shrink-0 text-amber-700" />
-          <span className="truncate">
-            Prospect owner is <strong>{formData.assignedOfficer}</strong>. As a unit teammate, updates and outreach activity will be attributed to you ({officerName || "Current Officer"}).
-          </span>
-        </div>
-      )}
 
       {/* TOP RECORD SUMMARY CARD */}
       <div className="rounded-lg border border-[#e3dfdf] bg-white shadow-xs p-3.5 space-y-2.5 w-full min-w-0">

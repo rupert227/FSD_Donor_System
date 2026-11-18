@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { CheckCircle2, AlertCircle, Info, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -14,11 +14,26 @@ export function ToastContainer() {
   const pathname = usePathname();
   const [activeToast, setActiveToast] = useState<ToastPayload | null>(null);
   const [isExiting, setIsExiting] = useState(false);
+  const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const exitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Check for any queued toast on route navigation
   useEffect(() => {
+    // If navigating INTO an edit page or add page, immediately dismiss any active toast
+    // so no previous toast ever appears inside a record.
+    if (pathname.includes("/edit-") || pathname.includes("/add-")) {
+      if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+      if (exitTimeoutRef.current) clearTimeout(exitTimeoutRef.current);
+      setActiveToast(null);
+      setIsExiting(false);
+      return;
+    }
+
+    // On table or list pages, consume any toast queued by the previous screen
     const pending = consumePendingToast();
     if (pending) {
+      if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+      if (exitTimeoutRef.current) clearTimeout(exitTimeoutRef.current);
       setIsExiting(false);
       setActiveToast(pending);
     }
@@ -29,6 +44,8 @@ export function ToastContainer() {
     const handleToastEvent = (e: Event) => {
       const customEvent = e as CustomEvent<ToastPayload>;
       if (customEvent.detail) {
+        if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+        if (exitTimeoutRef.current) clearTimeout(exitTimeoutRef.current);
         setIsExiting(false);
         setActiveToast(customEvent.detail);
       }
@@ -44,24 +61,25 @@ export function ToastContainer() {
   useEffect(() => {
     if (!activeToast) return;
 
-    let exitTimer: NodeJS.Timeout | null = null;
-    const duration = activeToast.duration ?? 2200;
+    const duration = activeToast.duration ?? 2800;
 
-    const mainTimer = setTimeout(() => {
+    toastTimeoutRef.current = setTimeout(() => {
       setIsExiting(true);
-      exitTimer = setTimeout(() => {
+      exitTimeoutRef.current = setTimeout(() => {
         setActiveToast(null);
         setIsExiting(false);
       }, 220);
     }, duration);
 
     return () => {
-      clearTimeout(mainTimer);
-      if (exitTimer) clearTimeout(exitTimer);
+      if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+      if (exitTimeoutRef.current) clearTimeout(exitTimeoutRef.current);
     };
   }, [activeToast]);
 
   const handleManualClose = () => {
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    if (exitTimeoutRef.current) clearTimeout(exitTimeoutRef.current);
     setIsExiting(true);
     setTimeout(() => {
       setActiveToast(null);

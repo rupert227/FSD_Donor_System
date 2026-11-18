@@ -23,7 +23,7 @@ import {
   type DonorRenewalItem,
   type DonorOutreachItem,
 } from "@/lib/donors/actions";
-import { showToast } from "@/lib/toast";
+import { showToast, setPendingToast } from "@/lib/toast";
 import type {
   DonorTenureEnum,
   EngagementStatusEnum,
@@ -351,12 +351,13 @@ function EditDonorForm() {
         return;
       }
 
-      showToast({
+      const savedToast = {
         title: "Donor Updated",
-        message: "Donor profile changes have been saved successfully.",
-        type: "success",
-      });
-      setIsSaving(false);
+        message: `Donor profile changes for "${formData.donorName || "this donor"}" saved successfully.`,
+        type: "success" as const,
+      };
+      setPendingToast(savedToast);
+      router.push(returnUrl);
     } catch (err: any) {
       setErrorMessage(err.message || "An unexpected error occurred");
       setIsSaving(false);
@@ -475,7 +476,7 @@ function EditDonorForm() {
         }}
       />
       <div
-        className="w-[75%] max-w-full min-w-0 mx-auto space-y-2.5 pb-12 overflow-hidden"
+        className="w-[75%] max-w-full min-w-0 mx-auto space-y-2.5 pb-12 overflow-visible"
         style={{ fontFamily: "var(--font-poppins), sans-serif" }}
       >
         {/* Back Link */}
@@ -936,6 +937,7 @@ function EditDonorForm() {
                         disabled={!canWrite}
                         placeholder="Select follow-up date"
                         direction="up"
+                        align="right"
                       />
                     </div>
 
