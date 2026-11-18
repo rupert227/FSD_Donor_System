@@ -208,6 +208,7 @@ CREATE TABLE IF NOT EXISTS donor_profiles (
   donor_tenure donor_tenure_enum NOT NULL DEFAULT 'New Renewal',
   assigned_officer VARCHAR(100) NOT NULL,
   converted_from_lead_id BIGINT REFERENCES lead_prospects(id) ON DELETE SET NULL,
+  cod_requested BOOLEAN NOT NULL DEFAULT FALSE,
   last_contact_date DATE,
   target_followup_date DATE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -318,7 +319,20 @@ CREATE TABLE IF NOT EXISTS lead_outreach_activities (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 3.9 notifications (System notifications, cross-module workflow alerts, reminders)
+-- 3.9 donor_outreach_activities (Touchpoint timeline and interaction history for retained donors)
+CREATE TABLE IF NOT EXISTS donor_outreach_activities (
+  id BIGSERIAL PRIMARY KEY,
+  donor_id BIGINT NOT NULL REFERENCES donor_profiles(id) ON DELETE CASCADE,
+  status engagement_status_enum NOT NULL,
+  followup_date DATE,
+  notes TEXT NOT NULL DEFAULT '',
+  author_officer VARCHAR(100) DEFAULT 'System Admin',
+  recorded_by BIGINT REFERENCES user_accounts(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 3.10 notifications (System notifications, cross-module workflow alerts, reminders)
 CREATE TABLE IF NOT EXISTS notifications (
   id BIGSERIAL PRIMARY KEY,
   title VARCHAR(150) NOT NULL,
@@ -354,6 +368,8 @@ CREATE INDEX IF NOT EXISTS idx_lead_prospects_assigned_officer_id ON lead_prospe
 CREATE INDEX IF NOT EXISTS idx_donor_profiles_converted_from ON donor_profiles(converted_from_lead_id);
 CREATE INDEX IF NOT EXISTS idx_lead_outreach_prospect_id ON lead_outreach_activities(prospect_id);
 CREATE INDEX IF NOT EXISTS idx_lead_outreach_created_at ON lead_outreach_activities(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_donor_outreach_donor_id ON donor_outreach_activities(donor_id);
+CREATE INDEX IF NOT EXISTS idx_donor_outreach_created_at ON donor_outreach_activities(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_notifications_module ON notifications(module);
 CREATE INDEX IF NOT EXISTS idx_notifications_assigned_officer ON notifications(assigned_officer);
 CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read);

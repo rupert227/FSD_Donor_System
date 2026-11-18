@@ -132,6 +132,7 @@ export interface DonorProfile {
   donor_tenure: DonorTenureEnum
   assigned_officer: string
   converted_from_lead_id: number | null
+  cod_requested?: boolean
   last_contact_date: string | null
   target_followup_date: string | null
   created_at: string

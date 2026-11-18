@@ -142,9 +142,12 @@ export async function createProspect(input: CreateProspectInput): Promise<{
   try {
     const supabase = await getSupabase();
 
+    const rawDonorType = (input.donorType || "corporate").toLowerCase();
+    const titleDonorType = rawDonorType.charAt(0).toUpperCase() + rawDonorType.slice(1);
+
     const payload = {
       prospect_name: input.prospectName.trim(),
-      donor_type: input.donorType.toLowerCase(),
+      donor_type: titleDonorType,
       lead_source_origin: input.leadSource,
       primary_contact_person: input.contactPerson.trim(),
       title_designation: input.designation?.trim() || null,
@@ -161,11 +164,22 @@ export async function createProspect(input: CreateProspectInput): Promise<{
       next_step_action_plan: input.actionPlan?.trim() || null,
     };
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("lead_prospects")
       .insert(payload)
       .select()
       .single();
+
+    if (error && error.message.includes("donor_type_enum")) {
+      payload.donor_type = rawDonorType;
+      const retry = await supabase
+        .from("lead_prospects")
+        .insert(payload)
+        .select()
+        .single();
+      data = retry.data;
+      error = retry.error;
+    }
 
     if (error || !data) {
       console.error("Error inserting prospect:", error);
@@ -229,9 +243,12 @@ export async function updateProspect(
       .eq("full_name", input.assignedOfficer)
       .maybeSingle();
 
+    const rawDonorType = (input.donorType || "corporate").toLowerCase();
+    const titleDonorType = rawDonorType.charAt(0).toUpperCase() + rawDonorType.slice(1);
+
     const payload = {
       prospect_name: input.prospectName.trim(),
-      donor_type: input.donorType.toLowerCase(),
+      donor_type: titleDonorType,
       lead_source_origin: input.leadSource,
       primary_contact_person: input.contactPerson.trim(),
       title_designation: input.designation?.trim() || null,
@@ -256,10 +273,19 @@ export async function updateProspect(
       .eq("id", numericId)
       .maybeSingle();
 
-    const { error } = await supabase
+    let { error } = await supabase
       .from("lead_prospects")
       .update(payload)
       .eq("id", numericId);
+
+    if (error && error.message.includes("donor_type_enum")) {
+      payload.donor_type = rawDonorType;
+      const retry = await supabase
+        .from("lead_prospects")
+        .update(payload)
+        .eq("id", numericId);
+      error = retry.error;
+    }
 
     if (error) {
       console.error("Error updating prospect:", error);
