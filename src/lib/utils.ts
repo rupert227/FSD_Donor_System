@@ -10,7 +10,7 @@ export const phCurrencyFormat = Intl.NumberFormat("en-PH", {
   maximumFractionDigits: 2,
 });
 
-export const phCurrencyFormatWhole = Intl.NumberFormat("en-PH", {
+export const phCurrencyWholeFormat = Intl.NumberFormat("en-PH", {
   style: "currency",
   currency: "PHP",
   maximumFractionDigits: 0,
@@ -21,7 +21,12 @@ export const reportDateFormat = new Intl.DateTimeFormat("en-US", {
   timeStyle: "long",
 });
 
-export const usFormat = new Intl.NumberFormat("en-US", {
+export const numberFormat = new Intl.NumberFormat("en-US", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+export const numberWholeFormat = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 0,
 });
 
@@ -34,13 +39,19 @@ export function formatCurrency(value: number | null | undefined): string {
 export function formatCurrencyWhole(value: number | null | undefined): string {
   if (!Number.isFinite(value) || value == null) return "—";
 
-  return phCurrencyFormatWhole.format(value);
+  return phCurrencyWholeFormat.format(value);
 }
 
 export function formatNumber(value: number | null | undefined): string {
   if (!Number.isFinite(value) || value == null) return "—";
 
-  return usFormat.format(Math.round(value));
+  return numberFormat.format(value);
+}
+
+export function formatNumberWhole(value: number | null | undefined): string {
+  if (!Number.isFinite(value) || value == null) return "—";
+
+  return numberWholeFormat.format(Math.round(value));
 }
 
 export function formatPercent(value: number | null | undefined): string {

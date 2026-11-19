@@ -44,18 +44,18 @@ export default function PreviewReportPageContent() {
 
   const report = reportContent ?? Retention.emptyReport;
 
-  const engagementStatusLabel =
-    report.engagementStatusOptions?.find(
-      (option) => option.key == report.engagementStatus,
-    )?.label ?? "All";
-
-  const fiscalYearLabel =
-    report.fiscalYearOptions?.find((option) => option.key == report.fiscalYear)
-      ?.label ?? "All";
+  const yearLabel =
+    report.yearOptions?.find((option) => option.key == report.year)?.label ??
+    "All";
 
   const targetCampaignLabel =
     report.targetCampaignOptions?.find(
       (option) => option.key == report.targetCampaign,
+    )?.label ?? "All";
+
+  const engagementStatusLabel =
+    report.engagementStatusOptions?.find(
+      (option) => option.key == report.engagementStatus,
     )?.label ?? "All";
 
   const summaryRows = generateSummaryRows(report);
@@ -142,10 +142,10 @@ export default function PreviewReportPageContent() {
                       <div className="flex gap-4">
                         <div className="flex gap-2">
                           <p className="text-brand-primary font-bold">
-                            FISCAL YEAR:
+                            YEAR:
                           </p>
                           <p className="text-text-primary font-medium">
-                            {fiscalYearLabel}
+                            {yearLabel}
                           </p>
                         </div>
                         <p className="text-text-secondary">•</p>
@@ -175,7 +175,7 @@ export default function PreviewReportPageContent() {
                 </div>
                 <div className="border-border-soft bg-surface-white rounded-panel flex flex-col border break-all shadow-sm">
                   <div className="border-border-soft bg-surface-white rounded-t-panel border-b px-4 py-3">
-                    <p className="text-text-primary text-[1.0rem] font-semibold tracking-[0.1em]">
+                    <p className="text-text-primary text-[1.0rem] font-semibold tracking-[0.075em]">
                       QUARTERLY SUMMARY
                     </p>
                   </div>

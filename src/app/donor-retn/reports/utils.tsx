@@ -1,5 +1,5 @@
 import { Retention, none } from "@/lib/types";
-import { formatCurrencyWhole, formatNumber, formatPercent } from "@/lib/utils";
+import { formatCurrencyWhole, formatNumberWhole, formatPercent } from "@/lib/utils";
 
 interface SummaryRow {
   type: "header" | "row" | "section" | "total";
@@ -20,7 +20,7 @@ export function generateSummaryRows(report: Retention.Report): SummaryRow[] {
       type: "row",
       valType: "currency",
       label: "Total Estimated Renewal Amount",
-      tooltip: <>?</>,
+      tooltip: <p>?</p>,
       values:
         report.quarterlySummary?.renewalValue?.totalEstimatedRenewalAmount,
     },
@@ -28,21 +28,21 @@ export function generateSummaryRows(report: Retention.Report): SummaryRow[] {
       type: "row",
       valType: "currency",
       label: "Realized Renewal Amount",
-      tooltip: <>?</>,
+      tooltip: <p>?</p>,
       values: report.quarterlySummary?.renewalValue?.realizedRenewalAmount,
     },
     {
       type: "row",
       valType: "currency",
       label: "Uncollected Renewal Amount",
-      tooltip: <>?</>,
+      tooltip: <p>?</p>,
       values: report.quarterlySummary?.renewalValue?.uncollectedRenewalAmount,
     },
     {
       type: "row",
       valType: "currency",
       label: "Mean Renewal Value",
-      tooltip: <>?</>,
+      tooltip: <p>?</p>,
       values: report.quarterlySummary?.renewalValue?.meanRenewalValue,
     },
     {
@@ -53,21 +53,21 @@ export function generateSummaryRows(report: Retention.Report): SummaryRow[] {
     {
       type: "row",
       label: "Active Retained Donors",
-      tooltip: <>?</>,
+      tooltip: <p>?</p>,
       values: report.quarterlySummary?.portfolio?.activeRetainedDonors,
     },
     {
       type: "row",
       valType: "percent",
       label: "Donor Retention Rate",
-      tooltip: <>?</>,
+      tooltip: <p>?</p>,
       values: report.quarterlySummary?.portfolio?.donorRetentionRate,
     },
     {
       type: "row",
       valType: "percent",
       label: "Realized Renewal Value Rate",
-      tooltip: <>?</>,
+      tooltip: <p>?</p>,
       values: report.quarterlySummary?.portfolio?.realizedRenewalValueRate,
     },
     {
@@ -146,12 +146,12 @@ export function renderSummaryValue(
   if (row.type === "section") return "";
 
   switch (row.valType) {
-    case "percent":
-      return formatPercent(value);
     case "currency":
       return formatCurrencyWhole(value);
+    case "percent":
+      return formatPercent(value);
     case "number":
     default:
-      return formatNumber(value);
+      return formatNumberWhole(value);
   }
 }

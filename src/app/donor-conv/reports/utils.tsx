@@ -1,5 +1,5 @@
 import { Leads, none } from "@/lib/types";
-import { formatCurrencyWhole, formatNumber, formatPercent } from "@/lib/utils";
+import { formatCurrencyWhole, formatNumberWhole, formatPercent } from "@/lib/utils";
 
 interface SummaryRow {
   type: "header" | "row" | "section" | "total";
@@ -21,10 +21,10 @@ export function generateSummaryRows(report: Leads.Report): SummaryRow[] {
       valType: "currency",
       label: "Total Estimated Valuation",
       tooltip: (
-        <>
+        <p>
           The sum of the target donation amounts of all matching prospect
           records.
-        </>
+        </p>
       ),
       values:
         report.quarterlySummary?.coreMonetaryValue?.totalEstimatedValuation,
@@ -34,11 +34,11 @@ export function generateSummaryRows(report: Leads.Report): SummaryRow[] {
       valType: "currency",
       label: "Probability-Adjusted Value",
       tooltip: (
-        <>
+        <p>
           The estimated donation value adjusted by each prospect&apos;s
           probability score. Only prospects with a probability score of{" "}
           <span className="font-semibold">60% or higher</span> are included.
-        </>
+        </p>
       ),
       values:
         report.quarterlySummary?.coreMonetaryValue?.probabilityAdjustedValue,
@@ -48,10 +48,10 @@ export function generateSummaryRows(report: Leads.Report): SummaryRow[] {
       valType: "currency",
       label: "Secured Value",
       tooltip: (
-        <>
+        <p>
           The sum of the target donation amounts of prospects currently in the{" "}
           <span className="font-semibold">Secured Donor</span> stage.
-        </>
+        </p>
       ),
       values: report.quarterlySummary?.coreMonetaryValue?.securedValue,
     },
@@ -60,12 +60,12 @@ export function generateSummaryRows(report: Leads.Report): SummaryRow[] {
       valType: "currency",
       label: "Unsecured Balance",
       tooltip: (
-        <>
+        <p>
           The remaining estimated donation value that has not been secured,
           calculated by subtracting the{" "}
           <span className="font-semibold">Secured Value</span> from the{" "}
           <span className="font-semibold">Total Estimated Valuation</span>.
-        </>
+        </p>
       ),
       values: report.quarterlySummary?.coreMonetaryValue?.unsecuredBalance,
     },
@@ -79,11 +79,11 @@ export function generateSummaryRows(report: Leads.Report): SummaryRow[] {
       valType: "percent",
       label: "Donor Conversion Rate",
       tooltip: (
-        <>
+        <p>
           The proportion of prospect records currently in the{" "}
           <span className="font-semibold">Secured Donor</span> stage relative to
           the total number of prospect records.
-        </>
+        </p>
       ),
       values:
         report.quarterlySummary?.conversionEfficiencyAndRatios
@@ -94,13 +94,13 @@ export function generateSummaryRows(report: Leads.Report): SummaryRow[] {
       valType: "percent",
       label: "Value Realization Rate",
       tooltip: (
-        <>
+        <p>
           The proportion of the{" "}
           <span className="font-semibold">Total Estimated Valuation</span> that
           has been secured, calculated by dividing the{" "}
           <span className="font-semibold">Secured Value</span> by the{" "}
           <span className="font-semibold">Total Estimated Valuation</span>.
-        </>
+        </p>
       ),
       values:
         report.quarterlySummary?.conversionEfficiencyAndRatios
@@ -188,12 +188,12 @@ export function renderSummaryValue(
   if (row.type === "section") return "";
 
   switch (row.valType) {
-    case "percent":
-      return formatPercent(value);
     case "currency":
       return formatCurrencyWhole(value);
+    case "percent":
+      return formatPercent(value);
     case "number":
     default:
-      return formatNumber(value);
+      return formatNumberWhole(value);
   }
 }

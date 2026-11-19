@@ -29,6 +29,8 @@
   --color-surface-warning-strong: var(--surface-warning-strong);
   --color-surface-white: var(--surface-white);
   --color-text-muted: var(--text-muted);
+  --color-text-numeric-negative: var(--text-numeric-negative);
+  --color-text-numeric-positive: var(--text-numeric-positive);
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
   --color-text-warning: var(--text-warning);
@@ -292,6 +294,8 @@
   --surface-warning-strong: #fef3c7;
   --surface-white: #ffffff;
   --text-muted: #9ca3af;
+  --text-numeric-negative: #b91c1c;
+  --text-numeric-positive: #15803d;
   --text-primary: #1c1a1a;
   --text-secondary: #5c5757;
   --text-warning: #78350f;

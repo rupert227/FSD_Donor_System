@@ -32,9 +32,9 @@ export default function ReportsPageContent() {
   const appliedFilters = useRef<Leads.ReportFilters>({});
   const selectedFilters = useRef<Leads.ReportFilters>({});
 
+  const [year, setYear] = useState<DropdownOption>();
   const [donorType, setDonorType] = useState<DropdownOption>();
-  const [fiscalYear, setFiscalYear] = useState<DropdownOption>();
-  const [pipelineStage, setPipelineStage] = useState<DropdownOption>();
+  const [targetCampaign, setTargetCampaign] = useState<DropdownOption>();
 
   const [applyIsEnabled, setApplyIsEnabled] = useState(true);
   const [canGeneratePDF, setCanGeneratePDF] = useState(true);
@@ -88,40 +88,39 @@ export default function ReportsPageContent() {
       JSON.stringify(report),
     );
 
+    const yearFilter =
+      report.yearOptions?.find((option) => option.key === report.year) ??
+      undefined;
+
     const donorTypeFilter =
       report.donorTypeOptions?.find(
         (option) => option.key === report.donorType,
       ) ?? undefined;
 
-    const fiscalYearFilter =
-      report.fiscalYearOptions?.find(
-        (option) => option.key === report.fiscalYear,
+    const targetCampaignFilter =
+      report.targetCampaignOptions?.find(
+        (option) => option.key === report.targetCampaign,
       ) ?? undefined;
 
-    const pipelineStageFilter =
-      report.pipelineStageOptions?.find(
-        (option) => option.key === report.pipelineStage,
-      ) ?? undefined;
-
+    setYear(yearFilter);
     setDonorType(donorTypeFilter);
-    setFiscalYear(fiscalYearFilter);
-    setPipelineStage(pipelineStageFilter);
+    setTargetCampaign(targetCampaignFilter);
 
+    appliedFilters.current.year = report.year;
     appliedFilters.current.donorType = report.donorType;
-    appliedFilters.current.fiscalYear = report.fiscalYear;
-    appliedFilters.current.pipelineStage = report.pipelineStage;
+    appliedFilters.current.targetCampaign = report.targetCampaign;
 
+    selectedFilters.current.year = report.year;
     selectedFilters.current.donorType = report.donorType;
-    selectedFilters.current.fiscalYear = report.fiscalYear;
-    selectedFilters.current.pipelineStage = report.pipelineStage;
+    selectedFilters.current.targetCampaign = report.targetCampaign;
   }, [report]);
 
   const hasFilterChanges = () => {
     return (
+      appliedFilters.current.year != selectedFilters.current.year ||
       appliedFilters.current.donorType != selectedFilters.current.donorType ||
-      appliedFilters.current.fiscalYear != selectedFilters.current.fiscalYear ||
-      appliedFilters.current.pipelineStage !=
-        selectedFilters.current.pipelineStage
+      appliedFilters.current.targetCampaign !=
+        selectedFilters.current.targetCampaign
     );
   };
 
@@ -130,18 +129,18 @@ export default function ReportsPageContent() {
 
     const params = new URLSearchParams(searchParams);
 
+    const yearPK = "year";
     const donorTypePK = "donorType";
-    const fiscalYearPK = "fiscalYear";
-    const pipelineStagePK = "pipelineStage";
+    const targetCampaignPK = "targetCampaign";
 
-    if (fiscalYear?.key) params.set(fiscalYearPK, fiscalYear.key);
-    else params.delete(fiscalYearPK);
+    if (year?.key) params.set(yearPK, year.key);
+    else params.delete(yearPK);
 
     if (donorType?.key) params.set(donorTypePK, donorType.key);
     else params.delete(donorTypePK);
 
-    if (pipelineStage?.key) params.set(pipelineStagePK, pipelineStage.key);
-    else params.delete(pipelineStagePK);
+    if (targetCampaign?.key) params.set(targetCampaignPK, targetCampaign.key);
+    else params.delete(targetCampaignPK);
 
     router.replace(`${pathname}?${params.toString()}`);
   };
@@ -155,20 +154,19 @@ export default function ReportsPageContent() {
   };
 
   const resetFiltersAction = () => {
+    setYear(undefined);
     setDonorType(undefined);
-    setFiscalYear(undefined);
-    setPipelineStage(undefined);
+    setTargetCampaign(undefined);
 
     selectedFilters.current.donorType = undefined;
-    selectedFilters.current.fiscalYear = undefined;
-    selectedFilters.current.pipelineStage = undefined;
+    selectedFilters.current.year = undefined;
+    selectedFilters.current.targetCampaign = undefined;
 
     setApplyIsEnabled(
-      appliedFilters.current.donorType != selectedFilters.current.donorType ||
-        appliedFilters.current.fiscalYear !=
-          selectedFilters.current.fiscalYear ||
-        appliedFilters.current.pipelineStage !=
-          selectedFilters.current.pipelineStage,
+      appliedFilters.current.year != selectedFilters.current.year ||
+        appliedFilters.current.donorType != selectedFilters.current.donorType ||
+        appliedFilters.current.targetCampaign !=
+          selectedFilters.current.targetCampaign,
     );
   };
 
@@ -219,16 +217,16 @@ export default function ReportsPageContent() {
           <div className="flex items-center items-end gap-3">
             <div>
               <label className="text-text-secondary text-[0.75rem] font-medium">
-                Fiscal Year
+                Year
               </label>
               <DropdownList
-                label="Select fiscal year"
-                selectedKey={fiscalYear?.key}
+                label="Select year"
+                selectedKey={year?.key}
                 deselectOption={{ key: undefined, label: "- Deselect -" }}
-                options={report.fiscalYearOptions}
+                options={report.yearOptions}
                 onChange={(option) => {
-                  selectedFilters.current.fiscalYear = option.key;
-                  setFiscalYear(option);
+                  selectedFilters.current.year = option.key;
+                  setYear(option);
                   setApplyIsEnabled(hasFilterChanges());
                 }}
               />
@@ -255,12 +253,12 @@ export default function ReportsPageContent() {
               </label>
               <DropdownList
                 label="Select pipeline stage"
-                selectedKey={pipelineStage?.key}
+                selectedKey={targetCampaign?.key}
                 deselectOption={{ key: undefined, label: "- Deselect -" }}
-                options={report.pipelineStageOptions}
+                options={report.targetCampaignOptions}
                 onChange={(option) => {
-                  selectedFilters.current.pipelineStage = option.key;
-                  setPipelineStage(option);
+                  selectedFilters.current.targetCampaign = option.key;
+                  setTargetCampaign(option);
                   setApplyIsEnabled(hasFilterChanges());
                 }}
               />
@@ -296,7 +294,7 @@ export default function ReportsPageContent() {
           </div>
           <div className="border-border-soft bg-surface-white rounded-panel flex flex-col border break-all shadow-sm">
             <div className="border-border-soft bg-surface-white rounded-t-panel border-b px-4 py-3">
-              <p className="text-text-primary text-[1.0rem] font-semibold tracking-[0.1em]">
+              <p className="text-text-primary text-[1.0rem] font-semibold tracking-[0.075em]">
                 QUARTERLY SUMMARY
               </p>
             </div>

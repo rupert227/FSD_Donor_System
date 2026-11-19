@@ -32,9 +32,9 @@ export default function ReportsPageContent() {
   const appliedFilters = useRef<Retention.ReportFilters>({});
   const selectedFilters = useRef<Retention.ReportFilters>({});
 
-  const [engagementStatus, setEngagementStatus] = useState<DropdownOption>();
-  const [fiscalYear, setFiscalYear] = useState<DropdownOption>();
+  const [year, setYear] = useState<DropdownOption>();
   const [targetCampaign, setTargetCampaign] = useState<DropdownOption>();
+  const [engagementStatus, setEngagementStatus] = useState<DropdownOption>();
 
   const [applyIsEnabled, setApplyIsEnabled] = useState(true);
   const [canGeneratePDF, setCanGeneratePDF] = useState(true);
@@ -88,41 +88,40 @@ export default function ReportsPageContent() {
       JSON.stringify(report),
     );
 
-    const engagementStatusFilter =
-      report.engagementStatusOptions?.find(
-        (option) => option.key === report.engagementStatus,
-      ) ?? undefined;
-
-    const fiscalYearFilter =
-      report.fiscalYearOptions?.find(
-        (option) => option.key === report.fiscalYear,
-      ) ?? undefined;
+    const yearFilter =
+      report.yearOptions?.find((option) => option.key === report.year) ??
+      undefined;
 
     const targetCampaignFilter =
       report.targetCampaignOptions?.find(
         (option) => option.key === report.targetCampaign,
       ) ?? undefined;
 
+    const engagementStatusFilter =
+      report.engagementStatusOptions?.find(
+        (option) => option.key === report.engagementStatus,
+      ) ?? undefined;
+
     setEngagementStatus(engagementStatusFilter);
-    setFiscalYear(fiscalYearFilter);
+    setYear(yearFilter);
     setTargetCampaign(targetCampaignFilter);
 
-    appliedFilters.current.engagementStatus = report.engagementStatus;
-    appliedFilters.current.fiscalYear = report.fiscalYear;
+    appliedFilters.current.year = report.year;
     appliedFilters.current.targetCampaign = report.targetCampaign;
+    appliedFilters.current.engagementStatus = report.engagementStatus;
 
-    selectedFilters.current.engagementStatus = report.engagementStatus;
-    selectedFilters.current.fiscalYear = report.fiscalYear;
+    selectedFilters.current.year = report.year;
     selectedFilters.current.targetCampaign = report.targetCampaign;
+    selectedFilters.current.engagementStatus = report.engagementStatus;
   }, [report]);
 
   const hasFilterChanges = () => {
     return (
-      appliedFilters.current.engagementStatus !=
-        selectedFilters.current.engagementStatus ||
-      appliedFilters.current.fiscalYear != selectedFilters.current.fiscalYear ||
+      appliedFilters.current.year != selectedFilters.current.year ||
       appliedFilters.current.targetCampaign !=
-        selectedFilters.current.targetCampaign
+        selectedFilters.current.targetCampaign ||
+      appliedFilters.current.engagementStatus !=
+        selectedFilters.current.engagementStatus
     );
   };
 
@@ -131,19 +130,19 @@ export default function ReportsPageContent() {
 
     const params = new URLSearchParams(searchParams);
 
-    const engagementStatusPK = "engagementStatus";
-    const fiscalYearPK = "fiscalYear";
+    const yearPK = "year";
     const targetCampaignPK = "targetCampaign";
+    const engagementStatusPK = "engagementStatus";
 
-    if (fiscalYear?.key) params.set(fiscalYearPK, fiscalYear.key);
-    else params.delete(fiscalYearPK);
+    if (year?.key) params.set(yearPK, year.key);
+    else params.delete(yearPK);
+
+    if (targetCampaign?.key) params.set(targetCampaignPK, targetCampaign.key);
+    else params.delete(targetCampaignPK);
 
     if (engagementStatus?.key)
       params.set(engagementStatusPK, engagementStatus.key);
     else params.delete(engagementStatusPK);
-
-    if (targetCampaign?.key) params.set(targetCampaignPK, targetCampaign.key);
-    else params.delete(targetCampaignPK);
 
     router.replace(`${pathname}?${params.toString()}`);
   };
@@ -157,21 +156,20 @@ export default function ReportsPageContent() {
   };
 
   const resetFiltersAction = () => {
-    setEngagementStatus(undefined);
-    setFiscalYear(undefined);
+    setYear(undefined);
     setTargetCampaign(undefined);
+    setEngagementStatus(undefined);
 
-    selectedFilters.current.engagementStatus = undefined;
-    selectedFilters.current.fiscalYear = undefined;
+    selectedFilters.current.year = undefined;
     selectedFilters.current.targetCampaign = undefined;
+    selectedFilters.current.engagementStatus = undefined;
 
     setApplyIsEnabled(
-      appliedFilters.current.engagementStatus !=
-        selectedFilters.current.engagementStatus ||
-        appliedFilters.current.fiscalYear !=
-          selectedFilters.current.fiscalYear ||
+      appliedFilters.current.year != selectedFilters.current.year ||
         appliedFilters.current.targetCampaign !=
-          selectedFilters.current.targetCampaign,
+          selectedFilters.current.targetCampaign ||
+        appliedFilters.current.engagementStatus !=
+          selectedFilters.current.engagementStatus,
     );
   };
 
@@ -222,16 +220,16 @@ export default function ReportsPageContent() {
           <div className="flex items-center items-end gap-3">
             <div>
               <label className="text-text-secondary text-[0.75rem] font-medium">
-                Fiscal Year
+                Year
               </label>
               <DropdownList
-                label="Select fiscal year"
-                selectedKey={fiscalYear?.key}
+                label="Select year"
+                selectedKey={year?.key}
                 deselectOption={{ key: undefined, label: "- Deselect -" }}
-                options={report.fiscalYearOptions}
+                options={report.yearOptions}
                 onChange={(option) => {
-                  selectedFilters.current.fiscalYear = option.key;
-                  setFiscalYear(option);
+                  selectedFilters.current.year = option.key;
+                  setYear(option);
                   setApplyIsEnabled(hasFilterChanges());
                 }}
               />
@@ -301,7 +299,7 @@ export default function ReportsPageContent() {
           </div>
           <div className="border-border-soft bg-surface-white rounded-panel flex flex-col border break-all shadow-sm">
             <div className="border-border-soft bg-surface-white rounded-t-panel border-b px-4 py-3">
-              <p className="text-text-primary text-[1.0rem] font-semibold tracking-[0.1em]">
+              <p className="text-text-primary text-[1.0rem] font-semibold tracking-[0.075em]">
                 QUARTERLY SUMMARY
               </p>
             </div>
