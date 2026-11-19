@@ -52,7 +52,6 @@ export async function GET(request: Request) {
       `[GET] Lead pipeline report filters: ${year}, ${donorType}, ${targetCampaign}`,
     );
 
-    /*
     const supabase = await createClient();
 
     const {
@@ -64,7 +63,7 @@ export async function GET(request: Request) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
 
     const { data, error } = await supabase.rpc("conversion_report", {
-      p_year: year ?? null,  
+      p_year: year ?? null,
       p_donor_type: donorType ?? null,
       p_target_campaign: targetCampaign ?? null,
     });
@@ -72,25 +71,6 @@ export async function GET(request: Request) {
     if (error) throw error;
 
     const report = data as Leads.Report;
-    */
-
-    const report = mockReport;
-
-    report.year = report.yearOptions?.some((option) => option.key === year)
-      ? year
-      : undefined;
-
-    report.donorType = report.donorTypeOptions?.some(
-      (option) => option.key === donorType,
-    )
-      ? donorType
-      : undefined;
-
-    report.targetCampaign = report.targetCampaignOptions?.some(
-      (option) => option.key === targetCampaign,
-    )
-      ? targetCampaign
-      : undefined;
 
     if (report.quarterlySummary?.headers) {
       report.quarterlySummary.headers[
@@ -99,8 +79,6 @@ export async function GET(request: Request) {
         report.yearOptions?.find((option) => option.key === report.year)
           ?.label ?? "All Years";
     }
-
-    report.timestamp = new Date().toISOString();
 
     return Response.json(report);
   } catch (err) {

@@ -349,9 +349,9 @@ export default function ReportsPageContent() {
                           {row.tooltip && (
                             <div className="group relative inline-block">
                               <Info className="text-text-muted h-3 w-3 shrink-0" />
-                              <p className="border-border-soft rounded-button bg-surface-white text-text-primary invisible absolute bottom-full left-1/2 mb-2 w-max max-w-60 -translate-x-1/2 border px-3 py-1.5 text-[0.75rem] font-normal break-normal whitespace-normal opacity-0 shadow-lg transition-opacity duration-300 group-hover:visible group-hover:opacity-100">
+                              <div className="border-border-soft rounded-button bg-surface-white text-text-primary invisible absolute bottom-full left-1/2 mb-2 w-max max-w-60 -translate-x-1/2 border px-3 py-1.5 text-[0.75rem] font-normal break-normal whitespace-normal opacity-0 shadow-lg transition-opacity duration-300 group-hover:visible group-hover:opacity-100">
                                 {row.tooltip}
-                              </p>
+                              </div>
                             </div>
                           )}
                         </td>

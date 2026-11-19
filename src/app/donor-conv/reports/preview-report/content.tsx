@@ -159,7 +159,7 @@ export default function PreviewReportPageContent() {
                         <p className="text-text-secondary">•</p>
                         <div className="flex gap-2">
                           <p className="text-brand-primary font-bold">
-                            PIPELINE STAGE:
+                            TARGET CAMPAIGN:
                           </p>
                           <p className="text-text-primary font-medium">
                             {targetCampaignLabel}
