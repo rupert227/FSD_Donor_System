@@ -1,5 +1,9 @@
 import { Retention, none } from "@/lib/types";
-import { formatCurrencyWhole, formatNumberWhole, formatPercent } from "@/lib/utils";
+import {
+  formatCurrencyWhole,
+  formatNumberWhole,
+  formatPercent,
+} from "@/lib/utils";
 
 interface SummaryRow {
   type: "header" | "row" | "section" | "total";
@@ -20,7 +24,12 @@ export function generateSummaryRows(report: Retention.Report): SummaryRow[] {
       type: "row",
       valType: "currency",
       label: "Total Estimated Renewal Amount",
-      tooltip: <p>?</p>,
+      tooltip: (
+        <p>
+          The total pledged renewal amount from transactions within the selected
+          period.
+        </p>
+      ),
       values:
         report.quarterlySummary?.renewalValue?.totalEstimatedRenewalAmount,
     },
@@ -28,21 +37,37 @@ export function generateSummaryRows(report: Retention.Report): SummaryRow[] {
       type: "row",
       valType: "currency",
       label: "Realized Renewal Amount",
-      tooltip: <p>?</p>,
+      tooltip: (
+        <p>
+          The total amount collected from{" "}
+          <span className="font-semibold">Renewal Transactions</span> within the
+          selected period.
+        </p>
+      ),
       values: report.quarterlySummary?.renewalValue?.realizedRenewalAmount,
     },
     {
       type: "row",
       valType: "currency",
       label: "Uncollected Renewal Amount",
-      tooltip: <p>?</p>,
+      tooltip: (
+        <p>
+          The remaining unpaid balance, calculated by subtracting{" "}
+          <span className="font-semibold">Collected Amounts</span> from{" "}
+          <span className="font-semibold">Pledged Amounts</span>.
+        </p>
+      ),
       values: report.quarterlySummary?.renewalValue?.uncollectedRenewalAmount,
     },
     {
       type: "row",
       valType: "currency",
       label: "Mean Renewal Value",
-      tooltip: <p>?</p>,
+      tooltip: (
+        <p>
+          The average pledged amount per transaction within the selected period.
+        </p>
+      ),
       values: report.quarterlySummary?.renewalValue?.meanRenewalValue,
     },
     {
@@ -53,21 +78,42 @@ export function generateSummaryRows(report: Retention.Report): SummaryRow[] {
     {
       type: "row",
       label: "Active Retained Donors",
-      tooltip: <p>?</p>,
+      tooltip: (
+        <p>
+          The number of donors marked as{" "}
+          <span className="font-semibold">Recommitted</span>,{" "}
+          <span className="font-semibold">Renewal Started</span>, or{" "}
+          <span className="font-semibold">Followed-up</span>.
+        </p>
+      ),
       values: report.quarterlySummary?.portfolio?.activeRetainedDonors,
     },
     {
       type: "row",
       valType: "percent",
       label: "Donor Retention Rate",
-      tooltip: <p>?</p>,
+      tooltip: (
+        <p>
+          {" "}
+          The percentage of matching donor profiles, classified as{" "}
+          <span className="font-semibold">Actively Retained</span> divided by
+          the{" "}
+          <span className="font-semibold">Total Matching Donor Profiles</span>.
+        </p>
+      ),
       values: report.quarterlySummary?.portfolio?.donorRetentionRate,
     },
     {
       type: "row",
       valType: "percent",
       label: "Realized Renewal Value Rate",
-      tooltip: <p>?</p>,
+      tooltip: (
+        <p>
+          The percentage of pledged renewal value that has been collected,
+          calculated as <span className="font-semibold">Collected Amount</span>{" "}
+          divided by <span className="font-semibold">Total Pledged Amount</span>.
+        </p>
+      ),
       values: report.quarterlySummary?.portfolio?.realizedRenewalValueRate,
     },
     {

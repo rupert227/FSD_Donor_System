@@ -52,7 +52,6 @@ export async function GET(request: Request) {
       `[GET] Retention report filters: ${year}, ${targetCampaign}, ${engagementStatus}`,
     );
 
-    /*
     const supabase = await createClient();
 
     const {
@@ -72,25 +71,6 @@ export async function GET(request: Request) {
     if (error) throw error;
 
     const report = data as Retention.Report;
-    */
-
-    const report = mockReport;
-
-    report.year = report.yearOptions?.some((option) => option.key === year)
-      ? year
-      : undefined;
-
-    report.targetCampaign = report.targetCampaignOptions?.some(
-      (option) => option.key === targetCampaign,
-    )
-      ? targetCampaign
-      : undefined;
-
-    report.engagementStatus = report.engagementStatusOptions?.some(
-      (option) => option.key === engagementStatus,
-    )
-      ? engagementStatus
-      : undefined;
 
     if (report.quarterlySummary?.headers) {
       report.quarterlySummary.headers[
@@ -99,8 +79,6 @@ export async function GET(request: Request) {
         report.yearOptions?.find((option) => option.key === report.year)
           ?.label ?? "All Years";
     }
-
-    report.timestamp = new Date().toISOString();
 
     return Response.json(report);
   } catch (err) {
