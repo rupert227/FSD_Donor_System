@@ -1,11 +1,6 @@
 import { Care, none } from "@/lib/types";
 
-import {
-  formatCurrencyWhole,
-  formatNumber,
-  formatNumberWhole,
-  formatPercent,
-} from "@/lib/utils";
+import { formatCurrency, formatNumber, formatPercent } from "@/lib/utils";
 
 interface SummaryRow {
   type: "header" | "row" | "section" | "total";
@@ -13,10 +8,12 @@ interface SummaryRow {
     | "currency"
     | "netCurrency"
     | "netDifference"
+    | "netDifferenceReversed"
     | "netDifferenceWhole"
     | "number"
     | "numberWhole"
     | "percent"
+    | "percentReversed"
   )[];
   label: string;
   tooltip?: React.ReactNode;
@@ -34,7 +31,13 @@ export function generateSummaryRows(report: Care.Report): SummaryRow[] {
       type: "row",
       valType: ["currency", "currency", "netCurrency", "percent"],
       label: "Total Collected Donations",
-      tooltip: <p>?</p>,
+      tooltip: (
+        <p>
+          The total amount successfully collected from transactions during the
+          selected year. Calculated by summing{" "}
+          <span className="font-semibold">Amount Collected</span>.
+        </p>
+      ),
       values:
         report.donationVariance?.coreMonetaryMetrics?.totalCollectedDonations,
     },
@@ -42,7 +45,13 @@ export function generateSummaryRows(report: Care.Report): SummaryRow[] {
       type: "row",
       valType: ["currency", "currency", "netCurrency", "percent"],
       label: "Total Committed Donations",
-      tooltip: <p>?</p>,
+      tooltip: (
+        <p>
+          The total amount pledged by donors during the selected year.
+          Calculated by summing{" "}
+          <span className="font-semibold">Amount Pledge</span>.
+        </p>
+      ),
       values:
         report.donationVariance?.coreMonetaryMetrics?.totalCommittedDonations,
     },
@@ -50,7 +59,15 @@ export function generateSummaryRows(report: Care.Report): SummaryRow[] {
       type: "row",
       valType: ["currency", "currency", "netCurrency", "percent"],
       label: "Uncollected Donation Balance",
-      tooltip: <p>?</p>,
+      tooltip: (
+        <p>
+          The remaining pledged amount that has not yet been collected.
+          Calculated by subtracting{" "}
+          <span className="font-semibold">Amount Collected</span> from{" "}
+          <span className="font-semibold">Amount Pledge</span> for each
+          transaction, then summing the balances.
+        </p>
+      ),
       values:
         report.donationVariance?.coreMonetaryMetrics
           ?.uncollectedDonationBalance,
@@ -59,7 +76,15 @@ export function generateSummaryRows(report: Care.Report): SummaryRow[] {
       type: "row",
       valType: ["currency", "currency", "netCurrency", "percent"],
       label: "Mean Donation per Transaction",
-      tooltip: <p>?</p>,
+      tooltip: (
+        <p>
+          The average amount collected per transaction during the selected year.
+          Calculated by dividing the{" "}
+          <span className="font-semibold">Total Collected Amount</span> by the
+          number of transactions with{" "}
+          <span className="font-semibold">Collected Amounts</span>.
+        </p>
+      ),
       values:
         report.donationVariance?.coreMonetaryMetrics
           ?.meanDonationPerTransaction,
@@ -142,7 +167,7 @@ export function generateSummaryRows(report: Care.Report): SummaryRow[] {
     },
     {
       type: "row",
-      valType: ["number", "number", "netDifference", "percent"],
+      valType: ["number", "number", "netDifferenceReversed", "percentReversed"],
       label: "Mean Dispatch Turnaround (Days)",
       values:
         report.donationVariance?.transactionAuditAndCertificates
@@ -164,56 +189,58 @@ export function renderSummaryValue(
     else if (value < 0) return "text-text-numeric-negative";
     else return "";
   })();
-
-  const symbol = (() => {
-    if (!value) return "";
-    else if (value > 0) return "+";
-    else return "";
-  })();
-
   const valType = row.valType?.[index];
 
   switch (valType) {
-    case "currency":
-      return formatCurrencyWhole(value);
+    case "currency": {
+      return formatCurrency(value);
+    }
 
-    case "netCurrency":
-      return (
-        <p className={color}>
-          {symbol}
-          {formatCurrencyWhole(value)}
-        </p>
-      );
+    case "netCurrency": {
+      return <p className={color}>{formatCurrency(value)}</p>;
+    }
 
-    case "netDifference":
-      return (
-        <p className={color}>
-          {symbol}
-          {formatNumber(value)}
-        </p>
-      );
+    case "netDifference": {
+      return <p className={color}>{formatNumber(value, false)}</p>;
+    }
 
-    case "netDifferenceWhole":
-      return (
-        <p className={color}>
-          {symbol}
-          {formatNumberWhole(value)}
-        </p>
-      );
+    case "netDifferenceReversed": {
+      const colorReversed = (() => {
+        if (!value) return "";
+        else if (value < 0) return "text-text-numeric-positive";
+        else if (value > 0) return "text-text-numeric-negative";
+        else return "";
+      })();
 
-    case "number":
-      return formatNumber(value);
+      return <p className={colorReversed}>{formatNumber(value, false)}</p>;
+    }
 
-    case "percent":
-      return (
-        <p className={color}>
-          {symbol}
-          {formatPercent(value)}
-        </p>
-      );
+    case "netDifferenceWhole": {
+      return <p className={color}>{formatNumber(value)}</p>;
+    }
+
+    case "number": {
+      return formatNumber(value, false);
+    }
+
+    case "percent": {
+      return <p className={color}>{formatPercent(value)}</p>;
+    }
+
+    case "percentReversed": {
+      const colorReversed = (() => {
+        if (!value) return "";
+        else if (value < 0) return "text-text-numeric-positive";
+        else if (value > 0) return "text-text-numeric-negative";
+        else return "";
+      })();
+
+      return <p className={colorReversed}>{formatPercent(value)}</p>;
+    }
 
     case "numberWhole":
-    default:
-      return formatNumberWhole(value);
+    default: {
+      return formatNumber(value);
+    }
   }
 }

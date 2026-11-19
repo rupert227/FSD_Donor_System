@@ -30,34 +30,55 @@ export const numberWholeFormat = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 0,
 });
 
-export function formatCurrency(value: number | null | undefined): string {
+export function formatCurrency(
+  value: number | null | undefined,
+  isWhole = true,
+  isReport = true,
+): string {
   if (!Number.isFinite(value) || value == null) return "—";
 
-  return phCurrencyFormat.format(value);
+  const stringValue = isWhole
+    ? phCurrencyWholeFormat.format(value)
+    : phCurrencyFormat.format(value);
+
+  return isReport
+    ? value >= 0
+      ? stringValue
+      : `(${stringValue.replaceAll("-", "")})`
+    : stringValue;
 }
 
-export function formatCurrencyWhole(value: number | null | undefined): string {
+export function formatNumber(
+  value: number | null | undefined,
+  isWhole = true,
+  isReport = true,
+): string {
   if (!Number.isFinite(value) || value == null) return "—";
 
-  return phCurrencyWholeFormat.format(value);
+  const stringValue = isWhole
+    ? numberWholeFormat.format(value)
+    : numberFormat.format(value);
+
+  return isReport
+    ? value >= 0
+      ? stringValue
+      : `(${stringValue.replaceAll("-", "")})`
+    : stringValue;
 }
 
-export function formatNumber(value: number | null | undefined): string {
+export function formatPercent(
+  value: number | null | undefined,
+  isReport = true,
+): string {
   if (!Number.isFinite(value) || value == null) return "—";
 
-  return numberFormat.format(value);
-}
+  const stringValue = percentFormat.format(value);
 
-export function formatNumberWhole(value: number | null | undefined): string {
-  if (!Number.isFinite(value) || value == null) return "—";
-
-  return numberWholeFormat.format(Math.round(value));
-}
-
-export function formatPercent(value: number | null | undefined): string {
-  if (!Number.isFinite(value) || value == null) return "—";
-
-  return percentFormat.format(value);
+  return isReport
+    ? value >= 0
+      ? stringValue
+      : `(${stringValue.replaceAll("-", "")})`
+    : stringValue;
 }
 
 export function formatReportDate(isoDate: string | null | undefined): string {

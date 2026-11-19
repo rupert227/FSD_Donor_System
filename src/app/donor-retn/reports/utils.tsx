@@ -1,7 +1,7 @@
 import { Retention, none } from "@/lib/types";
 import {
-  formatCurrencyWhole,
-  formatNumberWhole,
+  formatCurrency,
+  formatNumber,
   formatPercent,
 } from "@/lib/utils";
 
@@ -193,11 +193,11 @@ export function renderSummaryValue(
 
   switch (row.valType) {
     case "currency":
-      return formatCurrencyWhole(value);
+      return formatCurrency(value);
     case "percent":
       return formatPercent(value);
     case "number":
     default:
-      return formatNumberWhole(value);
+      return formatNumber(value);
   }
 }

@@ -1,5 +1,9 @@
 import { Leads, none } from "@/lib/types";
-import { formatCurrencyWhole, formatNumberWhole, formatPercent } from "@/lib/utils";
+import {
+  formatCurrency,
+  formatNumber,
+  formatPercent,
+} from "@/lib/utils";
 
 interface SummaryRow {
   type: "header" | "row" | "section" | "total";
@@ -189,11 +193,11 @@ export function renderSummaryValue(
 
   switch (row.valType) {
     case "currency":
-      return formatCurrencyWhole(value);
+      return formatCurrency(value);
     case "percent":
       return formatPercent(value);
     case "number":
     default:
-      return formatNumberWhole(value);
+      return formatNumber(value);
   }
 }

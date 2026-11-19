@@ -60,6 +60,13 @@ export default function PreviewReportPageContent() {
 
   const summaryRows = generateSummaryRows(report);
 
+  // TODO: Replace with actual logged in profile details.
+  const userProfile = {
+    displayName: "Display Name",
+    email: "profile@gmail.com",
+    description: "Profile role and description",
+  };
+
   const backToReportsAction = () => {
     setCanReturnToReports(false);
     const params = searchParams.toString();
@@ -261,11 +268,14 @@ export default function PreviewReportPageContent() {
                   <p className="text-brand-primary mb-2 text-[10pt] font-bold">
                     PREPARED BY:
                   </p>
-                  <p className="text-text-primary border-text-primary border-b-[1.5px] pb-2 text-[12pt] font-semibold">
-                    User Profile
+                  <p className="text-text-primary text-[12pt] font-semibold">
+                    {userProfile.displayName}
+                  </p>
+                  <p className="text-text-muted pb-1 text-[10pt] border-text-primary border-b-[1.5px]">
+                    {userProfile.email}
                   </p>
                   <p className="text-text-secondary pt-1 text-[10pt]">
-                    User role and description
+                    {userProfile.description}
                   </p>
                 </div>
                 <p className="text-text-secondary border-text-muted mt-8 border-t-[1.75px] pt-2 text-right text-[11pt]">
