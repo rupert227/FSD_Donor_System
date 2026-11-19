@@ -46,7 +46,6 @@ export async function GET(request: Request) {
       `[GET] Care report filters: ${baseYear}, ${compareYear}, ${sourceOfFunds}`,
     );
 
-    /*
     const supabase = await createClient();
 
     const {
@@ -66,27 +65,6 @@ export async function GET(request: Request) {
     if (error) throw error;
 
     const report = data as Care.Report;
-    */
-
-    const report = mockReport;
-
-    report.baseYear = report.baseYearOptions?.some(
-      (option) => option.key === baseYear,
-    )
-      ? baseYear
-      : undefined;
-
-    report.compareYear = report.compareYearOptions?.some(
-      (option) => option.key === compareYear,
-    )
-      ? compareYear
-      : undefined;
-
-    report.sourceOfFunds = report.sourceOfFundsOptions?.some(
-      (option) => option.key === sourceOfFunds,
-    )
-      ? sourceOfFunds
-      : undefined;
 
     if (report.donationVariance?.headers) {
       report.donationVariance.headers[0] =
@@ -100,8 +78,6 @@ export async function GET(request: Request) {
           (option) => option.key === report.compareYear,
         )?.label ?? "Compare Year";
     }
-
-    report.timestamp = new Date().toISOString();
 
     return Response.json(report);
   } catch (err) {

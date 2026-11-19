@@ -32,7 +32,7 @@ export function generateSummaryRows(report: Care.Report): SummaryRow[] {
     },
     {
       type: "row",
-      valType: ["currency", "currency", "currency", "percent"],
+      valType: ["currency", "currency", "netCurrency", "percent"],
       label: "Total Collected Donations",
       tooltip: <p>?</p>,
       values:
@@ -40,7 +40,7 @@ export function generateSummaryRows(report: Care.Report): SummaryRow[] {
     },
     {
       type: "row",
-      valType: ["currency", "currency", "currency", "percent"],
+      valType: ["currency", "currency", "netCurrency", "percent"],
       label: "Total Committed Donations",
       tooltip: <p>?</p>,
       values:
@@ -48,7 +48,7 @@ export function generateSummaryRows(report: Care.Report): SummaryRow[] {
     },
     {
       type: "row",
-      valType: ["currency", "currency", "currency", "percent"],
+      valType: ["currency", "currency", "netCurrency", "percent"],
       label: "Uncollected Donation Balance",
       tooltip: <p>?</p>,
       values:
@@ -57,7 +57,7 @@ export function generateSummaryRows(report: Care.Report): SummaryRow[] {
     },
     {
       type: "row",
-      valType: ["currency", "currency", "currency", "percent"],
+      valType: ["currency", "currency", "netCurrency", "percent"],
       label: "Mean Donation per Transaction",
       tooltip: <p>?</p>,
       values:

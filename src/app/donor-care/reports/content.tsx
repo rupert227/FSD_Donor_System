@@ -135,11 +135,11 @@ export default function ReportsPageContent() {
     const compareYearPK = "compareYear";
     const sourceOfFundsPK = "sourceOfFunds";
 
-    if (compareYear?.key) params.set(compareYearPK, compareYear.key);
-    else params.delete(compareYearPK);
-
     if (baseYear?.key) params.set(baseYearPK, baseYear.key);
     else params.delete(baseYearPK);
+
+    if (compareYear?.key) params.set(compareYearPK, compareYear.key);
+    else params.delete(compareYearPK);
 
     if (sourceOfFunds?.key) params.set(sourceOfFundsPK, sourceOfFunds.key);
     else params.delete(sourceOfFundsPK);
@@ -224,6 +224,22 @@ export default function ReportsPageContent() {
               </label>
               <DropdownList
                 label="Select base year"
+                selectedKey={baseYear?.key}
+                deselectOption={{ key: undefined, label: "- Deselect -" }}
+                options={report.baseYearOptions}
+                onChange={(option) => {
+                  selectedFilters.current.baseYear = option.key;
+                  setBaseYear(option);
+                  setApplyIsEnabled(hasFilterChanges());
+                }}
+              />
+            </div>
+            <div>
+              <label className="text-text-secondary text-[0.75rem] font-medium">
+                Compare Year
+              </label>
+              <DropdownList
+                label="Select compare year"
                 selectedKey={compareYear?.key}
                 deselectOption={{ key: undefined, label: "- Deselect -" }}
                 options={report.compareYearOptions}
@@ -236,10 +252,10 @@ export default function ReportsPageContent() {
             </div>
             <div>
               <label className="text-text-secondary text-[0.75rem] font-medium">
-                Compare Year
+                Source of Funds
               </label>
               <DropdownList
-                label="Select compare year"
+                label="Select source of funds"
                 selectedKey={sourceOfFunds?.key}
                 deselectOption={{ key: undefined, label: "- Deselect -" }}
                 options={report.sourceOfFundsOptions}
@@ -247,23 +263,6 @@ export default function ReportsPageContent() {
                 onChange={(option) => {
                   selectedFilters.current.sourceOfFunds = option.key;
                   setSourceOfFunds(option);
-                  setApplyIsEnabled(hasFilterChanges());
-                }}
-              />
-            </div>
-            <div>
-              <label className="text-text-secondary text-[0.75rem] font-medium">
-                Source of Funds
-              </label>
-              <DropdownList
-                label="Select source of funds"
-                selectedKey={baseYear?.key}
-                deselectOption={{ key: undefined, label: "- Deselect -" }}
-                options={report.baseYearOptions}
-                width={14}
-                onChange={(option) => {
-                  selectedFilters.current.baseYear = option.key;
-                  setBaseYear(option);
                   setApplyIsEnabled(hasFilterChanges());
                 }}
               />
@@ -310,9 +309,9 @@ export default function ReportsPageContent() {
                     <th className="text-surface-white w-1/3 px-3 py-3 font-medium tracking-[0.1em]">
                       METRIC
                     </th>
-                    {report.donationVariance.headers?.map((header) => (
+                    {report.donationVariance.headers?.map((header, index) => (
                       <th
-                        key={header}
+                        key={`${header}-${index}`}
                         className="text-surface-white w-[15%] px-3 py-3 text-right font-medium"
                       >
                         {header}
