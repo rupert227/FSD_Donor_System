@@ -25,7 +25,7 @@ END $$;
 
 -- Donor Type
 DO $$ BEGIN
-  CREATE TYPE donor_type_enum AS ENUM ('individual', 'corporate', 'community', 'international');
+  CREATE TYPE donor_type_enum AS ENUM ('Individual', 'Corporate', 'Community', 'International');
 EXCEPTION WHEN duplicate_object THEN null;
 END $$;
 

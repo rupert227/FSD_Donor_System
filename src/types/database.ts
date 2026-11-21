@@ -19,7 +19,15 @@ export type MonthEnum =
 
 export type RecordStatusEnum = 'Active' | 'Inactive' | 'Archived'
 
-export type DonorTypeEnum = 'individual' | 'corporate' | 'community' | 'international'
+export type DonorTypeEnum =
+  | 'Individual'
+  | 'Corporate'
+  | 'Community'
+  | 'International'
+  | 'individual'
+  | 'corporate'
+  | 'community'
+  | 'international'
 
 export type LeadSourceOriginEnum =
   | 'Referral'
