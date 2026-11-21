@@ -2,7 +2,7 @@ import { Care, none } from "@/lib/types";
 
 import { formatCurrency, formatNumber, formatPercent } from "@/lib/utils";
 
-interface SummaryRow {
+export interface SummaryRow {
   type: "header" | "row" | "section" | "total";
   valType?: (
     | "currency"
@@ -197,11 +197,11 @@ export function renderSummaryValue(
     }
 
     case "netCurrency": {
-      return <p className={color}>{formatCurrency(value)}</p>;
+      return <span className={color}>{formatCurrency(value)}</span>;
     }
 
     case "netDifference": {
-      return <p className={color}>{formatNumber(value, false)}</p>;
+      return <span className={color}>{formatNumber(value, false)}</span>;
     }
 
     case "netDifferenceReversed": {
@@ -212,11 +212,11 @@ export function renderSummaryValue(
         else return "";
       })();
 
-      return <p className={colorReversed}>{formatNumber(value, false)}</p>;
+      return <span className={colorReversed}>{formatNumber(value, false)}</span>;
     }
 
     case "netDifferenceWhole": {
-      return <p className={color}>{formatNumber(value)}</p>;
+      return <span className={color}>{formatNumber(value)}</span>;
     }
 
     case "number": {
@@ -224,7 +224,7 @@ export function renderSummaryValue(
     }
 
     case "percent": {
-      return <p className={color}>{formatPercent(value)}</p>;
+      return <span className={color}>{formatPercent(value)}</span>;
     }
 
     case "percentReversed": {
@@ -235,7 +235,7 @@ export function renderSummaryValue(
         else return "";
       })();
 
-      return <p className={colorReversed}>{formatPercent(value)}</p>;
+      return <span className={colorReversed}>{formatPercent(value)}</span>;
     }
 
     case "numberWhole":

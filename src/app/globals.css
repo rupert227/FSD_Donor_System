@@ -139,6 +139,15 @@
     }
   }
 
+  @keyframes reportBgFadeOut {
+    from {
+      background-color: #f2c97d;
+    }
+    to {
+      background-color: transparent;
+    }
+  }
+
   .toast-in,
   .toast-animate-in {
     animation: toastFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -174,6 +183,10 @@
     animation: popupFadeOut 0.16s ease-in forwards;
     transform-origin: top left;
     pointer-events: none;
+  }
+
+  .report-bg-out {
+    animation: reportBgFadeOut 3s ease-out forwards;
   }
 }
 

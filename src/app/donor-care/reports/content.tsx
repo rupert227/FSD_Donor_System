@@ -14,6 +14,7 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import {
+  type SummaryRow,
   generateSummaryRows,
   renderSummaryValue,
 } from "@/app/donor-care/reports/utils";
@@ -38,8 +39,16 @@ export default function ReportsPageContent() {
 
   const [applyIsEnabled, setApplyIsEnabled] = useState(true);
   const [canGeneratePDF, setCanGeneratePDF] = useState(true);
+  const [enableReportAnimation, setEnableReportAnimation] = useState(false);
+  const [isApplyingFilters, setIsApplyingFilters] = useState(false);
   const [pageIsReady, setPageIsReady] = useState(false);
+  const [reportAnimationTrigger, setReportAnimationTrigger] = useState(0);
   const [reportIsReady, setReportIsReady] = useState(false);
+
+  const [lastSummaryRows, setLastSummaryRows] = useState<SummaryRow[]>();
+  const [updatedReportsSet, setUpdatedReportsSet] = useState<Set<string>>(
+    new Set(),
+  );
 
   const [reportContent, setReportContent] = useState<Care.Report>();
 
@@ -54,17 +63,21 @@ export default function ReportsPageContent() {
           `/api/care-report?${searchParams.toString()}`,
           { signal: controller.signal },
         );
+
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
         const content = (await response.json()) as Care.Report;
         setReportContent(content);
       } catch (err) {
         if ((err as Error).name === "AbortError") return;
+
         setReportContent(Care.emptyReport);
       } finally {
         if (!controller.signal.aborted) {
           setApplyIsEnabled(false);
           setPageIsReady(true);
           setReportIsReady(true);
+          setIsApplyingFilters(false);
         }
       }
     };
@@ -114,6 +127,33 @@ export default function ReportsPageContent() {
     selectedFilters.current.baseYear = report.baseYear;
     selectedFilters.current.compareYear = report.compareYear;
     selectedFilters.current.sourceOfFunds = report.sourceOfFunds;
+
+    const columnCount = report.donationVariance?.headers?.length ?? 0;
+    const reportsSet = new Set<string>();
+
+    for (let rowIndex = 0; rowIndex < summaryRows.length; rowIndex++) {
+      for (let colIndex = 0; colIndex < columnCount; colIndex++) {
+        const key = `${summaryRows[rowIndex].label}-${colIndex}`;
+
+        if (
+          lastSummaryRows?.[rowIndex].values?.[colIndex] !=
+          summaryRows?.[rowIndex].values?.[colIndex]
+        )
+          reportsSet.add(key);
+      }
+    }
+
+    setLastSummaryRows(
+      summaryRows.map((row) => ({
+        type: row.type,
+        label: row.label,
+        values: row.values ? [...row.values] : row.values,
+      })),
+    );
+
+    setUpdatedReportsSet(reportsSet);
+    setEnableReportAnimation(reportAnimationTrigger >= 1);
+    setReportAnimationTrigger((n) => n + 1);
   }, [report]);
 
   const hasFilterChanges = () => {
@@ -127,6 +167,7 @@ export default function ReportsPageContent() {
   };
 
   const applyFiltersAction = async () => {
+    setIsApplyingFilters(true);
     setReportIsReady(false);
 
     const params = new URLSearchParams(searchParams);
@@ -270,7 +311,9 @@ export default function ReportsPageContent() {
             <div className="flex gap-3">
               <button
                 type="button"
-                disabled={!applyIsEnabled || !reportIsReady}
+                disabled={
+                  !applyIsEnabled || isApplyingFilters || !reportIsReady
+                }
                 onClick={applyFiltersAction}
                 className="border-border-soft text-text-primary enabled:hover:bg-surface-soft-hover bg-surface-white rounded-button disabled:opacity-button-disabled flex h-9 cursor-pointer items-center gap-1 border px-3 py-2 text-[0.75rem] disabled:cursor-not-allowed"
               >
@@ -286,7 +329,7 @@ export default function ReportsPageContent() {
                 Reset Filters
               </button>
 
-              {!reportIsReady && (
+              {isApplyingFilters && (
                 <div className="flex items-center justify-center gap-1 overflow-hidden">
                   <Loader className="text-brand-primary h-4 w-4 shrink-0 animate-spin" />
                   <p className="text-text-secondary text-[0.9rem]">
@@ -356,6 +399,9 @@ export default function ReportsPageContent() {
                         </td>
                         {Array.from({ length: columnCount }).map(
                           (_, colIndex) => {
+                            const updated =
+                              enableReportAnimation &&
+                              updatedReportsSet.has(`${row.label}-${colIndex}`);
                             const value = row.values?.[colIndex] ?? undefined;
                             return (
                               <td
@@ -367,9 +413,18 @@ export default function ReportsPageContent() {
                                     : "bg-report-footer-background font-medium",
                                 )}
                               >
-                                {isSection
-                                  ? ""
-                                  : renderSummaryValue(row, value, colIndex)}
+                                <span
+                                  key={
+                                    updated
+                                      ? `${row.label}-${colIndex}-${reportAnimationTrigger}`
+                                      : `${row.label}-${colIndex}`
+                                  }
+                                  className={cn(updated && "report-bg-out")}
+                                >
+                                  {isSection
+                                    ? ""
+                                    : renderSummaryValue(row, value, colIndex)}
+                                </span>
                               </td>
                             );
                           },

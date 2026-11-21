@@ -5,7 +5,7 @@ import {
   formatPercent,
 } from "@/lib/utils";
 
-interface SummaryRow {
+export interface SummaryRow {
   type: "header" | "row" | "section" | "total";
   valType?: "currency" | "number" | "percent";
   label: string;
