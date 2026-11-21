@@ -263,6 +263,12 @@ export default function ReportsPageContent() {
               <label className="text-text-secondary text-[0.75rem] font-medium">
                 Base Year
               </label>
+              {appliedFilters.current.baseYear !=
+                selectedFilters.current.baseYear && (
+                <label className="text-brand-danger pl-1 text-[0.6rem] font-medium">
+                  (Unapplied)
+                </label>
+              )}
               <DropdownList
                 label="Select base year"
                 selectedKey={baseYear?.key}
@@ -279,6 +285,12 @@ export default function ReportsPageContent() {
               <label className="text-text-secondary text-[0.75rem] font-medium">
                 Compare Year
               </label>
+              {appliedFilters.current.compareYear !=
+                selectedFilters.current.compareYear && (
+                <label className="text-brand-danger pl-1 text-[0.6rem] font-medium">
+                  (Unapplied)
+                </label>
+              )}
               <DropdownList
                 label="Select compare year"
                 selectedKey={compareYear?.key}
@@ -295,6 +307,12 @@ export default function ReportsPageContent() {
               <label className="text-text-secondary text-[0.75rem] font-medium">
                 Source of Funds
               </label>
+              {appliedFilters.current.sourceOfFunds !=
+                selectedFilters.current.sourceOfFunds && (
+                <label className="text-brand-danger pl-1 text-[0.6rem] font-medium">
+                  (Unapplied)
+                </label>
+              )}
               <DropdownList
                 label="Select source of funds"
                 selectedKey={sourceOfFunds?.key}

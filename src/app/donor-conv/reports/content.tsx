@@ -260,6 +260,11 @@ export default function ReportsPageContent() {
               <label className="text-text-secondary text-[0.75rem] font-medium">
                 Year
               </label>
+              {appliedFilters.current.year != selectedFilters.current.year && (
+                <label className="text-brand-danger pl-1 text-[0.6rem] font-medium">
+                  (Unapplied)
+                </label>
+              )}
               <DropdownList
                 label="Select year"
                 selectedKey={year?.key}
@@ -276,6 +281,12 @@ export default function ReportsPageContent() {
               <label className="text-text-secondary text-[0.75rem] font-medium">
                 Donor Type
               </label>
+              {appliedFilters.current.donorType !=
+                selectedFilters.current.donorType && (
+                <label className="text-brand-danger pl-1 text-[0.6rem] font-medium">
+                  (Unapplied)
+                </label>
+              )}
               <DropdownList
                 label="Select donor type"
                 selectedKey={donorType?.key}
@@ -292,6 +303,12 @@ export default function ReportsPageContent() {
               <label className="text-text-secondary text-[0.75rem] font-medium">
                 Target Campaign
               </label>
+              {appliedFilters.current.targetCampaign !=
+                selectedFilters.current.targetCampaign && (
+                <label className="text-brand-danger pl-1 text-[0.6rem] font-medium">
+                  (Unapplied)
+                </label>
+              )}
               <DropdownList
                 label="Select target campaign"
                 selectedKey={targetCampaign?.key}
