@@ -62,14 +62,14 @@ export function DropdownList({
           maxWidth: `${width}rem`,
         }}
         className={cn(
-          "border-dropdown-stroke bg-surface-white text-text-primary hover:bg-surface-soft-hover rounded-button flex h-9 cursor-pointer items-center justify-between border-[1px] px-3 text-left text-[0.8rem]",
+          "border-dropdown-stroke bg-surface-white text-text-primary hover:bg-surface-soft-hover transition-color rounded-button flex h-9 cursor-pointer items-center justify-between border-[1px] px-3 text-left text-[0.8rem] duration-50",
           !selectedOption && "text-text-muted",
         )}
       >
         <p className="truncate">{selectedOption?.label ?? label}</p>
         <ChevronDown
           className={cn(
-            "text-text-secondary ml-5 h-4 w-4 shrink-0",
+            "text-text-secondary ml-5 h-4 w-4 shrink-0 duration-150",
             isOpen && "rotate-180",
           )}
         />
@@ -96,9 +96,7 @@ export function DropdownList({
                       if (!isSelected) onChange?.(deselectOption);
                       setIsOpen(false);
                     }}
-                    className={cn(
-                      "text-text-muted first:rounded-t-dropdown last:rounded-b-dropdown hover:bg-surface-soft-hover flex h-7.5 w-full cursor-pointer items-center gap-2 px-3",
-                    )}
+                    className="text-text-muted first:rounded-t-dropdown last:rounded-b-dropdown hover:bg-surface-soft-hover flex h-7.5 w-full cursor-pointer items-center gap-2 px-3"
                   >
                     <p className="text-[0.8rem] whitespace-nowrap">
                       {deselectOption.label}
@@ -119,8 +117,8 @@ export function DropdownList({
                   className={cn(
                     "text-text-primary first:rounded-t-dropdown last:rounded-b-dropdown flex h-7.5 w-full cursor-pointer items-center gap-2 px-3",
                     isSelected
-                      ? "bg-brand-100 text-brand-primary"
-                      : "hover:bg-surface-soft-hover",
+                      ? "bg-brand-100 text-brand-primary font-medium"
+                      : "hover:bg-surface-soft-hover transition-color duration-50",
                   )}
                 >
                   <p className="text-[0.8rem] whitespace-nowrap">

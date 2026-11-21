@@ -597,7 +597,7 @@ export function Navbar({
               </div>
               <ChevronDown
                 className={cn(
-                  "text-text-secondary ml-5 h-4 w-4 shrink-0",
+                  "text-text-secondary ml-5 h-4 w-4 shrink-0 duration-150",
                   isProfileOpen && "rotate-180",
                 )}
               />
@@ -628,7 +628,7 @@ export function Navbar({
                     {displayName}
                   </p>
                   {userProfile.email && (
-                    <p className="text-text-secondary text-[0.75rem] break-all">
+                    <p className="text-text-muted text-[0.75rem] break-all pb-1">
                       {userProfile.email}
                     </p>
                   )}
@@ -655,7 +655,7 @@ export function Navbar({
             <p className="truncate">{selectedModule.label}</p>
             <ChevronDown
               className={cn(
-                "text-text-secondary h-3.5 w-3.5 shrink-0",
+                "text-text-secondary h-3.5 w-3.5 shrink-0 duration-150",
                 isModuleOpen && "rotate-180",
               )}
             />
