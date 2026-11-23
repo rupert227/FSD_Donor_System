@@ -27,7 +27,7 @@ agg AS (
     COUNT(*) FILTER (WHERE regexp_replace(lower(lead_source_origin::TEXT), '[^a-z]', '', 'g') = 'referral') AS referral,
     COUNT(*) FILTER (WHERE regexp_replace(lower(lead_source_origin::TEXT), '[^a-z]', '', 'g') = 'research') AS research,
     COUNT(*) FILTER (WHERE regexp_replace(lower(lead_source_origin::TEXT), '[^a-z]', '', 'g') = 'booths') AS booths,
-    COUNT(*) FILTER (WHERE regexp_replace(lower(lead_source_origin::TEXT), '[^a-z]', '', 'g') = 'callortext') AS call_or_text,
+    COUNT(*) FILTER (WHERE regexp_replace(lower(lead_source_origin::TEXT), '[^a-z]', '', 'g') IN ('callortext', 'directcall')) AS call_or_text,
     COUNT(*) FILTER (WHERE regexp_replace(lower(lead_source_origin::TEXT), '[^a-z]', '', 'g') = 'walkin') AS walk_in,
     COUNT(*) FILTER (WHERE regexp_replace(lower(pipeline_status::TEXT), '[^a-z]', '', 'g') = 'newlead') AS new_lead,
     COUNT(*) FILTER (WHERE regexp_replace(lower(pipeline_status::TEXT), '[^a-z]', '', 'g') = 'underresearch') AS under_research,

@@ -25,10 +25,10 @@ donor_agg AS (
     COUNT(*) FILTER (WHERE regexp_replace(lower(engagement_status::TEXT), '[^a-z]', '', 'g') = 'followedup') AS followed_up,
     COUNT(*) FILTER (WHERE regexp_replace(lower(engagement_status::TEXT), '[^a-z]', '', 'g') = 'uncontacted') AS uncontacted,
     COUNT(*) FILTER (WHERE regexp_replace(lower(engagement_status::TEXT), '[^a-z]', '', 'g') = 'lapseddonor') AS lapsed_donor,
-    COUNT(*) FILTER (WHERE created_at::DATE <= CURRENT_DATE - INTERVAL '3 years') AS three_plus_years_loyal,
-    COUNT(*) FILTER (WHERE created_at::DATE <= CURRENT_DATE - INTERVAL '2 years' AND created_at::DATE > CURRENT_DATE - INTERVAL '3 years') AS two_years_retained,
-    COUNT(*) FILTER (WHERE created_at::DATE <= CURRENT_DATE - INTERVAL '1 year' AND created_at::DATE > CURRENT_DATE - INTERVAL '2 years') AS one_year_retained,
-    COUNT(*) FILTER (WHERE created_at::DATE > CURRENT_DATE - INTERVAL '1 year') AS new_renewal
+    COUNT(*) FILTER (WHERE lower(donor_tenure::TEXT) = '3+ years loyal') AS three_plus_years_loyal,
+    COUNT(*) FILTER (WHERE lower(donor_tenure::TEXT) = '2 years retained') AS two_years_retained,
+    COUNT(*) FILTER (WHERE lower(donor_tenure::TEXT) = '1 year retained') AS one_year_retained,
+    COUNT(*) FILTER (WHERE lower(donor_tenure::TEXT) = 'new renewal') AS new_renewal
   FROM (
     SELECT *,
       EXTRACT(QUARTER FROM created_at)::INTEGER AS quarter
