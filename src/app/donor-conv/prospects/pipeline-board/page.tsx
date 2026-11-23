@@ -28,7 +28,11 @@ import { cn } from "cn";
 
 import { AppShell } from "@/components/AppShell";
 import { moduleName, navbarPreset } from "@/app/donor-conv/struct";
-import { ProspectSelectMenu, ProspectsBoardSkeleton } from "../_components";
+import {
+  PeriodFilter,
+  ProspectSelectMenu,
+  ProspectsBoardSkeleton,
+} from "../_components";
 
 import type { LeadDetail } from "@supabase/seeds/prospects-seed";
 import type { PipelineStatusEnum } from "@/types";
@@ -39,6 +43,14 @@ import {
   getBuiltProposalProspectIds,
 } from "@/lib/prospects/actions";
 import { showToast } from "@/lib/toast";
+import {
+  ALL_PERIODS,
+  currentPeriod,
+  matchesPeriod,
+  periodYears,
+  samePeriod,
+  type Period,
+} from "@/lib/period";
 
 import { useDocumentTitle } from "@/components/Navbar";
 import { useUserRole } from "@/lib/use-user-role";
@@ -230,6 +242,12 @@ export default function PipelineBoardPage() {
 
   const today = useToday();
 
+  // Year / quarter period. A null applied period follows the current quarter.
+  const [appliedPeriod, setAppliedPeriod] = useState<Period | null>(null);
+  const [draftPeriod, setDraftPeriod] = useState<Period>(ALL_PERIODS);
+  const defaultPeriod = useMemo(() => currentPeriod(today), [today]);
+  const period = appliedPeriod ?? defaultPeriod;
+
   const [leads, setLeads] = useState<LeadDetail[]>([]);
   const [search, setSearch] = useState("");
 
@@ -356,13 +374,27 @@ export default function PipelineBoardPage() {
     return () => window.removeEventListener("resize", updateLayoutMode);
   }, []);
 
+  const years = useMemo(
+    () =>
+      periodYears(
+        leads.map((l) => l.created_at),
+        today,
+      ),
+    [leads, today],
+  );
+
+  const periodLeads = useMemo(
+    () => leads.filter((l) => matchesPeriod(l.created_at, period)),
+    [leads, period],
+  );
+
   const chipCounts = useMemo(() => {
     return {
-      all: leads.length,
-      "due-today": leads.filter((l) => !!today && l.target_followup_date === today).length,
-      overdue: leads.filter((l) => !!today && !!l.target_followup_date && l.target_followup_date < today).length,
+      all: periodLeads.length,
+      "due-today": periodLeads.filter((l) => !!today && l.target_followup_date === today).length,
+      overdue: periodLeads.filter((l) => !!today && !!l.target_followup_date && l.target_followup_date < today).length,
       mine: isConversionOfficer
-        ? leads.filter((l) => {
+        ? periodLeads.filter((l) => {
             const target = myOfficerFilterName.toLowerCase();
             const leadOfficer = (l.assigned_officer || "").toLowerCase();
             return (
@@ -375,9 +407,9 @@ export default function PipelineBoardPage() {
             );
           }).length
         : 0,
-      "proposal-sent": leads.filter((l) => l.pipeline_status === "Proposal Sent").length,
+      "proposal-sent": periodLeads.filter((l) => l.pipeline_status === "Proposal Sent").length,
     };
-  }, [leads, today, isConversionOfficer, myOfficerFilterName]);
+  }, [periodLeads, today, isConversionOfficer, myOfficerFilterName]);
 
   const appliedFilterCount = useMemo(() => {
     let count = 0;
@@ -386,15 +418,16 @@ export default function PipelineBoardPage() {
     if (appliedFilters.probability !== "all" && Number(appliedFilters.probability) > 0) count++;
     if (appliedFilters.donorType !== "all") count++;
     if (appliedFilters.leadSource !== "all") count++;
+    if (!samePeriod(period, defaultPeriod)) count++;
     return count;
-  }, [appliedFilters]);
+  }, [appliedFilters, period, defaultPeriod]);
 
   // Filter prospects using exact criteria as the table
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
     const f = appliedFilters;
 
-    return [...leads].sort(byFollowUpDate).filter((l) => {
+    return [...periodLeads].sort(byFollowUpDate).filter((l) => {
       if (
         q &&
         !l.prospect_name.toLowerCase().includes(q) &&
@@ -472,7 +505,15 @@ export default function PipelineBoardPage() {
 
       return true;
     });
-  }, [leads, search, appliedFilters, quickOfficer, quickDate, quickStage, today]);
+  }, [
+    periodLeads,
+    search,
+    appliedFilters,
+    quickOfficer,
+    quickDate,
+    quickStage,
+    today,
+  ]);
 
   const columns = STAGES.map((stage) => {
     const cards = visible.filter((l) => l.pipeline_status === stage);
@@ -506,6 +547,8 @@ export default function PipelineBoardPage() {
       if (dbProposals && dbProposals.length > 0) setProposalsBuilt(new Set(dbProposals));
       setAppliedFilters(DEFAULT_FILTERS);
       setDraftFilters(DEFAULT_FILTERS);
+      setAppliedPeriod(null);
+      setDraftPeriod(defaultPeriod);
       setQuickOfficer(null);
       setQuickDate(null);
       setQuickStage(null);
@@ -1072,6 +1115,7 @@ export default function PipelineBoardPage() {
                   closeFilterPopup();
                 } else {
                   setDraftFilters(appliedFilters);
+                  setDraftPeriod(period);
                   setFilterOpen(true);
                 }
               }}
@@ -1116,6 +1160,13 @@ export default function PipelineBoardPage() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-x-5 gap-y-4">
+                    {/* Year and quarter (date added) */}
+                    <PeriodFilter
+                      value={draftPeriod}
+                      years={years}
+                      onChange={setDraftPeriod}
+                    />
+
                     {/* Target Campaign */}
                     <div>
                       <label className="block text-[0.75rem] font-medium text-[#5c5757] mb-1.5">
@@ -1238,6 +1289,8 @@ export default function PipelineBoardPage() {
                       onClick={() => {
                         setDraftFilters(DEFAULT_FILTERS);
                         setAppliedFilters(DEFAULT_FILTERS);
+                        setDraftPeriod(defaultPeriod);
+                        setAppliedPeriod(null);
                         closeFilterPopup();
                       }}
                       className="text-xs font-medium text-text-secondary hover:text-text-primary cursor-pointer hover:underline"
@@ -1248,6 +1301,9 @@ export default function PipelineBoardPage() {
                       type="button"
                       onClick={() => {
                         setAppliedFilters(draftFilters);
+                        setAppliedPeriod(
+                          samePeriod(draftPeriod, defaultPeriod) ? null : draftPeriod,
+                        );
                         closeFilterPopup();
                       }}
                       className="rounded-md bg-[#6b0f0f] hover:bg-[#520b0b] px-4 py-1.5 text-xs font-semibold text-white transition-colors cursor-pointer shadow-xs"

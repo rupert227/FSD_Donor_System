@@ -136,6 +136,8 @@ function mapDbToDonorDetail(row: Record<string, any>): DonorDetail {
     cod_requested: Boolean(row.cod_requested || false),
     last_contact_date: row.last_contact_date ?? null,
     target_followup_date: row.target_followup_date ?? null,
+    created_at: row.created_at ?? undefined,
+    updated_at: row.updated_at ?? undefined,
   };
 }
 

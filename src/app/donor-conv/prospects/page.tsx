@@ -27,8 +27,22 @@ import { getNavbarPreset, moduleName } from "@/app/donor-conv/struct";
 
 import type { LeadDetail } from "@supabase/seeds/prospects-seed";
 import type { PipelineStatusEnum } from "@/types";
-import { ProspectSelectMenu, ProspectsTableSkeleton } from "./_components";
+import {
+  PeriodFilter,
+  ProspectSelectMenu,
+  ProspectsTableSkeleton,
+} from "./_components";
 import { getProspects } from "@/lib/prospects/actions";
+import {
+  ALL_PERIODS,
+  currentPeriod,
+  isAllPeriods,
+  matchesPeriod,
+  periodLabel,
+  periodYears,
+  samePeriod,
+  type Period,
+} from "@/lib/period";
 
 import { useDocumentTitle } from "@/components/Navbar";
 import { useUserRole } from "@/lib/use-user-role";
@@ -333,6 +347,13 @@ export default function ProspectsPage() {
   const [quickStage, setQuickStage] = useState<PipelineStatusEnum | null>(null);
   const [page, setPage] = useState(1);
 
+  // Year / quarter period. A null applied period follows the
+  // current quarter, so the list opens on this quarter's prospects.
+  const [appliedPeriod, setAppliedPeriod] = useState<Period | null>(null);
+  const [draftPeriod, setDraftPeriod] = useState<Period>(ALL_PERIODS);
+  const defaultPeriod = useMemo(() => currentPeriod(today), [today]);
+  const period = appliedPeriod ?? defaultPeriod;
+
   // Popup filter open state
   const [filterOpen, setFilterOpen] = useState(false);
   const [isFilterExiting, setIsFilterExiting] = useState(false);
@@ -355,12 +376,13 @@ export default function ProspectsPage() {
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
         setDraft(applied);
+        setDraftPeriod(period);
         setFilterOpen(false);
       }
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [filterOpen, applied]);
+  }, [filterOpen, applied, period]);
 
   const [leads, setLeads] = useState<LeadDetail[]>([]);
 
@@ -391,9 +413,23 @@ export default function ProspectsPage() {
     [leads],
   );
 
+  const years = useMemo(
+    () =>
+      periodYears(
+        leads.map((l) => l.created_at),
+        today,
+      ),
+    [leads, today],
+  );
+
+  const periodRows = useMemo(
+    () => allRows.filter((l) => matchesPeriod(l.created_at, period)),
+    [allRows, period],
+  );
+
   const filtered = useMemo(
     () =>
-      allRows.filter((l) =>
+      periodRows.filter((l) =>
         matchesFilters(
           l,
           applied,
@@ -404,7 +440,15 @@ export default function ProspectsPage() {
           quickStage,
         ),
       ),
-    [allRows, applied, today, search, quickOfficer, quickDate, quickStage],
+    [
+      periodRows,
+      applied,
+      today,
+      search,
+      quickOfficer,
+      quickDate,
+      quickStage,
+    ],
   );
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -414,6 +458,7 @@ export default function ProspectsPage() {
 
   function openPopup() {
     setDraft(applied); // sync draft with current applied state
+    setDraftPeriod(period);
     setIsFilterExiting(false);
     setFilterOpen(true);
   }
@@ -422,6 +467,7 @@ export default function ProspectsPage() {
     setIsFilterExiting(true);
     setTimeout(() => {
       setDraft(applied); // discard unapplied changes
+      setDraftPeriod(period);
       setFilterOpen(false);
       setIsFilterExiting(false);
     }, 160);
@@ -429,6 +475,7 @@ export default function ProspectsPage() {
 
   function applyDraft() {
     setApplied(draft);
+    setAppliedPeriod(samePeriod(draftPeriod, defaultPeriod) ? null : draftPeriod);
     setPage(1);
     setIsFilterExiting(true);
     setTimeout(() => {
@@ -445,11 +492,13 @@ export default function ProspectsPage() {
     if (applied.amountRange !== "all" && applied.amountRange !== "0") count++;
     if (applied.donorType !== "all") count++;
     if (applied.leadSource !== "all") count++;
+    if (!samePeriod(period, defaultPeriod)) count++;
     return count;
-  }, [applied]);
+  }, [applied, period, defaultPeriod]);
 
   const hasActiveFilters =
     appliedFilterCount > 0 ||
+    !isAllPeriods(period) ||
     Boolean(quickOfficer) ||
     Boolean(quickDate) ||
     Boolean(quickStage) ||
@@ -460,6 +509,8 @@ export default function ProspectsPage() {
     setTimeout(() => {
       setApplied(DEFAULT_FILTERS);
       setDraft(DEFAULT_FILTERS);
+      setAppliedPeriod(null);
+      setDraftPeriod(defaultPeriod);
       setQuickOfficer(null);
       setQuickDate(null);
       setQuickStage(null);
@@ -471,15 +522,15 @@ export default function ProspectsPage() {
 
   const chipCounts = useMemo(
     () => ({
-      all: allRows.length,
-      "due-today": allRows.filter((l) =>
+      all: periodRows.length,
+      "due-today": periodRows.filter((l) =>
         matchesFilters(l, DEFAULT_FILTERS, today, "", null, "today", null),
       ).length,
-      overdue: allRows.filter((l) =>
+      overdue: periodRows.filter((l) =>
         matchesFilters(l, DEFAULT_FILTERS, today, "", null, "overdue", null),
       ).length,
       mine: isConversionOfficer
-        ? allRows.filter((l) => {
+        ? periodRows.filter((l) => {
             const target = myOfficerFilterName.toLowerCase();
             const leadOfficer = (l.assigned_officer || "").toLowerCase();
             return (
@@ -492,7 +543,7 @@ export default function ProspectsPage() {
             );
           }).length
         : 0,
-      "proposal-sent": allRows.filter((l) =>
+      "proposal-sent": periodRows.filter((l) =>
         matchesFilters(
           l,
           DEFAULT_FILTERS,
@@ -504,7 +555,7 @@ export default function ProspectsPage() {
         ),
       ).length,
     }),
-    [allRows, today, isConversionOfficer, myOfficerFilterName],
+    [periodRows, today, isConversionOfficer, myOfficerFilterName],
   );
 
   const isAllView = !quickDate && !quickOfficer && !quickStage;
@@ -548,7 +599,9 @@ export default function ProspectsPage() {
   }
 
   const hasDraftChanges =
-    JSON.stringify(draft) !== JSON.stringify(DEFAULT_FILTERS);
+    JSON.stringify(draft) !== JSON.stringify(DEFAULT_FILTERS) ||
+    !samePeriod(draftPeriod, defaultPeriod);
+
 
   return (
     <AppShell navbarPreset={navbarPreset}>
@@ -572,7 +625,8 @@ export default function ProspectsPage() {
               </h1>
             </div>
             <p className="ml-2 self-end pb-1 text-xs text-text-secondary">
-              {filtered.length} items · Sorted by follow-up date
+              {filtered.length} items ·{" "}
+              {periodLabel(period)} · Sorted by follow-up date
             </p>
           </div>
 
@@ -840,6 +894,13 @@ export default function ProspectsPage() {
 
                     {/* Filter Fields in clean 2-column rectangular grid with ample spacing */}
                     <div className="grid grid-cols-2 gap-x-5 gap-y-4">
+                      {/* 0. Year and quarter (date added) */}
+                      <PeriodFilter
+                        value={draftPeriod}
+                        years={years}
+                        onChange={setDraftPeriod}
+                      />
+
                       {/* 1. Pipeline Status */}
                       <div>
                         <label className="block text-[0.6875rem] font-medium text-[#5c5757] mb-1.5">
@@ -961,7 +1022,10 @@ export default function ProspectsPage() {
                     <div className="mt-5 flex items-center justify-between border-t border-[#e3dfdf] pt-3">
                       <button
                         type="button"
-                        onClick={() => setDraft(DEFAULT_FILTERS)}
+                        onClick={() => {
+                          setDraft(DEFAULT_FILTERS);
+                          setDraftPeriod(defaultPeriod);
+                        }}
                         disabled={!hasDraftChanges}
                         className="text-xs font-medium text-text-secondary hover:text-text-primary disabled:opacity-40 hover:underline cursor-pointer"
                       >

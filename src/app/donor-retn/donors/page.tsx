@@ -23,8 +23,21 @@ import { cn } from "cn";
 import { AppShell } from "@/components/AppShell";
 import { getNavbarPreset, moduleName } from "@/app/donor-retn/struct";
 import { useDocumentTitle } from "@/components/Navbar";
-import { ProspectSelectMenu } from "@/app/donor-conv/prospects/_components";
+import {
+  PeriodFilter,
+  ProspectSelectMenu,
+} from "@/app/donor-conv/prospects/_components";
 import { getDonors } from "@/lib/donors/actions";
+import {
+  ALL_PERIODS,
+  currentPeriod,
+  isAllPeriods,
+  matchesPeriod,
+  periodLabel,
+  periodYears,
+  samePeriod,
+  type Period,
+} from "@/lib/period";
 import type {
   DonorTenureEnum,
   DonorTypeEnum,
@@ -155,6 +168,7 @@ interface DonorRow {
   donor_tenure: DonorTenureEnum;
   last_contact_date: string | null; // YYYY-MM-DD
   target_followup_date: string | null; // YYYY-MM-DD
+  created_at: string | null; // date added, drives the year / quarter filter
 }
 
 /* ------------------------------------------------------------------ */
@@ -408,6 +422,13 @@ export default function DonorsPage() {
 
   const [page, setPage] = useState(1);
 
+  // Year / quarter period. A null applied period follows the
+  // current quarter, so the list opens on this quarter's donors.
+  const [appliedPeriod, setAppliedPeriod] = useState<Period | null>(null);
+  const [draftPeriod, setDraftPeriod] = useState<Period>(ALL_PERIODS);
+  const defaultPeriod = useMemo(() => currentPeriod(today), [today]);
+  const period = appliedPeriod ?? defaultPeriod;
+
   // Popup filter modal open state
   const [filterOpen, setFilterOpen] = useState(false);
   const [isFilterExiting, setIsFilterExiting] = useState(false);
@@ -430,12 +451,13 @@ export default function DonorsPage() {
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
         setDraft(applied);
+        setDraftPeriod(period);
         setFilterOpen(false);
       }
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [filterOpen, applied]);
+  }, [filterOpen, applied, period]);
 
   const [donorsData, setDonorsData] = useState<DonorRow[]>([]);
 
@@ -456,6 +478,7 @@ export default function DonorsPage() {
             donor_tenure: d.donor_tenure,
             last_contact_date: d.last_contact_date,
             target_followup_date: d.target_followup_date,
+            created_at: d.created_at ?? null,
           }));
           setDonorsData(rows);
         }
@@ -473,18 +496,31 @@ export default function DonorsPage() {
     };
   }, []);
 
-  // Sorted once by follow-up date
   const allRows = useMemo(
     () => [...donorsData].sort(byFollowUpDate),
     [donorsData],
   );
 
+  const years = useMemo(
+    () =>
+      periodYears(
+        donorsData.map((d) => d.created_at),
+        today,
+      ),
+    [donorsData, today],
+  );
+
+  const periodRows = useMemo(
+    () => allRows.filter((d) => matchesPeriod(d.created_at, period)),
+    [allRows, period],
+  );
+
   const filtered = useMemo(
     () =>
-      allRows.filter((d) =>
+      periodRows.filter((d) =>
         matchesFilters(d, applied, today, search, quickPill),
       ),
-    [allRows, applied, today, search, quickPill],
+    [periodRows, applied, today, search, quickPill],
   );
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -494,6 +530,7 @@ export default function DonorsPage() {
 
   function openPopup() {
     setDraft(applied);
+    setDraftPeriod(period);
     setIsFilterExiting(false);
     setFilterOpen(true);
   }
@@ -502,6 +539,7 @@ export default function DonorsPage() {
     setIsFilterExiting(true);
     setTimeout(() => {
       setDraft(applied);
+      setDraftPeriod(period);
       setFilterOpen(false);
       setIsFilterExiting(false);
     }, 160);
@@ -509,6 +547,7 @@ export default function DonorsPage() {
 
   function applyDraft() {
     setApplied(draft);
+    setAppliedPeriod(samePeriod(draftPeriod, defaultPeriod) ? null : draftPeriod);
     setPage(1);
     setIsFilterExiting(true);
     setTimeout(() => {
@@ -526,11 +565,13 @@ export default function DonorsPage() {
     if (applied.followUp !== "all") count++;
     if (applied.lastContacted !== "all") count++;
     if (applied.tenure !== "all") count++;
+    if (!samePeriod(period, defaultPeriod)) count++;
     return count;
-  }, [applied]);
+  }, [applied, period, defaultPeriod]);
 
   const hasActiveFilters =
     appliedFilterCount > 0 ||
+    !isAllPeriods(period) ||
     quickPill !== "all" ||
     Boolean(search.trim());
 
@@ -539,6 +580,8 @@ export default function DonorsPage() {
     setTimeout(() => {
       setApplied(DEFAULT_FILTERS);
       setDraft(DEFAULT_FILTERS);
+      setAppliedPeriod(null);
+      setDraftPeriod(defaultPeriod);
       setQuickPill("all");
       setSearch("");
       setPage(1);
@@ -549,21 +592,21 @@ export default function DonorsPage() {
   // Quick preset counts (for the pills above the table)
   const chipCounts = useMemo(
     () => ({
-      all: allRows.length,
-      overdue: allRows.filter((d) =>
+      all: periodRows.length,
+      overdue: periodRows.filter((d) =>
         matchesFilters(d, DEFAULT_FILTERS, today, "", "overdue"),
       ).length,
-      uncontacted: allRows.filter((d) =>
+      uncontacted: periodRows.filter((d) =>
         matchesFilters(d, DEFAULT_FILTERS, today, "", "uncontacted"),
       ).length,
-      recommitted: allRows.filter((d) =>
+      recommitted: periodRows.filter((d) =>
         matchesFilters(d, DEFAULT_FILTERS, today, "", "recommitted"),
       ).length,
-      lapsed: allRows.filter((d) =>
+      lapsed: periodRows.filter((d) =>
         matchesFilters(d, DEFAULT_FILTERS, today, "", "lapsed"),
       ).length,
     }),
-    [allRows, today],
+    [periodRows, today],
   );
 
   function exportCsv() {
@@ -599,7 +642,9 @@ export default function DonorsPage() {
   }
 
   const hasDraftChanges =
-    JSON.stringify(draft) !== JSON.stringify(DEFAULT_FILTERS);
+    JSON.stringify(draft) !== JSON.stringify(DEFAULT_FILTERS) ||
+    !samePeriod(draftPeriod, defaultPeriod);
+
 
   return (
     <AppShell navbarPreset={navbarPreset}>
@@ -627,7 +672,8 @@ export default function DonorsPage() {
                 </h1>
               </div>
               <p className="ml-2 self-end pb-1 text-xs text-text-secondary">
-                {filtered.length} items · Sorted by follow-up date
+                {filtered.length} items ·{" "}
+                {periodLabel(period)} · Sorted by follow-up date
               </p>
             </div>
 
@@ -760,6 +806,13 @@ export default function DonorsPage() {
 
                       {/* Filter Fields in 2-column rectangular grid from Figma 08.1_Retn_Filter and Sort */}
                       <div className="grid grid-cols-2 gap-x-5 gap-y-4">
+                        {/* 0. Year and quarter (date added) */}
+                        <PeriodFilter
+                          value={draftPeriod}
+                          years={years}
+                          onChange={setDraftPeriod}
+                        />
+
                         {/* 1. Retention Status */}
                         <div>
                           <label className="block text-[0.6875rem] font-medium text-[#5c5757] mb-1.5">
@@ -849,7 +902,10 @@ export default function DonorsPage() {
                       <div className="mt-5 flex items-center justify-between border-t border-[#e3dfdf] pt-3">
                         <button
                           type="button"
-                          onClick={() => setDraft(DEFAULT_FILTERS)}
+                          onClick={() => {
+                            setDraft(DEFAULT_FILTERS);
+                            setDraftPeriod(defaultPeriod);
+                          }}
                           disabled={!hasDraftChanges}
                           className="text-xs font-medium text-text-secondary hover:text-text-primary disabled:opacity-40 hover:underline cursor-pointer"
                         >
@@ -953,7 +1009,11 @@ export default function DonorsPage() {
                         <div className="flex flex-col items-center justify-center gap-2">
                           <p className="font-medium text-text-primary">
                             {hasActiveFilters
-                              ? "No donors match your current search or filters."
+                              ? `No donors match your current search or filters${
+                                  isAllPeriods(period)
+                                    ? "."
+                                    : ` for ${periodLabel(period)}.`
+                                }`
                               : "No donor profiles found in Supabase database."}
                           </p>
                           {hasActiveFilters && (
@@ -1006,7 +1066,7 @@ export default function DonorsPage() {
                               "px-3 py-2.5 whitespace-nowrap text-center text-[0.75rem]",
                               !r.target_followup_date && "text-text-muted",
                               r.target_followup_date && "text-text-secondary",
-                              isOverdue && "font-medium text-brand-danger",
+                              isOverdue && "font-medium text-[#a33838]",
                               isDueToday && "font-medium text-amber-700",
                             )}
                           >
