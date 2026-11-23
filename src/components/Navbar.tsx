@@ -7,17 +7,13 @@ import { cn } from "cn";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { createClient } from "@/lib/supabase/client";
+import { clearUserDetails, useUserDetails } from "@/lib/user-details";
 import {
   getLiveNotifications,
   markNotificationAsRead,
   markAllNotificationsAsRead,
 } from "@/lib/prospects/actions";
-import {
-  allowedModules,
-  isUserRole,
-  type ModuleKey,
-  type UserRole,
-} from "@/lib/access";
+import { allowedModules, type ModuleKey } from "@/lib/access";
 
 import {
   ArrowRight,
@@ -140,6 +136,7 @@ const profileOptions: ListOption[] = [
     label: "Logout",
     icon: LogOut,
     action: async () => {
+      clearUserDetails();
       await createClient().auth.signOut();
       window.location.href = "/login";
     },
@@ -272,13 +269,30 @@ export function Navbar({
 
 
 
-  const [userProfile, setUserProfile] = useState<UserProfile>({
-    displayName: "Loading",
-    username: "loading",
-    description: "Signed-in user",
-    iconLabel: "..",
-  });
-  const [role, setRole] = useState<UserRole | null>(null);
+  // Cached in the browser, so the profile is ready on the first render after a refresh.
+  const { details: userDetails } = useUserDetails();
+  const role = userDetails?.role ?? null;
+  // Accounts with no officer_profiles row fall back to the part before the @.
+  const profileName = userDetails
+    ? userDetails.officerName || userDetails.email.split("@")[0]
+    : null;
+  const userProfile: UserProfile =
+    userDetails && profileName
+      ? {
+          displayName: profileName,
+          username: profileName,
+          email: userDetails.email,
+          description: userDetails.role,
+          iconLabel: initialsFrom(profileName),
+        }
+      : {
+          // Blank (not "Loading") while the details are unknown, so a refresh never
+          // flashes placeholder text. The non-breaking space keeps the layout steady.
+          displayName: " ",
+          username: "",
+          description: " ",
+          iconLabel: " ",
+        };
 
   const [notifications, setNotifications] = useState<SystemNotification[]>([]);
 
@@ -447,46 +461,6 @@ export function Navbar({
     : "No description";
 
   const iconLabel = userProfile?.iconLabel ? userProfile.iconLabel : "?";
-
-  useEffect(() => {
-    const supabase = createClient();
-    let cancelled = false;
-
-    async function loadUser() {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user || cancelled) return;
-
-      const { data: account } = await supabase
-        .from("user_accounts")
-        .select("email_address, user_role, officer_profiles(full_name)")
-        .eq("auth_user_id", userData.user.id)
-        .maybeSingle();
-
-      if (!account || cancelled || !isUserRole(account.user_role)) return;
-
-      const email: string = account.email_address;
-      // officer_profiles is one-to-one with user_accounts, but guard against an array just in case.
-      const profile = Array.isArray(account.officer_profiles)
-        ? account.officer_profiles[0]
-        : account.officer_profiles;
-      // Accounts with no officer_profiles row fall back to the part before the @.
-      const name: string = profile?.full_name?.trim() || email.split("@")[0];
-      setRole(account.user_role);
-      setUserProfile({
-        displayName: name,
-        username: name,
-        email,
-        description: account.user_role,
-        iconLabel: initialsFrom(name),
-      });
-    }
-
-    loadUser();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   useEffect(() => {
     if (!isModuleOpen) return;
