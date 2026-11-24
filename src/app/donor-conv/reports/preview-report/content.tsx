@@ -12,6 +12,7 @@ import { getNavbarPreset, moduleName } from "@/app/donor-conv/struct";
 import { useDocumentTitle } from "@/components/Navbar";
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useUserDetails } from "@/lib/user-details";
 
 import {
   generateSummaryRows,
@@ -45,8 +46,8 @@ export default function PreviewReportPageContent() {
   const report = reportContent ?? Leads.emptyReport;
 
   const yearLabel =
-    report.yearOptions?.find((option) => option.key == report.year)
-      ?.label ?? "All";
+    report.yearOptions?.find((option) => option.key == report.year)?.label ??
+    "All";
 
   const donorTypeLabel =
     report.donorTypeOptions?.find((option) => option.key == report.donorType)
@@ -59,12 +60,7 @@ export default function PreviewReportPageContent() {
 
   const summaryRows = generateSummaryRows(report);
 
-  // TODO: Replace with actual logged in profile details.
-  const userProfile = {
-    displayName: "Display Name",
-    email: "profile@gmail.com",
-    description: "Profile role and description",
-  };
+  const { details: userDetails } = useUserDetails();
 
   const backToReportsAction = () => {
     setCanReturnToReports(false);
@@ -147,9 +143,7 @@ export default function PreviewReportPageContent() {
                     <div className="flex text-[12pt]">
                       <div className="flex gap-4">
                         <div className="flex gap-2">
-                          <p className="text-brand-primary font-bold">
-                            YEAR:
-                          </p>
+                          <p className="text-brand-primary font-bold">YEAR:</p>
                           <p className="text-text-primary font-medium">
                             {yearLabel}
                           </p>
@@ -264,17 +258,17 @@ export default function PreviewReportPageContent() {
                   )}
                 </div>
                 <div className="mt-10 w-[35%]">
-                  <p className="text-brand-primary mb-2 text-[10pt] font-bold">
+                  <p className="text-brand-primary text-[10pt] font-bold">
                     PREPARED BY:
                   </p>
-                  <p className="text-text-primary text-[12pt] font-semibold">
-                    {userProfile.displayName}
+                  <p className="text-text-primary text-[12pt] font-medium">
+                    {userDetails?.officerName ?? "—"}
                   </p>
-                  <p className="text-text-muted pb-1 text-[10pt] border-text-primary border-b-[1.5px]">
-                    {userProfile.email}
+                  <p className="text-text-muted border-text-primary border-b-[1.5px] pb-1 text-[10pt]">
+                    {userDetails?.email ?? "—"}
                   </p>
                   <p className="text-text-secondary pt-1 text-[10pt]">
-                    {userProfile.description}
+                    {userDetails?.role ?? "—"}
                   </p>
                 </div>
                 <p className="text-text-secondary border-text-muted mt-8 border-t-[1.75px] pt-2 text-right text-[11pt]">
