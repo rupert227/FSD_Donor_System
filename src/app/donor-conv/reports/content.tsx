@@ -267,6 +267,7 @@ export default function ReportsPageContent() {
                 options={report.yearOptions}
                 onChange={(option) => {
                   selectedFilters.current.year = option.key;
+                  setYear(option);
                   setApplyIsEnabled(hasFilterChanges());
                 }}
               />
@@ -288,6 +289,7 @@ export default function ReportsPageContent() {
                 options={report.donorTypeOptions}
                 onChange={(option) => {
                   selectedFilters.current.donorType = option.key;
+                  setDonorType(option);
                   setApplyIsEnabled(hasFilterChanges());
                 }}
               />
@@ -310,6 +312,7 @@ export default function ReportsPageContent() {
                 width={14}
                 onChange={(option) => {
                   selectedFilters.current.targetCampaign = option.key;
+                  setTargetCampaign(option);
                   setApplyIsEnabled(hasFilterChanges());
                 }}
               />
@@ -321,7 +324,7 @@ export default function ReportsPageContent() {
                   !applyIsEnabled || isApplyingFilters || !reportIsReady
                 }
                 onClick={applyFiltersAction}
-                className="text-surface-white bg-brand-primary rounded-button disabled:opacity-button-disabled flex h-9 font-medium cursor-pointer items-center gap-1 px-3 py-2 text-[0.75rem] enabled:hover:opacity-75 disabled:cursor-not-allowed"
+                className="text-surface-white bg-brand-primary rounded-button disabled:opacity-button-disabled flex h-9 cursor-pointer items-center gap-1 px-3 py-2 text-[0.75rem] font-medium enabled:hover:opacity-75 disabled:cursor-not-allowed"
               >
                 <Check className="text-surface-white h-4 w-4 shrink-0" />
                 Apply
