@@ -91,21 +91,20 @@ export default function PreviewReportPageContent() {
               onClick={backToReportsAction}
               className="border-border-soft text-text-primary enabled:hover:bg-surface-soft-hover bg-surface-white rounded-button disabled:opacity-button-disabled flex h-9 cursor-pointer items-center gap-1 border px-3 py-2 text-[0.75rem] font-medium disabled:cursor-not-allowed"
             >
-              <ChevronLeft className="h-5 w-5" />
+              <ChevronLeft className="h-4 w-4 shrink-0" />
               Back to Reports
             </button>
             <button
               type="button"
               disabled={!reportIsReady}
               onClick={downloadPDFAction}
-              className="border-brand-primary bg-brand-primary text-surface-white rounded-button disabled:opacity-button-disabled inline-flex cursor-pointer items-center gap-2 border px-3 py-2 text-[0.75rem] font-medium enabled:hover:opacity-80 disabled:cursor-not-allowed"
+              className="text-surface-white bg-brand-primary rounded-button disabled:opacity-button-disabled flex h-9 cursor-pointer items-center gap-1 px-3 py-2 text-[0.75rem] font-medium enabled:hover:opacity-75 disabled:cursor-not-allowed"
             >
-              <Download className="h-5 w-5" />
+              <Download className="text-surface-white h-4 w-4 shrink-0" />
               Download PDF
             </button>
           </div>
         </div>
-
         {!reportIsReady ? (
           <div className="flex flex-1">
             <LoadingScreen label="Generating PDF Report" />

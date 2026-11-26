@@ -204,13 +204,7 @@ export default function ReportsPageContent() {
     selectedFilters.current.targetCampaign = undefined;
     selectedFilters.current.engagementStatus = undefined;
 
-    setApplyIsEnabled(
-      appliedFilters.current.year != selectedFilters.current.year ||
-        appliedFilters.current.targetCampaign !=
-          selectedFilters.current.targetCampaign ||
-        appliedFilters.current.engagementStatus !=
-          selectedFilters.current.engagementStatus,
-    );
+    setApplyIsEnabled(hasFilterChanges());
   };
 
   if (!pageIsReady) {
@@ -249,9 +243,9 @@ export default function ReportsPageContent() {
                   type="button"
                   disabled={!canGeneratePDF || !reportIsReady}
                   onClick={generatePDFAction}
-                  className="border-border-soft text-text-primary enabled:hover:bg-surface-soft-hover bg-surface-white rounded-button disabled:opacity-button-disabled flex h-9 cursor-pointer items-center gap-1 border px-3 py-2 text-[0.75rem] font-medium disabled:cursor-not-allowed"
+                  className="text-surface-white bg-brand-primary rounded-button disabled:opacity-button-disabled flex h-9 cursor-pointer items-center gap-1 px-3 py-2 text-[0.75rem] font-medium enabled:hover:opacity-75 disabled:cursor-not-allowed"
                 >
-                  <Eye className="h-5 w-5" />
+                  <Eye className="text-surface-white h-4 w-4 shrink-0" />
                   Generate PDF
                 </button>
               </div>
@@ -332,20 +326,19 @@ export default function ReportsPageContent() {
                   !applyIsEnabled || isApplyingFilters || !reportIsReady
                 }
                 onClick={applyFiltersAction}
-                className="border-border-soft text-text-primary enabled:hover:bg-surface-soft-hover bg-surface-white rounded-button disabled:opacity-button-disabled flex h-9 cursor-pointer items-center gap-1 border px-3 py-2 text-[0.75rem] disabled:cursor-not-allowed"
+                className="text-surface-white bg-brand-primary rounded-button disabled:opacity-button-disabled flex h-9 cursor-pointer items-center gap-1 px-3 py-2 text-[0.75rem] font-medium enabled:hover:opacity-75 disabled:cursor-not-allowed"
               >
-                <Check className="text-text-secondary h-4 w-4 shrink-0" />
+                <Check className="text-surface-white h-4 w-4 shrink-0" />
                 Apply
               </button>
               <button
                 type="button"
                 onClick={resetFiltersAction}
-                className="border-border-soft text-text-primary hover:bg-surface-soft-hover rounded-button flex h-9 cursor-pointer items-center gap-1 border px-3 py-2 text-[0.75rem]"
+                className="border-border-soft bg-surface-white text-text-primary hover:bg-surface-soft-hover rounded-button flex h-9 cursor-pointer items-center gap-1 border px-3 py-2 text-[0.75rem]"
               >
                 <RotateCcw className="text-text-secondary h-4 w-4 shrink-0" />
-                Reset Filters
+                Reset
               </button>
-
               {isApplyingFilters && (
                 <div className="flex items-center justify-center gap-1 overflow-hidden">
                   <Loader className="text-brand-primary h-4 w-4 shrink-0 animate-spin" />
