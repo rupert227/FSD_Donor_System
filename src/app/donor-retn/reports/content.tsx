@@ -268,7 +268,6 @@ export default function ReportsPageContent() {
                 options={report.yearOptions}
                 onChange={(option) => {
                   selectedFilters.current.year = option.key;
-                  setYear(option);
                   setApplyIsEnabled(hasFilterChanges());
                 }}
               />
@@ -291,7 +290,6 @@ export default function ReportsPageContent() {
                 width={14}
                 onChange={(option) => {
                   selectedFilters.current.targetCampaign = option.key;
-                  setTargetCampaign(option);
                   setApplyIsEnabled(hasFilterChanges());
                 }}
               />
@@ -314,7 +312,6 @@ export default function ReportsPageContent() {
                 width={14}
                 onChange={(option) => {
                   selectedFilters.current.engagementStatus = option.key;
-                  setEngagementStatus(option);
                   setApplyIsEnabled(hasFilterChanges());
                 }}
               />

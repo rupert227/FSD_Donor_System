@@ -270,7 +270,6 @@ export default function ReportsPageContent() {
                 options={report.baseYearOptions}
                 onChange={(option) => {
                   selectedFilters.current.baseYear = option.key;
-                  setBaseYear(option);
                   setApplyIsEnabled(hasFilterChanges());
                 }}
               />
@@ -292,7 +291,6 @@ export default function ReportsPageContent() {
                 options={report.compareYearOptions}
                 onChange={(option) => {
                   selectedFilters.current.compareYear = option.key;
-                  setCompareYear(option);
                   setApplyIsEnabled(hasFilterChanges());
                 }}
               />
@@ -315,7 +313,6 @@ export default function ReportsPageContent() {
                 width={14}
                 onChange={(option) => {
                   selectedFilters.current.sourceOfFunds = option.key;
-                  setSourceOfFunds(option);
                   setApplyIsEnabled(hasFilterChanges());
                 }}
               />
