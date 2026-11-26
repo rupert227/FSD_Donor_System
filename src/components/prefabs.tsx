@@ -144,12 +144,12 @@ export function LoadingScreen({
       role="status"
       aria-live="polite"
       className={cn(
-        "flex flex-1 flex-col items-center justify-center gap-3 overflow-hidden",
+        "flex flex-1 flex-col items-center justify-center gap-3 overflow-hidden text-[1.5rem]",
         className,
       )}
     >
       <Loader2 className="text-brand-primary h-8 w-8 shrink-0 animate-spin" />
-      <p className="text-text-primary text-[1.5rem] font-medium">{label}</p>
+      <p className="text-text-primary font-medium">{label}</p>
       <p className="sr-only">{label}</p>
     </div>
   );

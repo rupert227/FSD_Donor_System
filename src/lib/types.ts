@@ -4,10 +4,16 @@ type numArray = (number | none)[] | none;
 type stringArray = (string | none)[] | none;
 
 export namespace Primitives {
-  export interface ChartOption<K = string, L = string, V = number> {
+  export interface ChartEntry<K = string, L = string, V = number> {
     key: K | none;
     label: L | none;
     value: V | none;
+  }
+
+  export interface ChartEntryMulti<K = string, L = string, V = number> {
+    key: K | none;
+    label: L | none;
+    values: V[] | none;
   }
 
   export interface DropdownOption<K = string, V = string> {
@@ -65,6 +71,102 @@ export namespace Care {
     compareYearOptions: undefined,
     sourceOfFundsOptions: undefined,
     donationVariance: undefined,
+  };
+}
+
+export namespace Dashboard {
+  export interface UnitTarget {
+    label?: string | none;
+    value?: number | none;
+    total?: number | none;
+  }
+
+  export interface Report {
+    timestamp?: string | none;
+    year?: string | none;
+    targetCampaign?: string | none;
+    engagementStatus?: string | none;
+    yearOptions?: Primitives.DropdownOption[] | none;
+    targetCampaignOptions?: Primitives.DropdownOption[] | none;
+    engagementStatusOptions?: Primitives.DropdownOption[] | none;
+    unitTargets?: {
+      donorConversion?: UnitTarget[] | null;
+      donorRetention?: UnitTarget[] | null;
+      donorCare?: UnitTarget[] | null;
+    } | null;
+    report?: {
+      totalCollectedRevenue?: number | none;
+      totalActiveDonors?: number | none;
+      totalActiveProspects?: number | none;
+      totalOutstandingPledges?: number | none;
+      revenueCollectedVSTargeted?:
+        Primitives.ChartEntryMulti[] | null | undefined;
+      donorConversion?: {
+        newProposalsDrafted?: numArray;
+        leadsConverted?: numArray;
+      };
+      donorRetention?: {
+        renewalsContacted?: numArray;
+        dormantDonorsReactivated?: numArray;
+      };
+      donorCare?: {
+        bankDepositsVerified?: numArray;
+        receiptsDispatched?: numArray;
+      };
+    };
+  }
+
+  export const emptyReport: Report = {
+    timestamp: undefined,
+    year: undefined,
+    targetCampaign: undefined,
+    engagementStatus: undefined,
+    yearOptions: undefined,
+    targetCampaignOptions: undefined,
+    engagementStatusOptions: undefined,
+    unitTargets: undefined,
+    report: undefined,
+  };
+
+  export interface ReportFilters {
+    year?: string | none;
+    targetCampaign?: string | none;
+    engagementStatus?: string | none;
+  }
+
+  export interface RevenueReceipt {
+    name?: string | none;
+    timestamp?: string | none;
+    amount?: numArray;
+  }
+
+  export interface RevenueReceipts {
+    timestamp?: string | none;
+    page?: number | none;
+    nameOrder?: string | none;
+    priceOrder?: string | none;
+    dateOrder?: string | none;
+    status?: string | none;
+    totalEntries?: number | none;
+    receipts?: RevenueReceipt[] | none;
+  }
+
+  export interface RevenueReceiptsFilters {
+    nameOrder?: string | none;
+    priceOrder?: string | none;
+    dateOrder?: string | none;
+    status?: string | none;
+  }
+
+  export const emptyRevenueReceipts: RevenueReceipts = {
+    timestamp: undefined,
+    page: undefined,
+    nameOrder: undefined,
+    priceOrder: undefined,
+    dateOrder: undefined,
+    status: undefined,
+    totalEntries: undefined,
+    receipts: undefined,
   };
 }
 

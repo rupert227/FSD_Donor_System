@@ -3,6 +3,8 @@
 @import "tw-animate-css";
 
 @theme inline {
+  --color-bar-negative: var(--bar-negative);
+  --color-bar-positive: var(--bar-positive);
   --color-border-soft: var(--border-soft);
   --color-border-strong: var(--border-strong);
   --color-border-warning: var(--border-warning);
@@ -258,6 +260,8 @@
   --accent-foreground: oklch(0.205 0 0);
   --accent: oklch(0.97 0 0);
   --background: oklch(1 0 0);
+  --bar-positive: #4ade80;
+  --bar-negative: #dc2626;
   --border-soft: #e3dfdf;
   --border-strong: #d1d5db;
   --border-warning: #fde68a;
@@ -266,7 +270,7 @@
   --brand-50: #fce8e6;
   --brand-danger: #fa4454;
   --brand-primary: #6b0f0f;
-  --button-disabled: 75%;
+  --button-disabled: 50%;
   --button-radius: 5px;
   --button-stroke: #8a8484;
   --card-foreground: oklch(0.145 0 0);
