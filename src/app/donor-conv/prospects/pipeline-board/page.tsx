@@ -150,23 +150,23 @@ function stageLabel(s: PipelineStatusEnum) {
 const STAGE_STYLES: Record<PipelineStatusEnum, { badge: string; dropGlow: string }> = {
   "New Lead": {
     badge: "bg-slate-100 text-slate-600 border border-slate-200",
-    dropGlow: "bg-slate-50/80 ring-2 ring-slate-300 border-slate-300",
+    dropGlow: "bg-slate-50/80",
   },
   "Under Research": {
     badge: "bg-stone-100 text-stone-600 border border-stone-200",
-    dropGlow: "bg-stone-50/80 ring-2 ring-stone-300 border-stone-300",
+    dropGlow: "bg-stone-50/80",
   },
   "Outreach Started": {
     badge: "bg-sky-50/70 text-[#2c5270] border border-[#cbdce9]",
-    dropGlow: "bg-sky-50/60 ring-2 ring-[#a4c6e2] border-[#a4c6e2]",
+    dropGlow: "bg-sky-50/60",
   },
   "Proposal Sent": {
     badge: "bg-amber-50/60 text-[#7a5e2c] border border-[#e8ddcb]",
-    dropGlow: "bg-amber-50/50 ring-2 ring-[#d8c3a5] border-[#d8c3a5]",
+    dropGlow: "bg-amber-50/50",
   },
   "Secured Donor": {
     badge: "bg-emerald-50/60 text-[#2d5f42] border border-[#d0e3d6]",
-    dropGlow: "bg-emerald-50/60 ring-2 ring-[#a6ceb3] border-[#a6ceb3]",
+    dropGlow: "bg-emerald-50/60",
   },
 };
 
@@ -208,6 +208,24 @@ function byFollowUpDate(a: LeadDetail, b: LeadDetail) {
 function csvCell(v: string | number | null) {
   const s = v === null ? "" : String(v);
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+const BASE_COLUMN_CLASSES = ["bg-surface-soft/80", "hover:bg-surface-soft"];
+
+// Highlights the column a card is being dragged over by toggling classes on the
+// column element directly. Going through React state re-rendered every card on
+// each column change, which made fast drags across the columns stutter.
+function setColumnOver(el: HTMLElement | null, stage: PipelineStatusEnum, over: boolean) {
+  if (!el) return;
+  const glow = STAGE_STYLES[stage].dropGlow.split(" ");
+  el.dataset.over = over ? "true" : "false";
+  if (over) {
+    el.classList.remove(...BASE_COLUMN_CLASSES);
+    el.classList.add(...glow);
+  } else {
+    el.classList.remove(...glow);
+    el.classList.add(...BASE_COLUMN_CLASSES);
+  }
 }
 
 interface ColumnBound {
@@ -309,11 +327,7 @@ export default function PipelineBoardPage() {
   }, []);
   const [activeLead, setActiveLead] = useState<LeadDetail | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [pointerPos, setPointerPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
-  const [dragOffset, setDragOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [dragWidth, setDragWidth] = useState<number>(220);
-  const [swayTilt, setSwayTilt] = useState<number>(0);
-  const [dragOverStage, setDragOverStage] = useState<PipelineStatusEnum | null>(null);
 
   const activeLeadRef = useRef<LeadDetail | null>(null);
   const isDraggingRef = useRef<boolean>(false);
@@ -321,6 +335,46 @@ export default function PipelineBoardPage() {
   const startCoordRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const lastMouseXRef = useRef<number>(0);
   const swayDecayTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // The floating card follows the pointer by writing straight to the DOM (one write
+  // per animation frame). Keeping the pointer position and tilt out of React state
+  // means a drag no longer re-renders the whole board, the navbar and every card on
+  // each pointer move, which is what dropped the frame rate.
+  const pointerRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const dragOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const floatRef = useRef<HTMLDivElement | null>(null);
+  const tiltRef = useRef<HTMLDivElement | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const highlightedStageRef = useRef<PipelineStatusEnum | null>(null);
+
+  const highlightColumn = useCallback((stage: PipelineStatusEnum | null) => {
+    const prev = highlightedStageRef.current;
+    if (prev === stage) return;
+    if (prev) setColumnOver(columnRefs.current[prev], prev, false);
+    if (stage) setColumnOver(columnRefs.current[stage], stage, true);
+    highlightedStageRef.current = stage;
+  }, []);
+
+  const applyFloatPosition = useCallback(() => {
+    const el = floatRef.current;
+    if (!el) return;
+    const x = pointerRef.current.x - dragOffsetRef.current.x;
+    const y = pointerRef.current.y - dragOffsetRef.current.y;
+    el.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+  }, []);
+
+  const applyTilt = useCallback((deg: number) => {
+    const el = tiltRef.current;
+    if (el) el.style.transform = `rotate(${deg}deg) scale(1.03)`;
+  }, []);
+
+  const setFloatRef = useCallback(
+    (el: HTMLDivElement | null) => {
+      floatRef.current = el;
+      if (el) applyFloatPosition();
+    },
+    [applyFloatPosition],
+  );
   const columnRefs = useRef<Record<string, HTMLElement | null>>({});
   const colBoundsRef = useRef<ColumnBound[]>([]);
 
@@ -658,17 +712,23 @@ export default function PipelineBoardPage() {
       }
 
       if (isDraggingRef.current) {
-        setPointerPos({ x: e.clientX, y: e.clientY });
+        pointerRef.current = { x: e.clientX, y: e.clientY };
+        if (rafRef.current === null) {
+          rafRef.current = requestAnimationFrame(() => {
+            rafRef.current = null;
+            applyFloatPosition();
+          });
+        }
 
         const dx = e.clientX - lastMouseXRef.current;
         if (Math.abs(dx) > 1) {
           const computedTilt = Math.max(-10, Math.min(10, -dx * 1.05));
-          setSwayTilt(computedTilt);
+          applyTilt(computedTilt);
           lastMouseXRef.current = e.clientX;
 
           if (swayDecayTimerRef.current) clearTimeout(swayDecayTimerRef.current);
           swayDecayTimerRef.current = setTimeout(() => {
-            setSwayTilt(0);
+            applyTilt(0);
           }, 110);
         }
 
@@ -684,8 +744,10 @@ export default function PipelineBoardPage() {
             break;
           }
         }
-        dragOverStageRef.current = found;
-        setDragOverStage(found);
+        if (dragOverStageRef.current !== found) {
+          dragOverStageRef.current = found;
+          highlightColumn(found);
+        }
       }
     }
 
@@ -707,9 +769,12 @@ export default function PipelineBoardPage() {
       dragOverStageRef.current = null;
       setActiveLead(null);
       setIsDragging(false);
-      setDragOverStage(null);
-      setSwayTilt(0);
+      highlightColumn(null);
       if (swayDecayTimerRef.current) clearTimeout(swayDecayTimerRef.current);
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
     }
 
     window.addEventListener("pointermove", handleWindowPointerMove);
@@ -721,7 +786,7 @@ export default function PipelineBoardPage() {
       window.removeEventListener("pointerup", handleWindowPointerUp);
       window.removeEventListener("pointercancel", handleWindowPointerUp);
     };
-  }, [activeLead, canWrite, executeDrop, router]);
+  }, [activeLead, canWrite, executeDrop, router, applyFloatPosition, applyTilt, highlightColumn]);
 
   function handleCardPointerDown(e: React.PointerEvent<HTMLDivElement>, lead: LeadDetail) {
     if (e.button !== 0) return;
@@ -751,15 +816,14 @@ export default function PipelineBoardPage() {
     isDraggingRef.current = false;
     dragOverStageRef.current = null;
 
-    setDragOffset({
+    dragOffsetRef.current = {
       x: e.clientX - rect.left,
       y: e.clientY - rect.top,
-    });
+    };
+    pointerRef.current = { x: e.clientX, y: e.clientY };
     setDragWidth(rect.width);
-    setPointerPos({ x: e.clientX, y: e.clientY });
     setActiveLead(lead);
     setIsDragging(false);
-    setSwayTilt(0);
   }
 
   function exportCsv() {
@@ -1339,7 +1403,6 @@ export default function PipelineBoardPage() {
         <div className="grid grid-cols-5 items-start gap-2.5 w-full min-w-0">
           {columns.map(({ stage, cards, total }) => {
             const style = STAGE_STYLES[stage];
-            const isDragOver = dragOverStage === stage && isDragging;
 
             return (
               <section
@@ -1348,12 +1411,8 @@ export default function PipelineBoardPage() {
                   columnRefs.current[stage] = el;
                 }}
                 aria-label={stageLabel(stage)}
-                className={cn(
-                  "flex flex-col rounded-[8px] p-2 transition-colors duration-150 w-full min-w-0",
-                  isDragOver
-                    ? style.dropGlow
-                    : "bg-surface-soft/80 hover:bg-surface-soft",
-                )}
+                data-over="false"
+                className="group/col flex flex-col rounded-[8px] p-2 transition-colors duration-150 w-full min-w-0 bg-surface-soft/80 hover:bg-surface-soft"
               >
                 {/* Column Header */}
                 <header className="mb-2 flex items-center justify-between gap-1 px-0.5 min-w-0">
@@ -1375,16 +1434,12 @@ export default function PipelineBoardPage() {
                 {/* Column Scrollable Body: dynamically fits exactly 4 cards on laptop (384px), 5 on monitor (482px) */}
                 <div className="space-y-2 kanban-cards-container overflow-y-auto pr-0.5 kanban-scroll-stable">
                   {cards.length === 0 && (
-                    <div
-                      className={cn(
-                        "flex h-24 flex-col items-center justify-center rounded-[6px] border border-dashed p-2 text-center transition-colors",
-                        isDragOver
-                          ? "border-[#6b0f0f]/40 bg-white/70"
-                          : "border-border-strong/50 text-text-muted",
-                      )}
-                    >
-                      <p className="text-[0.6875rem] font-medium">
-                        {isDragOver ? "Drop card here" : "No prospects"}
+                    <div className="flex h-24 flex-col items-center justify-center rounded-[6px] border border-dashed border-border-strong/50 p-2 text-center text-text-muted transition-colors group-data-[over=true]/col:bg-white/70 group-data-[over=true]/col:text-text-primary">
+                      <p className="text-[0.6875rem] font-medium group-data-[over=true]/col:hidden">
+                        No prospects
+                      </p>
+                      <p className="hidden text-[0.6875rem] font-medium group-data-[over=true]/col:block">
+                        Drop card here
                       </p>
                     </div>
                   )}
@@ -1406,6 +1461,10 @@ export default function PipelineBoardPage() {
                         className={cn(
                           "group relative block rounded-[6px] border bg-white p-2 shadow-xs transition-all select-none min-w-0 h-[90px] flex flex-col justify-between shrink-0",
                           canWrite ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
+                          // Pointer moves are handled on the window, so cards need no hover
+                          // styles (and no style recalculation) during a drag. The column
+                          // under them still receives the mouse wheel.
+                          isDragging && "pointer-events-none",
                           isHeld
                             ? "border-dashed border-gray-300 bg-gray-50/70 opacity-30 shadow-none pointer-events-none"
                             : "border-border-soft hover:border-border-strong hover:shadow-xs",
@@ -1483,16 +1542,19 @@ export default function PipelineBoardPage() {
         {/* FLOATING CARD AT POINTER POSITION */}
         {activeLead && isDragging && (
           <div
-            className="fixed pointer-events-none z-50 select-none rounded-[6px] border border-border-strong bg-white p-2.5 shadow-2xl"
+            ref={setFloatRef}
+            className="fixed left-0 top-0 pointer-events-none z-50 select-none"
+            style={{ width: dragWidth, willChange: "transform" }}
+          >
+          <div
+            ref={tiltRef}
+            className="rounded-[6px] border border-border-strong bg-white p-2.5 shadow-2xl"
             style={{
-              left: pointerPos.x - dragOffset.x,
-              top: pointerPos.y - dragOffset.y,
-              width: dragWidth,
               transformOrigin: "50% 0%",
-              transform: `rotate(${swayTilt}deg) scale(1.03)`,
+              transform: "rotate(0deg) scale(1.03)",
               transition: "transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1)",
               boxShadow: "0 18px 32px -4px rgba(0, 0, 0, 0.22), 0 8px 16px -4px rgba(0, 0, 0, 0.12)",
-              willChange: "transform, left, top",
+              willChange: "transform",
             }}
           >
             <div className="flex items-start justify-between gap-1.5">
@@ -1538,6 +1600,7 @@ export default function PipelineBoardPage() {
                 {initials(activeLead.assigned_officer)}
               </span>
             </div>
+          </div>
           </div>
         )}
 
