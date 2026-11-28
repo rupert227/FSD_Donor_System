@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient as createServerSupabase } from "@/lib/supabase/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { isPendingReceiptNo } from "@/lib/transactions/constants";
 import type {
   DonorTenureEnum,
   DonorTypeEnum,
@@ -401,7 +402,10 @@ export async function getDonorRenewals(
     if (!error && data && data.length > 0) {
       return data.map((t: any) => ({
         id: Number(t.id),
-        officialReceiptNo: t.official_receipt_no || `OR-${t.id}`,
+        // Blank until Treasury issues the real number (never a made-up one)
+        officialReceiptNo: isPendingReceiptNo(t.official_receipt_no)
+          ? ""
+          : (t.official_receipt_no ?? ""),
         campaignName: t.campaign_name || "General Fund",
         amountPledged: Number(t.amount_pledge) || 0,
         amountCollected: Number(t.amount_collected) || 0,
