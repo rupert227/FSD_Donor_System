@@ -740,15 +740,15 @@ export default function ReportsPageContent() {
                       />
                     </div>
                   ) : (
-                    <div className="scrollbar-primary flex h-full flex-1 flex-col overflow-auto p-4">
+                    <div className="scrollbar-primary flex h-full flex-1 flex-col overflow-x-hidden overflow-y-auto p-4">
                       <div className="flex min-w-full flex-col gap-2">
                         {revenueReceipts.receipts?.map((receipt) => (
                           <div
                             key={receipt.name}
-                            className="border-border-soft/50 bg-text-secondary/5 flex w-max min-w-full items-center gap-8 rounded-[8px] border px-4 py-2 break-normal shadow-sm"
+                            className="border-border-soft/50 bg-text-secondary/5 flex min-w-full items-center gap-6 rounded-[8px] border px-4 py-2 shadow-sm"
                           >
-                            <div className="flex flex-col">
-                              <p className="text-[1.0rem] font-medium">
+                            <div className="flex w-[100%] flex-col">
+                              <p className="text-[0.9rem] font-medium">
                                 {receipt.name}
                               </p>
                               <p className="text-text-secondary text-[0.8rem]">
@@ -757,7 +757,7 @@ export default function ReportsPageContent() {
                             </div>
                             <div className="ml-auto flex w-full flex-col gap-1">
                               <div className="text-text-primary flex">
-                                <div className="ml-auto flex gap-1 text-[0.8rem] text-nowrap">
+                                <div className="ml-auto flex gap-1 text-[0.8rem]">
                                   <p>
                                     {formatCurrency(
                                       receipt.amount?.[0],
