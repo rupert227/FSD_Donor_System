@@ -73,13 +73,12 @@ export type SourceOfFundsEnum =
 export type PaymentMethodEnum =
   | 'Bank Transfer'
   | 'Check Payment'
-  | 'Direct Deposit'
   | 'Cash'
 
 export type TreasuryClearanceStatusEnum =
   | 'Receipt Verification'
   | 'Certificate Creation'
-  | 'Dispatch Prepared'
+  | 'Dispatch Preparation'
   | 'Transaction Finalized'
 
 export type DeliveryPreferenceEnum =

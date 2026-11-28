@@ -99,7 +99,6 @@ DO $$ BEGIN
   CREATE TYPE payment_method_enum AS ENUM (
     'Bank Transfer',
     'Check Payment',
-    'Direct Deposit',
     'Cash'
   );
 EXCEPTION WHEN duplicate_object THEN null;
@@ -110,7 +109,7 @@ DO $$ BEGIN
   CREATE TYPE treasury_clearance_status_enum AS ENUM (
     'Receipt Verification',
     'Certificate Creation',
-    'Dispatch Prepared',
+    'Dispatch Preparation',
     'Transaction Finalized'
   );
 EXCEPTION WHEN duplicate_object THEN null;

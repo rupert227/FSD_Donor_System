@@ -143,7 +143,7 @@ Maintains cash remittance ledgers, deposit records, and receipt clearance status
   Calendar date of bank deposit or transfer.
 - **`payment_method`** (`ENUM`, `NOT NULL`)  
   Financial channel used for cash transfer.  
-  *Permitted values: `Bank Transfer`, `Check Payment`, `Direct Deposit`, `Cash`*
+  *Permitted values: `Bank Transfer`, `Check Payment`, `Cash`*
 - **`deposit_bank`** (`VARCHAR(100)`, `NOT NULL`)  
   Depository bank institution.
 - **`bank_reference_no`** (`VARCHAR(100)`, `NOT NULL`)  
@@ -159,7 +159,7 @@ Maintains cash remittance ledgers, deposit records, and receipt clearance status
   *Permitted values:*
   - *`Receipt Verification`*
   - *`Certificate Creation`*
-  - *`Dispatch Prepared`*
+  - *`Dispatch Preparation`*
   - *`Transaction Finalized`*
 - **`deposit_clearance_date`** (`DATE`, `NULLABLE`)  
   Date Treasury verified the cash deposit.
