@@ -104,9 +104,9 @@ export function generateSummaryRows(report: Care.Report): SummaryRow[] {
     {
       type: "row",
       valType: ["currency", "currency", "netCurrency", "percent"],
-      label: "Youth Service Leadership",
+      label: "Youth Servant Leadership",
       values:
-        report.donationVariance?.campaignAllocations?.youthServiceLeadership,
+        report.donationVariance?.campaignAllocations?.youthServantLeadership,
     },
     {
       type: "row",

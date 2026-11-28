@@ -41,7 +41,7 @@ export namespace Care {
       };
       campaignAllocations?: {
         healthAndDisasterRelief?: numArray;
-        youthServiceLeadership?: numArray;
+        youthServantLeadership?: numArray;
         inKindSocialEnterprise?: numArray;
         instituteForStewardship?: numArray;
         atRiskRestorativeJustice?: numArray;

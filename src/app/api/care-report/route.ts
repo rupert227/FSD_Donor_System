@@ -19,7 +19,7 @@ const mockReport: Care.Report = {
     },
     campaignAllocations: {
       healthAndDisasterRelief: [0, 0, 0, 0],
-      youthServiceLeadership: [0, 0, 0, 0],
+      youthServantLeadership: [0, 0, 0, 0],
       inKindSocialEnterprise: [0, 0, 0, 0],
       instituteForStewardship: [0, 0, 0, 0],
       atRiskRestorativeJustice: [0, 0, 0, 0],
