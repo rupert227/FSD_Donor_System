@@ -331,7 +331,7 @@ function AddProspectForm() {
 
                 <div className="min-w-0">
                   <label className="block text-[0.65625rem] font-medium text-[#5c5757] mb-0.5">
-                    Mobile / Landline Number <span className="text-[#b42318]">*</span>
+                    Mobile / Phone Number <span className="text-[#b42318]">*</span>
                   </label>
                   <input
                     type="tel"
@@ -439,7 +439,7 @@ function AddProspectForm() {
 
                 <div className="min-w-0">
                   <label className="block text-[0.65625rem] font-medium text-[#5c5757] mb-0.5">
-                    Assigned Officer <span className="text-[#b42318]">*</span>
+                    c/o (Specialist) <span className="text-[#b42318]">*</span>
                   </label>
                   <ProspectSelectMenu
                     value={formData.assignedOfficer}

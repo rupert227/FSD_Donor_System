@@ -102,6 +102,8 @@ export function ProspectSelectMenu({
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape" && isOpen) {
+        // Tells modal Escape handlers this press was used to close the menu
+        event.preventDefault();
         setIsOpen(false);
         setSearchQuery("");
       }

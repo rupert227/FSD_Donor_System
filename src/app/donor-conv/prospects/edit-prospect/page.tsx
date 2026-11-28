@@ -28,6 +28,11 @@ import {
   type ProposalRecord,
 } from "@/lib/prospects/actions";
 import { showToast, setPendingToast } from "@/lib/toast";
+import {
+  OUTREACH_HEADER_MAX,
+  encodeOutreachNotes,
+  parseOutreachNotes,
+} from "@/lib/outreach-notes";
 
 const pageName = "Edit Prospect";
 
@@ -246,6 +251,7 @@ function EditProspectForm() {
       setIsSecuredNoticeExiting(false);
     }, 180);
   }, []);
+  const [modalHeader, setModalHeader] = useState("");
   const [modalCallNotes, setModalCallNotes] = useState("");
   const [modalFollowupDate, setModalFollowupDate] = useState("");
   const [modalStage, setModalStage] = useState<PipelineStatusEnum>("Outreach Started");
@@ -262,6 +268,27 @@ function EditProspectForm() {
       setIsActivityDetailExiting(false);
     }, 180);
   }, []);
+
+  // Escape closes the open modal. A dropdown inside the modal that handles
+  // Escape itself calls preventDefault, so the first press only closes that.
+  useEffect(() => {
+    if (!isTrackCallOpen && !selectedActivity && !isSecuredNoticeModalOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || e.defaultPrevented) return;
+      if (selectedActivity) closeActivityDetailModal();
+      else if (isSecuredNoticeModalOpen) closeSecuredNoticeModal();
+      else closeOutreachModal();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [
+    isTrackCallOpen,
+    selectedActivity,
+    isSecuredNoticeModalOpen,
+    closeOutreachModal,
+    closeActivityDetailModal,
+    closeSecuredNoticeModal,
+  ]);
 
   // Dynamic probability calculation using deterministic formula
   const prospectScore = calculateProspectProbability({
@@ -586,7 +613,8 @@ function EditProspectForm() {
 
   const handleTrackCallSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!modalCallNotes.trim()) return;
+    if (!modalHeader.trim() || !modalCallNotes.trim()) return;
+    const storedNotes = encodeOutreachNotes(modalHeader, modalCallNotes);
 
     const now = new Date();
     const formattedDateTime = now.toLocaleDateString("en-US", {
@@ -608,7 +636,7 @@ function EditProspectForm() {
       dateTime: formattedDateTime,
       status: modalStage,
       followupDate: modalFollowupDate || undefined,
-      notes: modalCallNotes.trim(),
+      notes: storedNotes,
       authorOfficer: currentAuthor,
     };
 
@@ -632,7 +660,7 @@ function EditProspectForm() {
       await recordOutreachActivity(prospectId, {
         status: modalStage,
         followupDate: modalFollowupDate || undefined,
-        notes: modalCallNotes.trim(),
+        notes: storedNotes,
         probabilityTier: calculateProspectProbability({
           ...formData,
           pipelineStatus: modalStage,
@@ -642,6 +670,7 @@ function EditProspectForm() {
       console.error("Error recording outreach in DB:", err);
     }
 
+    setModalHeader("");
     setModalCallNotes("");
     closeOutreachModal();
     showToast({
@@ -959,7 +988,7 @@ function EditProspectForm() {
 
               <div>
                 <label className="block text-[0.65625rem] font-medium text-[#5c5757] mb-0.5">
-                  Mobile / Landline Number
+                  Mobile / Phone Number
                 </label>
                 <input
                   type="tel"
@@ -1074,7 +1103,7 @@ function EditProspectForm() {
 
               <div>
                 <label className="block text-[0.65625rem] font-medium text-[#5c5757] mb-0.5">
-                  Assigned Officer
+                  c/o (Specialist)
                 </label>
                 {canReassignOwner ? (
                   <ProspectSelectMenu
@@ -1374,7 +1403,7 @@ function EditProspectForm() {
             <div className="flex items-center justify-between border-b border-[#e3dfdf] px-6 py-3.5 bg-white">
               <div>
                 <h3 className="text-[0.8125rem] font-semibold text-[#1c1a1a]">
-                  Record Outreach — {formData.prospectName}
+                  Record Outreach
                 </h3>
                 <p className="text-[0.625rem] text-[#5c5757]">
                   Enter outreach notes, update status, and set next follow-up date
@@ -1428,7 +1457,24 @@ function EditProspectForm() {
 
                 <div>
                   <label className="block text-[0.6875rem] font-medium text-[#1c1a1a] mb-1">
-                    Notes & Action Plan
+                    Header <span className="text-[#b42318]">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={modalHeader}
+                    maxLength={OUTREACH_HEADER_MAX}
+                    onChange={(e) => setModalHeader(e.target.value)}
+                    placeholder="Short summary, e.g. Sent proposal"
+                    className="w-full h-[30px] px-2.5 text-[0.6875rem] font-medium rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] hover:border-[#8a8484] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition"
+                  />
+                  <div className="mt-0.5 text-right text-[0.625rem] text-[#5c5757]">
+                    {modalHeader.length} / {OUTREACH_HEADER_MAX}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[0.6875rem] font-medium text-[#1c1a1a] mb-1">
+                    Notes & Action Plan <span className="text-[#b42318]">*</span>
                   </label>
                   <textarea
                     rows={4}
@@ -1450,7 +1496,7 @@ function EditProspectForm() {
                   <button
                     type="button"
                     onClick={handleTrackCallSubmit}
-                    disabled={!modalCallNotes.trim()}
+                    disabled={!modalHeader.trim() || !modalCallNotes.trim()}
                     className="h-[28px] px-4 text-[0.65625rem] font-medium text-white bg-[#6b0f0f] hover:bg-[#520b0b] disabled:bg-gray-300 disabled:cursor-not-allowed rounded-md transition shadow-xs cursor-pointer"
                   >
                     Save Outreach
@@ -1475,7 +1521,7 @@ function EditProspectForm() {
         >
           <div
             className={cn(
-              "w-full max-w-[620px] bg-white rounded-lg shadow-2xl border border-[#e3dfdf] flex flex-col overflow-visible",
+              "w-full max-w-[800px] bg-white rounded-lg shadow-2xl border border-[#e3dfdf] flex flex-col overflow-visible",
               isActivityDetailExiting ? "modal-content-out" : "modal-content-in",
             )}
             style={{ fontFamily: "var(--font-poppins), sans-serif" }}
@@ -1550,12 +1596,23 @@ function EditProspectForm() {
                 </div>
               </div>
 
+              {parseOutreachNotes(selectedActivity.notes).header && (
+                <div>
+                  <label className="block text-[0.6875rem] font-semibold text-[#1c1a1a] mb-1.5">
+                    Header
+                  </label>
+                  <div className="w-full px-3.5 py-2 text-[0.6875rem] font-medium rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a]">
+                    {parseOutreachNotes(selectedActivity.notes).header}
+                  </div>
+                </div>
+              )}
+
               <div>
                 <label className="block text-[0.6875rem] font-semibold text-[#1c1a1a] mb-1.5">
                   Full Notes & Action Plan
                 </label>
                 <div className="w-full min-h-[90px] max-h-[260px] overflow-y-auto p-3.5 text-[0.6875rem] font-normal leading-relaxed rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] whitespace-pre-wrap">
-                  {selectedActivity.notes?.trim() || "No notes recorded for this activity."}
+                  {parseOutreachNotes(selectedActivity.notes).body || "No notes recorded for this activity."}
                 </div>
               </div>
 

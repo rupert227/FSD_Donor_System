@@ -24,6 +24,11 @@ import {
   type DonorOutreachItem,
 } from "@/lib/donors/actions";
 import { showToast, setPendingToast } from "@/lib/toast";
+import {
+  OUTREACH_HEADER_MAX,
+  encodeOutreachNotes,
+  parseOutreachNotes,
+} from "@/lib/outreach-notes";
 import type {
   DonorTenureEnum,
   EngagementStatusEnum,
@@ -199,6 +204,7 @@ function EditDonorForm() {
   const [isOutreachModalExiting, setIsOutreachModalExiting] = useState(false);
   const [modalStatus, setModalStatus] = useState<EngagementStatusEnum>("Followed-up");
   const [modalFollowupDate, setModalFollowupDate] = useState("");
+  const [modalHeader, setModalHeader] = useState("");
   const [modalNotes, setModalNotes] = useState("");
   const [isSavingOutreach, setIsSavingOutreach] = useState(false);
 
@@ -221,6 +227,19 @@ function EditDonorForm() {
       setIsActivityDetailExiting(false);
     }, 160);
   }, []);
+
+  // Escape closes the open modal. A dropdown inside the modal that handles
+  // Escape itself calls preventDefault, so the first press only closes that.
+  useEffect(() => {
+    if (!isTrackOutreachOpen && !selectedActivity) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || e.defaultPrevented) return;
+      if (selectedActivity) closeActivityDetailModal();
+      else closeOutreachModal();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isTrackOutreachOpen, selectedActivity, closeOutreachModal, closeActivityDetailModal]);
 
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -375,10 +394,11 @@ function EditDonorForm() {
         officerName ||
         formData.assignedOfficer;
 
+      const storedNotes = encodeOutreachNotes(modalHeader, modalNotes);
       const res = await recordDonorOutreach(donorId, {
         status: modalStatus,
         followupDate: modalFollowupDate || undefined,
-        notes: modalNotes,
+        notes: storedNotes,
         authorOfficer: effectiveAuthor,
       });
 
@@ -394,7 +414,7 @@ function EditDonorForm() {
           }),
           status: modalStatus,
           followupDate: modalFollowupDate,
-          notes: modalNotes,
+          notes: storedNotes,
           authorOfficer: effectiveAuthor,
         };
 
@@ -411,6 +431,8 @@ function EditDonorForm() {
           message: "Stewardship touchpoint recorded successfully.",
           type: "success",
         });
+        setModalHeader("");
+        setModalNotes("");
 
         closeOutreachModal();
       } else {
@@ -912,7 +934,7 @@ function EditDonorForm() {
 
                     <div className="min-w-0">
                       <label className="block text-[0.65625rem] font-medium text-[#5c5757] mb-0.5">
-                        Assigned Officer <span className="text-[#b42318]">*</span>
+                        c/o (Specialist) <span className="text-[#b42318]">*</span>
                       </label>
                       <ProspectSelectMenu
                         value={formData.assignedOfficer}
@@ -1026,7 +1048,9 @@ function EditDonorForm() {
                       {renewalsList.map((r) => (
                         <tr key={r.id} className="hover:bg-[#fafafa]">
                           <td className="px-3 py-2.5 font-medium text-[#1c1a1a]">
-                            {r.officialReceiptNo}
+                            {r.officialReceiptNo || (
+                              <span className="font-normal text-[#8a8585]">Not issued yet</span>
+                            )}
                           </td>
                           <td className="px-3 py-2.5 text-[#5c5757]">
                             {r.campaignName}
@@ -1135,7 +1159,7 @@ function EditDonorForm() {
                               </span>
                             </td>
                             <td className="px-3.5 py-2 text-left pl-6 sm:pl-8 text-[#5c5757] whitespace-nowrap text-[0.65625rem] truncate">
-                              {record.notes?.trim() || "-"}
+                              {parseOutreachNotes(record.notes).header || "-"}
                             </td>
                           </tr>
                         );
@@ -1172,7 +1196,7 @@ function EditDonorForm() {
             <div className="flex items-center justify-between border-b border-[#e3dfdf] px-6 py-3.5 bg-white">
               <div>
                 <h3 className="text-[0.8125rem] font-semibold text-[#1c1a1a]">
-                  Record Outreach — {formData.donorName}
+                  Record Outreach
                 </h3>
                 <p className="text-[0.625rem] text-[#5c5757]">
                   Enter outreach notes, update status, and set next follow-up date
@@ -1226,7 +1250,24 @@ function EditDonorForm() {
 
                 <div>
                   <label className="block text-[0.6875rem] font-medium text-[#1c1a1a] mb-1">
-                    Notes & Action Plan
+                    Header <span className="text-[#b42318]">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={modalHeader}
+                    maxLength={OUTREACH_HEADER_MAX}
+                    onChange={(e) => setModalHeader(e.target.value)}
+                    placeholder="Short summary, e.g. Sent renewal letter"
+                    className="w-full h-[30px] px-2.5 text-[0.6875rem] font-medium rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] hover:border-[#8a8484] placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6b0f0f]/20 focus:border-[#6b0f0f] transition"
+                  />
+                  <div className="mt-0.5 text-right text-[0.625rem] text-[#5c5757]">
+                    {modalHeader.length} / {OUTREACH_HEADER_MAX}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[0.6875rem] font-medium text-[#1c1a1a] mb-1">
+                    Notes & Action Plan <span className="text-[#b42318]">*</span>
                   </label>
                   <textarea
                     rows={4}
@@ -1248,7 +1289,7 @@ function EditDonorForm() {
                   <button
                     type="button"
                     onClick={handleSaveOutreach}
-                    disabled={!modalNotes.trim() || isSavingOutreach}
+                    disabled={!modalHeader.trim() || !modalNotes.trim() || isSavingOutreach}
                     className="h-[28px] px-4 text-[0.65625rem] font-medium text-white bg-[#6b0f0f] hover:bg-[#520b0b] disabled:bg-gray-300 disabled:cursor-not-allowed rounded-md transition shadow-xs cursor-pointer"
                   >
                     {isSavingOutreach ? "Saving..." : "Save Outreach"}
@@ -1273,7 +1314,7 @@ function EditDonorForm() {
         >
           <div
             className={cn(
-              "w-full max-w-lg rounded-xl border border-[#e3dfdf] bg-white shadow-2xl p-5 space-y-4",
+              "w-full max-w-[800px] rounded-lg border border-[#e3dfdf] bg-white shadow-2xl p-5 space-y-4",
               isActivityDetailExiting ? "popup-out" : "popup-in"
             )}
             onClick={(e) => e.stopPropagation()}
@@ -1304,7 +1345,7 @@ function EditDonorForm() {
                   <span className="block text-[0.59375rem] font-semibold uppercase text-[#5c5757] tracking-wider">
                     Date & Time
                   </span>
-                  <span className="text-[0.6875rem] font-medium text-[#1c1a1a] mt-0.5 block truncate">
+                  <span className="text-[0.6875rem] font-medium text-[#1c1a1a] mt-0.5 block">
                     {selectedActivity.dateTime}
                   </span>
                 </div>
@@ -1347,12 +1388,23 @@ function EditDonorForm() {
                 </div>
               </div>
 
+              {parseOutreachNotes(selectedActivity.notes).header && (
+                <div>
+                  <label className="block text-[0.6875rem] font-semibold text-[#1c1a1a] mb-1.5">
+                    Header
+                  </label>
+                  <div className="w-full px-3.5 py-2 text-[0.6875rem] font-medium rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a]">
+                    {parseOutreachNotes(selectedActivity.notes).header}
+                  </div>
+                </div>
+              )}
+
               <div>
                 <label className="block text-[0.6875rem] font-semibold text-[#1c1a1a] mb-1.5">
                   Full Notes & Action Plan
                 </label>
                 <div className="w-full min-h-[90px] max-h-[260px] overflow-y-auto p-3.5 text-[0.6875rem] font-normal leading-relaxed rounded-md border border-[#e3dfdf] bg-white text-[#1c1a1a] whitespace-pre-wrap">
-                  {selectedActivity.notes?.trim() || "No notes recorded for this activity."}
+                  {parseOutreachNotes(selectedActivity.notes).body || "No notes recorded for this activity."}
                 </div>
               </div>
 
